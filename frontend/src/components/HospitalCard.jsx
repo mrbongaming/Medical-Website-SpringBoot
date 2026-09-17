@@ -1,41 +1,36 @@
-function HospitalCard({ image, name, address, rating }) {
-    return (
-        <div className="overflow-hidden rounded-2xl bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
-            {/* Image */}
-            <img
-                src={image}
-                alt={name}
-                className="h-48 w-full object-cover"
-            />
-
-            {/* Information */}
-            <div className="p-5">
-
-                <h3 className="text-lg font-bold text-gray-800">
-                    {name}
-                </h3>
-
-                <p className="mt-2 text-sm text-gray-500">
-                    {address}
-                </p>
-
-                <div className="mt-4 flex items-center justify-between">
-
-                    <span className="text-sm font-medium text-yellow-500">
-                        ⭐ {rating}
-                    </span>
-
-                    <button className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
-                        Đặt khám
-                    </button>
-
-                </div>
-
-            </div>
-
+import { Link } from "react-router-dom";
+import { FiMapPin } from "react-icons/fi";
+export default function HospitalCard({ hospital, list = false }) {
+  return (
+    <article className={"hospital-card " + (list ? "list-card" : "")}>
+      <Link className="hospital-image" to={"/co-so-y-te/" + hospital.slug}>
+        <img src={hospital.image} alt={hospital.name} loading="lazy" />
+      </Link>
+      <div className="card-body">
+        <Link to={"/co-so-y-te/" + hospital.slug}>
+          <h3>{hospital.name}</h3>
+        </Link>
+        <p className="muted location">
+          <FiMapPin /> {list ? hospital.address : hospital.city}
+        </p>
+        <div className="rating">
+          <span aria-label="5 sao">★★★★★</span>{" "}
+          <small>({hospital.rating})</small>
         </div>
-    );
+        <div className="card-actions">
+          {list && (
+            <Link
+              className="button outline"
+              to={"/co-so-y-te/" + hospital.slug}
+            >
+              Xem chi tiết
+            </Link>
+          )}
+          <Link className="button" to={"/dat-kham/" + hospital.slug}>
+            Đặt khám ngay
+          </Link>
+        </div>
+      </div>
+    </article>
+  );
 }
-
-export default HospitalCard;

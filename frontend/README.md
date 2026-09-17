@@ -1,16 +1,31 @@
-# React + Vite
+# Medpro React frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A frontend practice recreation of https://medpro.vn/ using React, React Router, and plain CSS. No login or backend is needed.
 
-Currently, two official plugins are available:
+## Run
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+From this folder:
 
-## React Compiler
+```sh
+npm install
+npm run dev
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+`npm run build` creates the production build. `npm run preview` serves it locally.
 
-## Expanding the ESLint configuration
+## Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- `src/components/`: shared header, footer, search, cards, and homepage sections.
+- `src/pages/`: home, medical facilities, services, doctors, details, booking preview, news, guides, and contact/information pages.
+- `src/data/reference.json`: static snapshot of public facility names, service labels, and image paths.
+- `src/data/mockData.js`: exports the local data and contains sample articles and navigation labels.
+- `src/index.css`: shared styles and responsive layouts.
+- `public/images/`: locally saved images from the reference site.
+
+Search, filters, pagination, tabs, carousel controls, FAQs, and page navigation work locally. Booking and contact forms only show previews; they do not submit data or create appointments. Availability, article content, descriptions, and other demo information are illustrative.
+
+The backend is currently a Spring Boot skeleton with no medical APIs. Unused product/cart/login files and the product API have been removed. See [the completion plan](../docs/KE_HOACH_DO_AN.md) for services, APIs, database design, and milestones.
+
+Fonts use Google Fonts with system fallbacks. All site images are local. Reference branding and images remain the property of their respective owners.
+
+For deployment, configure the web server to fall back to `index.html` for React Router URLs.

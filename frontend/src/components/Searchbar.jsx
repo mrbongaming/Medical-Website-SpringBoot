@@ -1,20 +1,29 @@
-import { FaFilter } from "react-icons/fa";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiSearch } from "react-icons/fi";
 
-function SearchBar() {
+export default function Searchbar({ compact = false }) {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+  function search(event) {
+    event.preventDefault();
+    navigate("/co-so-y-te?q=" + encodeURIComponent(query.trim()));
+  }
   return (
-    <div className="flex items-center justify-center mt-4">
-    <FaFilter className="mr-2 size-8"/>
-      <div className="flex w-150 rounded-lg border-2 shadow">
-        
-        <input
-          type="text"
-          placeholder="Search products..."
-          className="flex-12 outline-none p-2"
-        />
-        <div className="flex items-center justify-center flex-1">🔍</div>
-      </div>
-    </div>
+    <form
+      className={"searchbar " + (compact ? "compact" : "")}
+      onSubmit={search}
+    >
+      <FiSearch aria-hidden="true" />
+      <input
+        aria-label="Tìm cơ sở y tế"
+        placeholder="Tìm kiếm cơ sở y tế, chuyên khoa..."
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+      />
+      <button type="submit" aria-label="Tìm kiếm">
+        {compact ? <FiSearch /> : "Tìm kiếm"}
+      </button>
+    </form>
   );
 }
-
-export default SearchBar;

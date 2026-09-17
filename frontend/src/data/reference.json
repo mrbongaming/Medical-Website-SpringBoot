@@ -1,0 +1,779 @@
+{
+  "source": "https://medpro.vn/",
+  "logo": "/images/c273793a462571.svg",
+  "hero": "/images/e8c4de967720ce.webp",
+  "appImage": "/images/e6e39c4b637438.png",
+  "services": [
+    {
+      "name": "Đặt khám tại cơ sở",
+      "slug": "dat-kham-tai-co-so",
+      "image": "/images/ad9127bb7e5dec.png",
+      "banner": "/images/fc91116eccce59.webp"
+    },
+    {
+      "name": "Đặt khám chuyên khoa",
+      "slug": "dat-kham-chuyen-khoa",
+      "image": "/images/3ffe6c690d493d.png",
+      "banner": "/images/05f5f48a7c0c0a.png"
+    },
+    {
+      "name": "Gọi video với bác sĩ",
+      "slug": "tu-van-kham-benh-tu-xa",
+      "image": "/images/2c732405d70e41.png",
+      "banner": "/images/4dae99abb72dd4.webp"
+    },
+    {
+      "name": "Đặt lịch xét nghiệm",
+      "slug": "dat-lich-xet-nghiem",
+      "image": "/images/4536d7d44f3c64.png",
+      "banner": "/images/4f24cb9850e4ff.webp"
+    },
+    {
+      "name": "Đặt khám ngoài giờ",
+      "slug": "dat-kham-ngoai-gio",
+      "image": "/images/df990331f170d0.png",
+      "banner": "/images/7a8faa537c14fa.webp"
+    },
+    {
+      "name": "Giúp việc cá nhân",
+      "slug": "giup-viec-ca-nhan",
+      "image": "/images/0531310bb6d347.png",
+      "banner": ""
+    },
+    {
+      "name": "Khám sức khỏe thông tư",
+      "slug": "dat-kham-thong-tu",
+      "image": "/images/18adad9ca93fb4.png",
+      "banner": "/images/98deea2f0afe21.png"
+    },
+    {
+      "name": "Đặt khám theo bác sĩ",
+      "slug": "dat-kham-theo-bac-si",
+      "image": "/images/b6ecb1dc3442de.png",
+      "banner": "/images/0ba47d41005845.webp"
+    },
+    {
+      "name": "Gói khám sức khỏe",
+      "slug": "goi-kham-suc-khoe",
+      "image": "/images/c335027a06eb68.png",
+      "banner": "/images/7213ce427ac1d4.webp"
+    },
+    {
+      "name": "Y tế tại nhà",
+      "slug": "y-te-tai-nha",
+      "image": "/images/7625f965f09622.png",
+      "banner": "/images/aac3b37e85eceb.webp"
+    },
+    {
+      "name": "Đặt lịch tiêm chủng",
+      "slug": "dat-lich-tiem-chung",
+      "image": "/images/61094dbf7596b3.png",
+      "banner": "/images/bf183c877e5cd3.webp"
+    },
+    {
+      "name": "Mua thuốc tại An Khang",
+      "slug": "mua-thuoc-tai-an-khang",
+      "image": "/images/5ddc0653531a8f.png",
+      "banner": "/images/a29d1ac7743f54.png"
+    },
+    {
+      "name": "Khám doanh nghiệp",
+      "slug": "kham-suc-khoe-doanh-nghiep",
+      "image": "/images/408bd6c5401e6d.png",
+      "banner": "/images/62433fc42e195e.webp"
+    },
+    {
+      "name": "Đặt lịch Chụp phim & Nội soi",
+      "slug": "dat-lich-chup-phim-noi-soi",
+      "image": "/images/326b0d19570112.png",
+      "banner": "/images/60aa894943b363.webp"
+    },
+    {
+      "name": "Khám Tạo Hình Thẩm Mỹ",
+      "slug": "tao-hinh-tham-my",
+      "image": "/images/13eafb6d01dbcb.png",
+      "banner": "/images/f154177fb2153d.webp"
+    },
+    {
+      "name": "Gói khuyến mãi",
+      "slug": "goi-khuyen-mai",
+      "image": "/images/d50ea07c8f3b15.webp",
+      "banner": "/images/feeaacefcfd0ba.webp"
+    }
+  ],
+  "hospitals": [
+    {
+      "slug": "bv-da-khoa-phuong-dong",
+      "name": "Bệnh viện Đa khoa Phương Đông - Hà Nội",
+      "image": "/images/2588f067640b89.jpg",
+      "logo": "/images/454ee877433343.jpg",
+      "address": "Số 9 Phố Viên, Phường Đông Ngạc, Hà Nội",
+      "city": "Thành phố Hà Nội",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "dym-medical-center-sai-gon",
+      "name": "DYM Medical Center Sài Gòn",
+      "image": "/images/df7148395bba1c.png",
+      "logo": "/images/a8c93844a03256.png",
+      "address": "Phòng B101-B103, tầng hầm 1, toà nhà mPlaza Saigon, 39 Lê Duẩn, Phường Sài Gòn, TP.HCM (Địa chỉ cũ: Phòng B103, Tầng hầm 1, Tòa nhà mPlaza Saigon, 39 Lê Duẩn, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "nhidong2",
+      "name": "Bệnh viện Nhi Đồng 2",
+      "image": "/images/6502e50a00cb90.png",
+      "logo": "/images/ac34cfa1467cfa.png",
+      "address": "14 Lý Tự Trọng, Phường Sài Gòn, TP.HCM",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 5
+    },
+    {
+      "slug": "benh-vien-tham-my-gangwhoo",
+      "name": "Bệnh viện Thẩm mỹ Gangwhoo",
+      "image": "/images/4ff287df19d938.jpg",
+      "logo": "/images/2a32e20a159e73.png",
+      "address": "576-578 Cộng Hòa, Phường Tân Bình, TP.HCM",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "benh-vien-ho-tro-sinh-san-nam-hoc-sai-gon",
+      "name": "Bệnh viện Hỗ trợ sinh sản & Nam học Sài Gòn",
+      "image": "/images/75aa3d2ef328bc.png",
+      "logo": "/images/c0b27b25357830.png",
+      "address": "87 Lý Chiêu Hoàng, Phường Bình Phú, Thành phố Hồ Chí Minh",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "dreye",
+      "name": "Dr. Eye - Phòng Khám Chuyên Sâu Chống Lão Hóa Vùng Mắt Dành Cho Phụ Nữ Trung Niên",
+      "image": "/images/056a93cb939d70.png",
+      "logo": "/images/5bc22a612fa52e.png",
+      "address": "07 Nguyễn Cơ Thạch, Phường An Khánh, Thành Phố Hồ Chí Minh",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "phong-kham-gia-dinh-tokyo",
+      "name": "Phòng khám Gia Đình Tokyo - Tokyo Family Clinic",
+      "image": "/images/b4ec63fa80c6a1.jpg",
+      "logo": "/images/f95f59a1257e4b.jpg",
+      "address": "127 Hồng Hà, Phường Đức Nhuận, Thành Phố Hồ Chí Minh (Địa chỉ cũ: 127 Hồng Hà, Phường 9, Quận Phú Nhuận, TP. HCM)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "benh-vien-hoan-my-sai-gon",
+      "name": "Bệnh viện Hoàn Mỹ Sài Gòn",
+      "image": "/images/abe60769d3c64d.png",
+      "logo": "/images/97f84d45070818.png",
+      "address": "60 - 60A Phan Xích Long, Phường Cầu Kiệu, TP. Hồ Chí Minh (Địa chỉ cũ: 60-60A Phan Xích Long, Phường 1, Phú Nhuận, Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "phong-kham-y-hoc-co-truyen-y-khoa-thai-duong",
+      "name": "Phòng khám Y Học Cổ Truyền Y Khoa Thái Dương",
+      "image": "/images/965afa13a443d6.png",
+      "logo": "/images/1e054ce5b90c47.png",
+      "address": "15A Trần Khánh Dư, P. Ninh Kiều, TP. Cần Thơ (Địa chỉ cũ: 15A Đ. Trần Khánh Dư, Xuân Khánh, Ninh Kiều, Cần Thơ)",
+      "city": "Thành phố Cần Thơ",
+      "type": 3,
+      "rating": 4.7
+    },
+    {
+      "slug": "bv-ung-buou-hung-viet",
+      "name": "Bệnh viện Ung bướu Hưng Việt",
+      "image": "/images/8b7944259921aa.png",
+      "logo": "/images/ccc6c07461a6fb.png",
+      "address": "34 và 40 Đại Cồ Việt, Phường Hai Bà Trưng, Hà Nội",
+      "city": "Thành phố Hà Nội",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "phau-thuat-tham-my-bac-si-long",
+      "name": "Phẫu Thuật Thẩm Mỹ Bác Sĩ Long | Bệnh viện thẩm mỹ và Nha khoa quốc tế ASIA Saigon",
+      "image": "/images/3593ec86dfc7da.webp",
+      "logo": "/images/56edef7992c024.webp",
+      "address": "318 Lê Hồng Phong, Phường Vườn Lài, Thành phố Hồ Chí Minh",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "phong-kham-da-lieu-bac-si-doan-van-loi-em",
+      "name": "Phòng Khám Chuyên Khoa Da Liễu BS.CKII. Đoàn Văn Lợi Em",
+      "image": "/images/214abc1cf50e2e.webp",
+      "logo": "/images/4ed0f75850cbfe.webp",
+      "address": "RS5-SH06 RICHSTAR 2, 239-241 Hòa Bình, Khu phố 35, Phường Phú Thạnh, TP. HCM",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "phong-chan-tri-yhct-minh-tue-duong",
+      "name": "Phòng Chẩn trị Y học cổ truyền Minh Tuệ Đường",
+      "image": "/images/f2c277a2a46bde.webp",
+      "logo": "/images/16bff48d47c4b3.webp",
+      "address": "77 Hàm Nghi, phường Hạc Thành, Thanh Hóa",
+      "city": "Tỉnh Thanh Hóa",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "benh-vien-phuong-nam",
+      "name": "Bệnh viện Phương Nam - thành viên Tập đoàn Y tế Phương Châu",
+      "image": "/images/c6b68ffb652569.png",
+      "logo": "/images/e9fc9d6044d0c5.png",
+      "address": "Số 2 Nguyễn Lương Bằng, Phường Tân Mỹ, TP. Hồ Chí Minh",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "dym-medical-center-phu-my-hung",
+      "name": "DYM Medical Center Phú Mỹ Hưng",
+      "image": "/images/238ec85d909058.png",
+      "logo": "/images/a32f3a6f9dfbd9.png",
+      "address": "Phòng 3A01, Tầng 3A, Tòa nhà The Grace, 71 Hoàng Văn Thái, Phường Tân Mỹ, TP. Hồ Chí Minh (Địa chỉ cũ: Phòng 3A01, Tầng 3A, Tòa nhà The Grace, 71 Hoàng Văn Thái, Khu phố 1, Phường Tân Phú, Quận 7, Thành phố Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4
+    },
+    {
+      "slug": "simmed",
+      "name": "Phòng khám Đa khoa SIM Med",
+      "image": "/images/ce0bc4a664944a.png",
+      "logo": "/images/ce0bc4a664944a.png",
+      "address": "Toà nhà Richstar 2 - RS5, 239-241 Đường Hòa Bình, phường Phú Thạnh, TP. Hồ Chí Minh (Địa chỉ cũ: Toà nhà Richstar 2 - RS5, 239-241 đường Hòa Bình, P. Hiệp Tân, Q.Tân Phú,TP.HCM)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4
+    },
+    {
+      "slug": "phong-kham-da-khoa-phap-anh",
+      "name": "Phòng Khám Đa Khoa Pháp Anh",
+      "image": "/images/8e1520ae0e4be6.png",
+      "logo": "/images/45d2233fb9e116.png",
+      "address": "222-224-226 Nguyễn Duy Dương   Phường Vườn Lài, TP.HCM (Địa chỉ cũ: 222-224-226 Nguyễn Duy Dương, Phường 4, Quận 10, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4.7
+    },
+    {
+      "slug": "pkmenhealth",
+      "name": "Trung Tâm Sức Khỏe Nam giới Men's Health",
+      "image": "/images/00a67ded6cbc81.png",
+      "logo": "/images/2104e8b4fe15c8.png",
+      "address": "7B/31 Thành Thái, Phường Diên Hồng, TP. Hồ Chí Minh (Địa chỉ cũ: 7B/31 Thành Thái, P14, Quận 10, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4
+    },
+    {
+      "slug": "pkdkhd",
+      "name": "Phòng Khám Đa Khoa Hưng Dũng",
+      "image": "/images/ce50535a5fe9df.png",
+      "logo": "/images/6bb7ab53a3dd63.png",
+      "address": "525/15 SƯ VẠN HẠNH (NỐI DÀI), PHƯỜNG 12, QUẬN 10, TP. HCM",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4
+    },
+    {
+      "slug": "bvnsaigon",
+      "name": "Bệnh viện Đa khoa Quốc tế Nam Sài Gòn",
+      "image": "/images/7927b2aa0fe868.jpg",
+      "logo": "/images/51a8284a50fe5e.jpg",
+      "address": "Số 88, Đường số 8, Khu dân cư Trung Sơn, xã Bình Hưng, TP Hồ Chí Minh (Địa chỉ cũ: Số 88, Đường số 8, Khu dân cư Trung Sơn, Xã Bình Hưng, Huyện Bình Chánh, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 4.7
+    },
+    {
+      "slug": "phong-kham-da-khoa-vigor-health",
+      "name": "Phòng Khám Đa Khoa Vigor Health",
+      "image": "/images/dbf668bbe606ec.png",
+      "logo": "/images/f4789344b4a043.png",
+      "address": "100-102-102A-104 Trương Định, Phường Nhiêu Lộc, Thành phố Hồ Chí Minh",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4
+    },
+    {
+      "slug": "trung-tam-mat-nam-viet",
+      "name": "Trung Tâm Mắt Kỹ Thuật Cao Nam Việt",
+      "image": "/images/aaa96ac37f79be.png",
+      "logo": "/images/c119f4ca591d41.png",
+      "address": "18 - 20 Phước Hưng, Phường An Đông, Thành phố Hồ Chí Minh (Địa chỉ cũ: 18 - 20 Phước Hưng, Phường 8, Quận 5, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 4.8
+    },
+    {
+      "slug": "bvmedicbd",
+      "name": "Bệnh viện Đa Khoa Medic Bình Dương",
+      "image": "/images/6fb709939f4e13.png",
+      "logo": "/images/6fb709939f4e13.png",
+      "address": "14A Nguyễn An Ninh, Phường Thủ Dầu Một, Tỉnh Bình Dương (Địa chỉ cũ: 14A Nguyễn An Ninh, phường Phú Cường, Tp Thủ Dầu Một, Tỉnh Bình Dương)",
+      "city": "Tỉnh Bình Dương",
+      "type": 2,
+      "rating": 4
+    },
+    {
+      "slug": "quoctecity",
+      "name": "Bệnh viện Quốc tế City - CIH",
+      "image": "/images/def5308f953121.png",
+      "logo": "/images/def5308f953121.png",
+      "address": "03 Đường 17A, phường An Lạc, TP. Hồ Chí Minh (Địa chỉ cũ: Số 3, Đường 17A, P.Bình Trị Đông B, Q. Bình Tân, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 2,
+      "rating": 4.7
+    },
+    {
+      "slug": "drcheck",
+      "name": "Trung Tâm Nội Soi Tiêu Hoá Doctor Check",
+      "image": "/images/ab834882974f71.png",
+      "logo": "/images/a29aa469a5c04c.png",
+      "address": "429 Tô Hiến Thành, Diên Hồng, Hồ Chí Minh (Địa chỉ cũ: 429 Tô Hiến Thành, Phường 14, Quận 10, Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "phong-kham-san-phu-khoa-drmarie1",
+      "name": "Phòng Khám Sản Phụ Khoa Dr.Marie HCM01 (Cơ sở Nguyễn Văn Trỗi)",
+      "image": "/images/63c021bab933ca.png",
+      "logo": "/images/4ea38b903bd392.png",
+      "address": "307/15 Nguyễn Văn Trỗi, Phường Tân Sơn Hòa, TP. HCM",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "benh-vien-hoan-my-cuu-long",
+      "name": "Bệnh viện Đa khoa Hoàn Mỹ Cửu Long",
+      "image": "/images/c72bc538148b7d.jpg",
+      "logo": "/images/02db38d5f8dbb0.jpg",
+      "address": "Lô 20 Võ Nguyên Giáp, Phường Hưng Phú, TP. Cần Thơ (Địa chỉ cũ: Lô 20 Võ Nguyên Giáp, Phường Phú Thứ, Quận Cái Răng, TP. Cần Thơ)",
+      "city": "Thành phố Cần Thơ",
+      "type": 2,
+      "rating": 5
+    },
+    {
+      "slug": "nha-khoa-lac-viet-intech",
+      "name": "Nha khoa Lạc Việt Intech",
+      "image": "/images/c59be470f08c9c.png",
+      "logo": "/images/34af8f01186a0f.png",
+      "address": "Số 90 - 92 Ngô Gia Tự, Phường 9, Quận 10, TP. HCM",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "phong-kham-acc-ben-thanh",
+      "name": "Phòng khám ACC Bến Thành - HCM",
+      "image": "/images/0455079c377032.png",
+      "logo": "/images/29405f156b1aad.png",
+      "address": "99 Nguyễn Du, P. Bến Thành, TP.HCM (Địa chỉ cũ: 99 Nguyễn Du, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 3,
+      "rating": 5
+    },
+    {
+      "slug": "bvmathcm",
+      "name": "Bệnh Viện Mắt",
+      "image": "/images/f437c4f96e4831.png",
+      "logo": "/images/f437c4f96e4831.png",
+      "address": "280 Điện Biên Phủ, phường Xuân Hòa, TP. Hồ Chí Minh (Địa chỉ cũ: 280 Điện Biên Phủ, Phường Võ Thị Sáu, Quận 3, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "nhidong1",
+      "name": "Bệnh viện Nhi Đồng 1",
+      "image": "/images/d92aac707ee58f.png",
+      "logo": "/images/d92aac707ee58f.png",
+      "address": "341 Sư Vạn Hạnh, Phường Vườn Lài, TP.Hồ Chí Minh (Địa chỉ cũ: 341 Sư Vạn Hạnh, Phường 10, Quận 10, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "dalieuhcm",
+      "name": "Bệnh viện Da Liễu TP.HCM",
+      "image": "/images/73fce02079556a.png",
+      "logo": "/images/73fce02079556a.png",
+      "address": "02 Nguyễn Thông, Phường Xuân Hòa, TP.Hồ Chí Minh (Địa chỉ cũ: 2 Nguyễn Thông, Phường Võ Thị Sáu, Quận 3, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "binhthanhhcm",
+      "name": "Bệnh Viện Đa Khoa Bình Thạnh",
+      "image": "/images/49c924ea40307a.png",
+      "logo": "/images/b235911db09430.png",
+      "address": "132 Lê Văn Duyệt, Phường Gia Định, TP.Hồ Chí Minh (Địa chỉ cũ: 132 Lê Văn Duyệt, Phường 1, Bình Thạnh, Thành phố Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "benh-vien-da-khoa-dong-nai",
+      "name": "Bệnh viện Đa khoa Đồng Nai",
+      "image": "/images/24c0c388d5ea6a.png",
+      "logo": "/images/24c0c388d5ea6a.png",
+      "address": " 02 Đồng Khởi, Phường Tam Hiệp, Thành phố Đồng Nai (Địa chỉ cũ: 02 Đồng Khởi, Phường Tam Hòa, TP. Biên Hòa, Tỉnh Đồng Nai)",
+      "city": "Tỉnh Đồng Nai",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "trungvuong",
+      "name": "Bệnh viện Trưng Vương",
+      "image": "/images/7d9d0bedd1ca4a.png",
+      "logo": "/images/d639820bbe5837.png",
+      "address": "266 Lý Thường Kiệt, Phường Diên Hồng, TP.Hồ Chí Minh (Địa chỉ cũ: 266 Lý Thường Kiệt, Phường 14, Quận 10, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "benh-vien-chan-thuong-chinh-hinh-hcm",
+      "name": "Bệnh viện Chấn Thương Chỉnh Hình TP.HCM",
+      "image": "/images/cbc4ea1288d2fc.png",
+      "logo": "/images/b03e48581c31c3.png",
+      "address": "929 Trần Hưng Đạo, Phường Chợ Quán, TP. Hồ Chí Minh (Địa chỉ cũ: 929 Trần Hưng Đạo, Phường 1, Quận 5, TP.HCM)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "benh-vien-dai-hoc-y-duoc-tphcm-co-so-2",
+      "name": "Bệnh viện Đại học Y Dược TP.HCM (Cơ sở 2)",
+      "image": "/images/268367d112e32f.png",
+      "logo": "/images/268367d112e32f.png",
+      "address": "CS2: 201 Nguyễn Chí Thanh - Phường Chợ Lớn - TP. Hồ Chí Minh (Địa chỉ cũ: 201 Nguyễn Chí Thanh, Phường 12, Quận 5, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.7
+    },
+    {
+      "slug": "benh-vien-dai-hoc-y-duoc-co-so-3",
+      "name": "Bệnh viện Đại học Y Dược TP.HCM (Y học cổ truyền kết hợp y học hiện đại)",
+      "image": "/images/f6406fe5d1c8fc.png",
+      "logo": "/images/5b7b4aeed45b94.png",
+      "address": "CS3: 221B Hoàng Văn Thụ, Phường Phú Nhuận, TP.HCM (Địa chỉ cũ: 221B Hoàng Văn Thụ, Phường 8, Quận Phú Nhuận, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.7
+    },
+    {
+      "slug": "nhidonghcm",
+      "name": "Bệnh viện Nhi Đồng Thành Phố",
+      "image": "/images/a812e2da729668.png",
+      "logo": "/images/a812e2da729668.png",
+      "address": "15 Võ Trần Chí, xã Tân Nhựt, TP.Hồ Chí Minh (Địa chỉ cũ: Số 15 Võ Trần Chí, Xã Tân Kiên, Huyện Bình Chánh, TP. Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "bv-nguyen-trai",
+      "name": "Bệnh viện Nguyễn Trãi",
+      "image": "/images/9f454a5a7d01dc.jpg",
+      "logo": "/images/da040cc9eab023.jpg",
+      "address": "314 Nguyễn Trãi, Phường An Đông, TP.Hồ Chí Minh (Địa chỉ cũ: 314 Nguyễn Trãi, Phường 8, Quận 5, TP.Hồ Chí Minh)",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "bv-vung-tau",
+      "name": "Bệnh viện Đa Khoa Vũng Tàu",
+      "image": "/images/68d311b429299d.jpg",
+      "logo": "/images/395e20ce30120b.jpg",
+      "address": "27 Đường 2/9, Phường Phước Thắng, TP. Hồ Chí Minh (Địa chỉ cũ: Số 27, Đường 2/9, Phường 11, Thành phố Vũng Tàu)",
+      "city": "Tỉnh BR-VT",
+      "type": 1,
+      "rating": 4.5
+    },
+    {
+      "slug": "benh-vien-da-khoa-singapore",
+      "name": "Bệnh viện đa khoa Singapore (Singapore General Hospital)",
+      "image": "/images/322f9d5f748285.png",
+      "logo": "/images/ddc284af099bc9.png",
+      "address": "Bukit Merah, Central Region, Singapore",
+      "city": "TP.HCM",
+      "type": 1,
+      "rating": 4.7
+    }
+  ],
+  "doctors": [
+    {
+      "slug": "1",
+      "name": "Trần Vũ Hoàng",
+      "image": "/images/61ea93470186b1.png",
+      "specialty": "Tổng quát",
+      "price": "150.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "2",
+      "name": "Lê Tuấn",
+      "image": "/images/bc1e51ab4fcd08.png",
+      "specialty": "Nội khoa",
+      "price": "150.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "3",
+      "name": "Nguyễn Trường Mạnh",
+      "image": "/images/ca72f4f6b6fdcd.png",
+      "specialty": "Nam khoa, Vô sinh - Hiếm muộn",
+      "price": "200.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "4",
+      "name": "Trần Thị Mây",
+      "image": "/images/ed6d7edaf0589a.png",
+      "specialty": "Tâm thần, Tâm lý",
+      "price": "300.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "5",
+      "name": "Hoàng Thị Anh Thư",
+      "image": "/images/2c04120db69722.png",
+      "specialty": "Tâm thần, Tâm lý",
+      "price": "250.000đ - 650.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "6",
+      "name": "Ngô Trung Nam",
+      "image": "/images/3911c39a793e75.webp",
+      "specialty": "Sản phụ khoa",
+      "price": "200.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "7",
+      "name": "Vũ Đình Khôi",
+      "image": "/images/eea30515fe55f9.png",
+      "specialty": "Nam khoa, Tổng quát, Da liễu",
+      "price": "200.000đ - 450.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    },
+    {
+      "slug": "8",
+      "name": "Nguyễn Phúc Thiện",
+      "image": "/images/f2660cc52698a2.jpg",
+      "specialty": "Tim mạch",
+      "price": "300.000đ",
+      "hospital": "Bác sĩ Chuyên Khoa"
+    }
+  ],
+  "specialties": [
+    {
+      "name": "Tiêu Hóa Gan Mật",
+      "slug": "tieu-hoa-gan-mat",
+      "icon": "/images/04376e5d0235fe.png"
+    },
+    {
+      "name": "Nội Tổng Quát",
+      "slug": "noi-tong-quat",
+      "icon": "/images/8e6159a654f080.png"
+    },
+    {
+      "name": "Nội Tiết",
+      "slug": "noi-tiet",
+      "icon": "/images/80df26af0d28f3.png"
+    },
+    {
+      "name": "Da liễu",
+      "slug": "da-lieu",
+      "icon": "/images/78efa07a483994.png"
+    },
+    {
+      "name": "Nội Tim Mạch",
+      "slug": "noi-tim-mach",
+      "icon": "/images/ad6701c651df1e.png"
+    },
+    {
+      "name": "Nội Thần Kinh",
+      "slug": "noi-than-kinh",
+      "icon": "/images/c06e267d1a8040.png"
+    },
+    {
+      "name": "Nội Cơ Xương Khớp",
+      "slug": "noi-co-xuong-khop",
+      "icon": "/images/ba3ddf1709b485.png"
+    },
+    {
+      "name": "Tai Mũi Họng",
+      "slug": "tai-mui-hong",
+      "icon": "/images/653b26dd675192.png"
+    },
+    {
+      "name": "Mắt",
+      "slug": "mat",
+      "icon": "/images/1a945761adc8a7.png"
+    },
+    {
+      "name": "Nội Tiêu Hoá",
+      "slug": "noi-tieu-hoa",
+      "icon": "/images/77dd1ff605786e.png"
+    },
+    {
+      "name": "Nội Truyền Nhiễm",
+      "slug": "noi-truyen-nhiem",
+      "icon": "/images/c67e30cbdb1ce6.png"
+    },
+    {
+      "name": "Nội Hô Hấp",
+      "slug": "noi-ho-hap",
+      "icon": "/images/3b7eccc46c0938.png"
+    },
+    {
+      "name": "Nội Tiết Niệu",
+      "slug": "noi-tiet-nieu",
+      "icon": "/images/b681304eb2b787.png"
+    },
+    {
+      "name": "Ngoại Cơ Xương Khớp",
+      "slug": "ngoai-co-xuong-khop",
+      "icon": "/images/3f14e79d551838.png"
+    },
+    {
+      "name": "Sản - Phụ Khoa",
+      "slug": "san-phu-khoa",
+      "icon": "/images/7db417e78dcea6.png"
+    },
+    {
+      "name": "Ngoại Tiêu Hoá",
+      "slug": "ngoai-tieu-hoa",
+      "icon": "/images/77dd1ff605786e.png"
+    }
+  ],
+  "banners": [
+    "/images/a1e137c4ea6f8d.webp",
+    "/images/c3d59fa2ff9b44.webp",
+    "/images/bf7f4933ec275e.png",
+    "/images/ef984be2b40698.png",
+    "/images/512e6b4aec46da.jpg"
+  ],
+  "packages": [
+    {
+      "slug": "1",
+      "name": "Khám sức khỏe xin việc",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "563.000đ",
+      "hospital": "Phòng khám Đa khoa Quốc tế Hàng Xanh",
+      "category": "Sức khỏe"
+    },
+    {
+      "slug": "2",
+      "name": "Gói khám work permit VIP - nam (Gói khám giấy phép lao động dành cho người nước ngoài)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "1.960.000đ",
+      "hospital": "Phòng khám đa khoa DHA Health Care",
+      "category": "Sức khỏe"
+    },
+    {
+      "slug": "3",
+      "name": "Gói khám thai Toàn diện (7 - 39w)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "27,000,000 - 45,000,0000 (Thanh toán tại cơ sở)",
+      "hospital": "Bệnh viện Phương Nam - thành viên Tập đoàn Y tế Phương Châu",
+      "category": "Sức khỏe"
+    },
+    {
+      "slug": "4",
+      "name": "Gói khám tiểu đường",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "720.000đ",
+      "hospital": "Phòng Khám Đa khoa Quốc Tế Golden Healthcare",
+      "category": "Sức khỏe"
+    },
+    {
+      "slug": "5",
+      "name": "Gói Xét Nghiệm Sinh Hóa Cơ Bản Tại Nhà",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "885.000đ",
+      "hospital": "Phòng Khám Đa Khoa Pháp Anh",
+      "category": "Xét nghiệm"
+    },
+    {
+      "slug": "6",
+      "name": "Gói xét nghiệm sức khỏe sinh sản nữ - nâng cao (6 test)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "1.338.000đ",
+      "hospital": "Trung tâm xét nghiệm và chẩn đoán Y khoa Diag - Quận 11",
+      "category": "Xét nghiệm"
+    },
+    {
+      "slug": "7",
+      "name": "Gói XN Viêm gan - cơ bản (3 test)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "420.000đ",
+      "hospital": "Trung tâm xét nghiệm và chẩn đoán Y khoa Diag - Quận 11",
+      "category": "Xét nghiệm"
+    },
+    {
+      "slug": "8",
+      "name": "Gói XN đái tháo đường - cơ bản (3 test)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "159.000đ",
+      "hospital": "Trung tâm xét nghiệm và chẩn đoán Y khoa Diag - Quận 11",
+      "category": "Xét nghiệm"
+    },
+    {
+      "slug": "9",
+      "name": "Tiêm chủng Sởi đơn",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "Thanh toán tại cơ sở",
+      "hospital": "Bệnh viện Đa Khoa Vũng Tàu",
+      "category": "Tiêm chủng"
+    },
+    {
+      "slug": "10",
+      "name": "Tiêm chủng Ngừa ung thư cổ tử cung và u nhú bộ phận sinh dục, sùi mào gà",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "Thanh toán tại cơ sở",
+      "hospital": "Bệnh viện Đa Khoa Vũng Tàu",
+      "category": "Tiêm chủng"
+    },
+    {
+      "slug": "11",
+      "name": "Gói Vaccine HPV (Gói 1)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "7.300.000đ",
+      "hospital": "Bệnh viện Phụ Sản Quốc Tế Sài Gòn",
+      "category": "Tiêm chủng"
+    },
+    {
+      "slug": "12",
+      "name": "Gói Vắc Xin Dành Cho Trẻ Từ 6 Tuần - 6 Tháng Tuổi (Synflorix Inj)",
+      "image": "/images/ec6be2ea2f6454.png",
+      "price": "10.200.000đ",
+      "hospital": "Bệnh viện Đa khoa Quốc Tế Hoàn Mỹ Thủ Đức",
+      "category": "Tiêm chủng"
+    }
+  ]
+}
