@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:services": "node scripts/check-services.mjs",
+    "check:browser": "node scripts/check-browser.mjs"
   },
   "dependencies": {
     "react": "^19.2.8",

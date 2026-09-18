@@ -10,6 +10,7 @@ import {
 import { FaFacebookF, FaYoutube, FaTiktok } from "react-icons/fa";
 import { logo, guides, hospitalTypes } from "../data/mockData";
 import Searchbar from "./Searchbar";
+import AccountMenu from "./AccountMenu";
 
 export default function Navbar() {
   const [open, setOpen] = useState(false);
@@ -78,6 +79,7 @@ export default function Navbar() {
             Tư vấn / Đặt khám<strong>1900 2115</strong>
           </span>
         </Link>
+        <AccountMenu />
         <button
           className="menu-toggle"
           aria-label={open ? "Đóng menu" : "Mở menu"}

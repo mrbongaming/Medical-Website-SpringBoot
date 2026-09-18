@@ -12,6 +12,10 @@ import Home from "./pages/home";
 import Hospitals from "./pages/Hospitals";
 import Details from "./pages/Details";
 import Services from "./pages/Services";
+import ServiceDirectory from "./pages/ServiceDirectory";
+import ServiceDetail from "./pages/ServiceDetail";
+import ServiceBooking from "./pages/ServiceBooking";
+import Auth from "./pages/Auth";
 import Booking from "./pages/Booking";
 import News from "./pages/News";
 import Guide from "./pages/Guide";
@@ -37,8 +41,12 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/co-so-y-te" element={<Hospitals />} />
           <Route path="/co-so-y-te/:slug" element={<Details />} />
-          <Route path="/dich-vu-y-te" element={<Services />} />
-          <Route path="/dich-vu-y-te/:slug" element={<Services />} />
+          <Route path="/dich-vu-y-te" element={<ServiceDirectory />} />
+          <Route path="/dich-vu-y-te/:slug" element={<ServiceDirectory />} />
+          <Route path="/dich-vu-y-te/:serviceSlug/chi-tiet/:itemSlug" element={<ServiceDetail />} />
+          <Route path="/dich-vu-y-te/:serviceSlug/dat-lich/:itemSlug" element={<ServiceBooking />} />
+          <Route path="/dang-nhap" element={<Auth />} />
+          <Route path="/dang-ky" element={<Auth register />} />
           <Route
             path="/chuyen-khoa"
             element={<Services mode="specialties" />}
@@ -58,7 +66,7 @@ export default function App() {
           <Route path="/lien-he" element={<Information mode="contact" />} />
           <Route
             path="/kham-suc-khoe-doanh-nghiep"
-            element={<Information mode="business" />}
+            element={<ServiceDirectory business />}
           />
           <Route path="/ve-medpro" element={<Information mode="about" />} />
           <Route path="/tuyen-dung" element={<Information mode="careers" />} />
