@@ -1,102 +1,134 @@
-import { useEffect } from "react";
 import {
-  BrowserRouter,
-  Routes,
+  createBrowserRouter,
+  createRoutesFromElements,
+  RouterProvider,
+  Navigate,
+  Outlet,
   Route,
   useLocation,
-  Link,
-} from "react-router-dom";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-import Home from "./pages/home";
-import Hospitals from "./pages/Hospitals";
-import Details from "./pages/Details";
-import Services from "./pages/Services";
-import ServiceDirectory from "./pages/ServiceDirectory";
-import ServiceDetail from "./pages/ServiceDetail";
-import ServiceBooking from "./pages/ServiceBooking";
-import Auth from "./pages/Auth";
-import Booking from "./pages/Booking";
-import News from "./pages/News";
-import Guide from "./pages/Guide";
-import Information from "./pages/Information";
+} from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import HospitalProvider from './state/HospitalProvider';
+import { PublicLayout, RequireRole, StaffLayout } from './components/Layouts';
+import {
+  HomePage,
+  DirectoryPage,
+  DetailPage,
+  InformationPage,
+  NotFound,
+} from './pages/PublicPages';
+import { AuthPage, BookingPage, ProfilePage } from './pages/PatientPages';
+import {
+  AppointmentsPage,
+  RecordsPage,
+  DoctorSchedulePage,
+  RecordDetailPage,
+  ExaminationPage,
+} from './pages/ClinicalPages';
+import { ManagementPage, SystemPage } from './pages/ManagementPages';
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 function ScrollToTop() {
   const { pathname } = useLocation();
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  return null;
+  return <Outlet />;
 }
-export default function App() {
-  return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <a className="skip-link" href="#main-content">
-        Đến nội dung chính
-      </a>
-      <Navbar />
-      <main id="main-content">
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/co-so-y-te" element={<Hospitals />} />
-          <Route path="/co-so-y-te/:slug" element={<Details />} />
-          <Route path="/dich-vu-y-te" element={<ServiceDirectory />} />
-          <Route path="/dich-vu-y-te/:slug" element={<ServiceDirectory />} />
-          <Route path="/dich-vu-y-te/:serviceSlug/chi-tiet/:itemSlug" element={<ServiceDetail />} />
-          <Route path="/dich-vu-y-te/:serviceSlug/dat-lich/:itemSlug" element={<ServiceBooking />} />
-          <Route path="/dang-nhap" element={<Auth />} />
-          <Route path="/dang-ky" element={<Auth register />} />
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<ScrollToTop />}>
+      <Route element={<PublicLayout />}>
+        <Route index element={<HomePage />} />
+        {[
+          ['co-so', 'branches'],
+          ['bac-si', 'doctors'],
+          ['goi-kham', 'packages'],
+        ].map(([path, kind]) => (
+          <Route key={path} path={path}>
+            <Route index element={<DirectoryPage key={kind} kind={kind} />} />
+            <Route path=":slug" element={<DetailPage kind={kind} />} />
+          </Route>
+        ))}
+        <Route
+          path="chuyen-khoa"
+          element={<DirectoryPage key="specialties" kind="specialties" />}
+        />
+        <Route path="dat-lich" element={<BookingPage />} />
+        <Route path="dang-nhap" element={<AuthPage />} />
+        <Route path="dang-ky" element={<Navigate to="/dang-nhap" replace />} />
+        <Route path="gioi-thieu" element={<InformationPage mode="about" />} />
+        <Route path="huong-dan" element={<InformationPage mode="guide" />} />
+        <Route path="lien-he" element={<InformationPage mode="contact" />} />
+        <Route path="co-so-y-te/*" element={<Navigate to="/co-so" replace />} />
+        <Route element={<RequireRole roles={['patient', 'doctor', 'branchAdmin', 'superAdmin']} />}>
+          <Route path="tai-khoan" element={<ProfilePage />} />
+        </Route>
+        <Route element={<RequireRole roles={['patient']} />}>
+          <Route path="lich-hen" element={<AppointmentsPage />} />
+          <Route path="ho-so-kham" element={<RecordsPage />} />
+          <Route path="ho-so-kham/:recordId" element={<RecordDetailPage />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Route>
+      <Route element={<RequireRole roles={['superAdmin', 'branchAdmin']} />}>
+        <Route path="quan-tri" element={<StaffLayout />}>
           <Route
-            path="/chuyen-khoa"
-            element={<Services mode="specialties" />}
-          />
-          <Route
-            path="/chuyen-khoa/:slug"
-            element={<Services mode="specialties" />}
-          />
-          <Route path="/bac-si" element={<Services mode="doctors" />} />
-          <Route path="/bac-si/:slug" element={<Details kind="doctor" />} />
-          <Route path="/goi-kham/:slug" element={<Details kind="package" />} />
-          <Route path="/dat-kham/:slug" element={<Booking />} />
-          <Route path="/tin-tuc" element={<News />} />
-          <Route path="/tin-tuc/:slug" element={<News />} />
-          <Route path="/huong-dan" element={<Guide />} />
-          <Route path="/huong-dan/:slug" element={<Guide />} />
-          <Route path="/lien-he" element={<Information mode="contact" />} />
-          <Route
-            path="/kham-suc-khoe-doanh-nghiep"
-            element={<ServiceDirectory business />}
-          />
-          <Route path="/ve-medpro" element={<Information mode="about" />} />
-          <Route path="/tuyen-dung" element={<Information mode="careers" />} />
-          <Route
-            path="/dieu-khoan-dich-vu"
-            element={<Information mode="terms" />}
-          />
-          <Route
-            path="/chinh-sach-bao-mat"
-            element={<Information mode="privacy" />}
-          />
-          <Route
-            path="/quy-dinh-su-dung"
-            element={<Information mode="rules" />}
-          />
-          <Route
-            path="*"
+            index
             element={
-              <div className="empty-state">
-                <h1>Không tìm thấy trang</h1>
-                <p>Trang bạn đang tìm không có trong giao diện này.</p>
-                <Link className="button" to="/">
-                  Về trang chủ
-                </Link>
-              </div>
+              <Suspense fallback={<p>Đang tải thống kê…</p>}>
+                <ReportsPage />
+              </Suspense>
             }
           />
-        </Routes>
-      </main>
-      <Footer />
-    </BrowserRouter>
+          <Route path="lich-hen" element={<AppointmentsPage />} />
+          {[
+            ['co-so', 'branches'],
+            ['khoa-phong', 'departments'],
+            ['bac-si', 'doctors'],
+            ['lich-lam-viec', 'schedules'],
+          ].map(([path, entity]) => (
+            <Route
+              key={path}
+              path={path}
+              element={<ManagementPage key={entity} entity={entity} />}
+            />
+          ))}
+          <Route element={<RequireRole roles={['superAdmin']} />}>
+            {[
+              ['admin', 'users'],
+              ['chuyen-khoa', 'specialties'],
+              ['goi-kham', 'packages'],
+            ].map(([path, entity]) => (
+              <Route
+                key={path}
+                path={path}
+                element={<ManagementPage key={entity} entity={entity} />}
+              />
+            ))}
+            <Route path="he-thong" element={<SystemPage />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Route>
+      <Route element={<RequireRole roles={['doctor']} />}>
+        <Route path="bac-si-lam-viec" element={<StaffLayout />}>
+          <Route index element={<AppointmentsPage />} />
+          <Route path="lich-lam-viec" element={<DoctorSchedulePage />} />
+          <Route path="ho-so" element={<RecordsPage />} />
+          <Route path="ho-so/:recordId" element={<RecordDetailPage />} />
+          <Route path="kham/:appointmentId" element={<ExaminationPage />} />
+          <Route path="tai-khoan" element={<ProfilePage />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Route>
+    </Route>,
+  ),
+);
+export default function App() {
+  return (
+    <HospitalProvider>
+      <RouterProvider router={router} />
+    </HospitalProvider>
   );
 }
