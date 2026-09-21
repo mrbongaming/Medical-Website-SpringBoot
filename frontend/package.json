@@ -11,6 +11,7 @@
     "format:check": "prettier --check src scripts index.html README.md",
     "preview": "vite preview",
     "check:domain": "node scripts/check-domain.mjs",
+    "check:billing": "node scripts/check-billing.mjs",
     "check:browser": "node scripts/check-browser.mjs"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
@@ -30,6 +32,7 @@
     "eslint-plugin-react-refresh": "^0.5.3",
     "globals": "^17.7.0",
     "prettier": "^3.9.8",
+    "tailwindcss": "^4.3.3",
     "vite": "^8.2.0"
   }
 }

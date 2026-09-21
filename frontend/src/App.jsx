@@ -1,40 +1,35 @@
+import { PromotionsPage } from './pages/PromotionsPage';
+import { InsuranceSettingsPage } from './pages/InsuranceSettingsPage';
 import {
   createBrowserRouter,
   createRoutesFromElements,
   RouterProvider,
   Navigate,
-  Outlet,
   Route,
-  useLocation,
 } from 'react-router-dom';
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense } from 'react';
+import { ScrollToTop } from './components/ScrollToTop';
 import HospitalProvider from './state/HospitalProvider';
-import { PublicLayout, RequireRole, StaffLayout } from './components/Layouts';
-import {
-  HomePage,
-  DirectoryPage,
-  DetailPage,
-  InformationPage,
-  NotFound,
-} from './pages/PublicPages';
-import { AuthPage, BookingPage, ProfilePage } from './pages/PatientPages';
-import {
-  AppointmentsPage,
-  RecordsPage,
-  DoctorSchedulePage,
-  RecordDetailPage,
-  ExaminationPage,
-} from './pages/ClinicalPages';
-import { ManagementPage, SystemPage } from './pages/ManagementPages';
+import { PublicLayout } from './components/PublicLayout';
+import { RequireRole } from './components/RequireRole';
+import { StaffLayout } from './components/StaffLayout';
+import { HomePage } from './pages/HomePage';
+import { DirectoryPage } from './pages/DirectoryPage';
+import { DetailPage } from './pages/DetailPage';
+import { InformationPage } from './pages/InformationPage';
+import { NotFound } from './pages/NotFound';
+import { AuthPage } from './pages/AuthPage';
+import { BookingPage } from './pages/BookingPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { AppointmentsPage } from './pages/AppointmentsPage';
+import { RecordsPage } from './pages/RecordsPage';
+import { DoctorSchedulePage } from './pages/DoctorSchedulePage';
+import { RecordDetailPage } from './pages/RecordDetailPage';
+import { ExaminationPage } from './pages/ExaminationPage';
+import { ManagementPage } from './pages/ManagementPage';
+import { SystemPage } from './pages/SystemPage';
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
-function ScrollToTop() {
-  const { pathname } = useLocation();
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, [pathname]);
-  return <Outlet />;
-}
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route element={<ScrollToTop />}>
@@ -82,6 +77,8 @@ const router = createBrowserRouter(
             }
           />
           <Route path="lich-hen" element={<AppointmentsPage />} />
+          <Route path="khuyen-mai" element={<PromotionsPage />} />
+          <Route path="bao-hiem" element={<InsuranceSettingsPage />} />
           {[
             ['co-so', 'branches'],
             ['khoa-phong', 'departments'],

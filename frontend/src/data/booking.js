@@ -43,5 +43,10 @@ export function initialBooking(db, params, saved = {}) {
     patientName: source.patientName || '',
     phone: source.phone || '',
     notes: source.notes || '',
+    promotionCode: String(source.promotionCode || ''),
+    insurance:
+      source.insurance && typeof source.insurance === 'object'
+        ? source.insurance
+        : { enabled: false },
   };
 }

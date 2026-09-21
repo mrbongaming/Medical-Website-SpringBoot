@@ -1,27 +1,17 @@
+import { appointmentPrice } from '../helpers/PricingHelpers';
 import { useState } from 'react';
 import { useHospital } from '../state/context';
 import { dateKey, relativeDate, money, statuses } from '../data/seed';
 import { inBranch } from '../data/domain';
 import { report } from '../data/reports';
-import { Empty, Field, PageTitle, Select, Stat, Table } from '../components/UI';
+import { Empty } from '../components/Empty';
+import { Field } from '../components/Field';
+import { PageTitle } from '../components/PageTitle';
+import { Select } from '../components/Select';
+import { Stat } from '../components/Stat';
 import TrendChart from '../components/TrendChart';
+import { ReportTable } from './ReportTable';
 
-function ReportTable({ title, headers, rows }) {
-  return (
-    <section className="report-table">
-      <h2>{title}</h2>
-      <Table headers={headers} empty={!rows.length}>
-        {rows.map((row, i) => (
-          <tr key={i}>
-            {row.map((value, j) => (
-              <td key={j}>{value}</td>
-            ))}
-          </tr>
-        ))}
-      </Table>
-    </section>
-  );
-}
 export default function ReportsPage() {
   const { db, user } = useHospital();
   const [filters, setFilters] = useState({
@@ -128,7 +118,33 @@ export default function ReportsPage() {
         ],
         finance: [
           {
-            title: 'Phân bổ tiền khám đã thu',
+            title: 'Điều chỉnh và hoàn tiền · theo ngày giao dịch',
+            headers: ['Mã', 'Ngày', 'Loại', 'Số tiền', 'Lý do'],
+            rows: d.adjustments.map((r) => [
+              r.id,
+              r.date,
+              r.kind === 'refund' ? 'Hoàn tiền' : 'Thu bổ sung',
+              money(r.amount),
+              r.reason,
+            ]),
+          },
+          {
+            title: 'BHYT chờ quyết toán · theo ngày khám',
+            headers: ['Lịch hẹn', 'Ngày khám', 'Bệnh nhân', 'Khoản BHYT'],
+            rows: d.insurancePending.map((a) => [
+              a.id,
+              a.date,
+              a.patientName,
+              money(a.billing.finalized.price.insurer),
+            ]),
+          },
+          {
+            title: 'BHYT đã thanh toán mô phỏng · theo ngày nhận',
+            headers: ['Tham chiếu', 'Ngày', 'Số tiền'],
+            rows: d.insuranceReceipts.map((r) => [r.reason, r.date, money(r.amount)]),
+          },
+          {
+            title: 'Phân bổ tiền khách thực trả ròng',
             headers: ['Nhóm', 'Tên', 'Đã thu'],
             rows: d.finance.map((f) => [
               fieldLabel[f.field],
@@ -155,7 +171,7 @@ export default function ReportsPage() {
               a.date,
               a.patientName,
               name('branches', a.branchId),
-              money(a.price),
+              a.billing.finalized ? money(appointmentPrice(a).patientDue) : 'Chưa chốt phí',
             ]),
           },
         ],
@@ -171,8 +187,8 @@ export default function ReportsPage() {
             : name('branches', user.branchId)
         }
       />
-      <section className="panel report-filters">
-        <div className="actions">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
+        <div className="flex flex-wrap items-center gap-3">
           <strong>Khoảng thời gian</strong>
           {[
             ['Hôm nay', dateKey()],
@@ -180,7 +196,7 @@ export default function ReportsPage() {
             ['Tháng này', dateKey().slice(0, 8) + '01'],
           ].map(([label, from]) => (
             <button
-              className="chip-button"
+              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 hover:border-sky-300 hover:text-sky-700"
               key={label}
               onClick={() => setFilters((f) => ({ ...f, from, to: dateKey() }))}
             >
@@ -188,7 +204,7 @@ export default function ReportsPage() {
             </button>
           ))}
         </div>
-        <div className="filters">
+        <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
           <Field label="Từ ngày">
             <input type="date" value={filters.from} onChange={(e) => set('from', e.target.value)} />
           </Field>
@@ -238,10 +254,12 @@ export default function ReportsPage() {
         </div>
       </section>
       {!d ? (
-        <p className="alert error">Chọn khoảng ngày hợp lệ: từ ngày không được sau đến ngày.</p>
+        <p className="my-4 rounded-xl border p-4 text-sm font-medium border-red-200 bg-red-50 text-red-800">
+          Chọn khoảng ngày hợp lệ: từ ngày không được sau đến ngày.
+        </p>
       ) : (
         <>
-          <div className="stats four">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Tổng lịch hẹn" value={d.appointments.length} note="Theo ngày khám" />
             <Stat
               label="Bệnh nhân duy nhất"
@@ -249,24 +267,46 @@ export default function ReportsPage() {
               note={`${d.first.length} khám lần đầu · ${d.returning.length} quay lại đã khám trong kỳ`}
             />
             <Stat
-              label="Tiền khám đã thu"
+              label="Khách thực trả ròng"
               value={money(d.revenue)}
-              note={`${d.payments.length} phiếu · Theo ngày thu`}
+              note={`${d.payments.length} phiếu · Bao gồm điều chỉnh/hoàn trong kỳ`}
             />
             <Stat
-              label="Phí khám chưa thu"
+              label="Khách còn phải trả"
               value={money(d.debt)}
-              note={`${d.unpaid.length} buổi hoàn tất trong kỳ`}
+              note={`${d.unfinalized.length} buổi chưa chốt phí chưa cộng vào công nợ`}
             />
           </div>
-          <nav className="tabs report-tabs">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <Stat label="Đã hoàn khách" value={money(d.refunds)} note="Theo ngày hoàn tiền" />
+            <Stat
+              label="Ưu đãi đã chốt"
+              value={money(d.discounts)}
+              note="Theo ngày khám hoàn tất"
+            />
+            <Stat
+              label="BHYT chờ quyết toán"
+              value={money(d.insuranceDebt)}
+              note="Buổi khám trong kỳ · Không cộng vào tiền thực thu"
+            />
+            <Stat
+              label="BHYT đã nhận mô phỏng"
+              value={money(d.insuranceReceived)}
+              note="Theo ngày nhận · Tách khỏi tiền khách trả"
+            />
+          </div>
+          <nav className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-px [&>button]:min-h-11 [&>button]:shrink-0 [&>button]:border-b-2 [&>button]:border-transparent [&>button]:px-4 [&>button]:font-semibold [&>button]:text-slate-500 flex flex-wrap gap-2">
             {[
               ['appointments', 'Lịch hẹn & bệnh nhân'],
               ['staff', 'Bác sĩ & khoa'],
               ['finance', 'Tài chính'],
             ].map(([key, text]) => (
               <button
-                className={tab === key ? 'selected' : ''}
+                className={
+                  tab === key
+                    ? 'bg-sky-600 text-white'
+                    : 'border border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
+                }
                 onClick={() => setTab(key)}
                 key={key}
               >
@@ -275,8 +315,8 @@ export default function ReportsPage() {
             ))}
           </nav>
           {tab === 'appointments' && (
-            <div className="panel">
-              <div className="section-heading">
+            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+              <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-brand-900 sm:[&_h2]:text-3xl [&_p]:mt-2 [&_p]:max-w-2xl [&_p]:text-slate-600">
                 <h2>Xu hướng lịch hẹn</h2>
                 <Select
                   label="Gộp dữ liệu"
@@ -305,15 +345,15 @@ export default function ReportsPage() {
             </div>
           )}
           {tab === 'staff' && (
-            <p className="notice">
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               Mỗi khung giờ dài 30 phút. Đã dùng gồm chờ duyệt, xác nhận, hoàn tất và vắng mặt. Lọc
               trạng thái thu hẹp tử số sử dụng.
             </p>
           )}
           {tab === 'finance' && (
-            <p className="notice">
-              Đã thu tính theo ngày thu. Chưa thu gồm buổi khám hoàn tất trong khoảng ngày khám,
-              chưa có phiếu thu tại thời điểm xem.
+            <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+              Tiền khách thực trả tính theo ngày giao dịch, trừ hoàn tiền và cộng thu bổ sung. Công
+              nợ chỉ gồm bảng phí đã chốt của buổi khám trong kỳ. BHYT được theo dõi riêng.
             </p>
           )}
           {tables[tab].map((table) => (

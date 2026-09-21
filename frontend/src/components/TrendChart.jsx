@@ -50,7 +50,7 @@ export default function TrendChart({ rows, type = 'bar' }) {
     return () => chart.destroy();
   }, [rows, type]);
   return (
-    <div className="chart">
+    <div className="h-72 w-full rounded-2xl border border-slate-200 bg-white p-4">
       <canvas
         ref={ref}
         role="img"

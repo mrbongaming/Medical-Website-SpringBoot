@@ -1,3 +1,4 @@
+import { appointmentPrice, financialBalance } from '../helpers/PricingHelpers.js';
 import { isAdmin, inBranch } from './domain.js';
 
 export function report(db, user, filters) {
@@ -18,7 +19,23 @@ export function report(db, user, filters) {
       period(p.date) &&
       db.appointments.some((a) => a.id === p.appointmentId && clinical(a)),
   );
-  const unpaid = completed.filter((a) => !db.payments.some((p) => p.appointmentId === a.id));
+  const matchesTransaction = (p) =>
+    branch(p) &&
+    period(p.date) &&
+    db.appointments.some((a) => a.id === p.appointmentId && clinical(a));
+  const adjustments = db.adjustments.filter(matchesTransaction);
+  const cashTransactions = [
+    ...payments,
+    ...adjustments.map((p) => ({ ...p, amount: p.kind === 'refund' ? -p.amount : p.amount })),
+  ];
+  const insuranceReceipts = db.insuranceSettlements.filter(matchesTransaction);
+  const unpaid = completed.filter((a) => !financialBalance(db, a).settled);
+  const unfinalized = unpaid.filter((a) => !a.billing.finalized);
+  const insurancePending = completed.filter(
+    (a) =>
+      a.billing.finalized?.price.insurer > 0 &&
+      !db.insuranceSettlements.some((s) => s.appointmentId === a.id),
+  );
   const patients = [...new Set(appointments.map((a) => a.patientId))];
   const first = patients.filter(
     (id) =>
@@ -68,7 +85,7 @@ export function report(db, user, filters) {
           .reduce((s, a) => s + a.duration, 0),
         open,
         used,
-        paid: payments
+        paid: cashTransactions
           .filter(
             (p) =>
               rows.some((a) => a.id === p.appointmentId) ||
@@ -88,7 +105,7 @@ export function report(db, user, filters) {
     .map(([date, count]) => ({ date, count }));
   const finance = ['branchId', 'doctorId', 'departmentId', 'packageId'].flatMap((field) => {
     const grouped = {};
-    for (const p of payments) {
+    for (const p of cashTransactions) {
       const a = db.appointments.find((a) => a.id === p.appointmentId);
       const id = a[field] || 'Khám chuyên khoa';
       grouped[id] = (grouped[id] || 0) + p.amount;
@@ -99,6 +116,14 @@ export function report(db, user, filters) {
     appointments,
     completed,
     payments,
+    adjustments,
+    insuranceReceipts,
+    insurancePending,
+    unfinalized,
+    refunds: adjustments.filter((r) => r.kind === 'refund').reduce((sum, r) => sum + r.amount, 0),
+    discounts: completed.reduce((sum, a) => sum + (a.billing.finalized?.price.discount || 0), 0),
+    insuranceDebt: insurancePending.reduce((sum, a) => sum + a.billing.finalized.price.insurer, 0),
+    insuranceReceived: insuranceReceipts.reduce((sum, r) => sum + r.amount, 0),
     unpaid,
     patients,
     first,
@@ -107,7 +132,9 @@ export function report(db, user, filters) {
     staff,
     trend,
     finance,
-    revenue: payments.reduce((s, p) => s + p.amount, 0),
-    debt: unpaid.reduce((s, a) => s + a.price, 0),
+    revenue: cashTransactions.reduce((s, p) => s + p.amount, 0),
+    debt: unpaid
+      .filter((a) => a.billing.finalized)
+      .reduce((s, a) => s + appointmentPrice(a).patientDue, 0),
   };
 }

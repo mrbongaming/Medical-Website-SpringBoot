@@ -1,3 +1,9 @@
+import {
+  attachBookingBilling,
+  releasePromotion,
+  recordServices,
+  billingAction,
+} from './billing.js';
 import { dateKey } from './seed.js';
 
 export const isAdmin = (u) => ['superAdmin', 'branchAdmin'].includes(u?.role);
@@ -130,6 +136,23 @@ export function act(source, actorId, type, payload = {}) {
       db.branches.some((b) => b.id === user.branchId && b.active),
       'Cơ sở đã ngừng hoạt động.',
     );
+  if (
+    [
+      'service-save',
+      'promotion-save',
+      'policy-save',
+      'receive',
+      'insurance-verify',
+      'insurance-resubmit',
+      'bill-finalize',
+      'pay',
+      'bill-adjust',
+      'insurance-settle',
+    ].includes(type)
+  ) {
+    result = billingAction(db, user, type, p, today);
+    return { db, result };
+  }
   if (type === 'profile') {
     requireThat(p.name?.trim() && phoneValid(p.phone), 'Họ tên và số điện thoại chưa hợp lệ.');
     requireThat(
@@ -217,6 +240,7 @@ export function act(source, actorId, type, payload = {}) {
       reason: '',
       createdAt: new Date().toISOString(),
     };
+    attachBookingBilling(db, user, row, p);
     db.appointments.push(row);
     result = row.id;
   } else if (type === 'appointment') {
@@ -233,6 +257,7 @@ export function act(source, actorId, type, payload = {}) {
     } else if (p.status === 'cancelled') {
       requireThat(
         live(a) &&
+          !a.billing.receivedAt &&
           ((user.role === 'patient' && a.patientId === user.id && future(a.date, a.time)) ||
             (isAdmin(user) && inBranch(user, a.branchId))),
         'Không thể hủy lịch hẹn này.',
@@ -243,6 +268,7 @@ export function act(source, actorId, type, payload = {}) {
         isAdmin(user) &&
           inBranch(user, a.branchId) &&
           a.status === 'confirmed' &&
+          !a.billing.receivedAt &&
           !future(a.date, a.time),
         'Chỉ ghi nhận vắng mặt sau giờ hẹn đã xác nhận.',
       );
@@ -250,6 +276,7 @@ export function act(source, actorId, type, payload = {}) {
     a.status = p.status;
     a.reason = p.reason?.trim() || '';
     a.updatedAt = new Date().toISOString();
+    if (['cancelled', 'rejected', 'absent'].includes(a.status)) releasePromotion(db, user, a);
   } else if (type === 'record') {
     const a = db.appointments.find((a) => a.id === p.appointmentId);
     requireThat(
@@ -283,25 +310,10 @@ export function act(source, actorId, type, payload = {}) {
       followUp: p.followUp || '',
       finalized: !!p.finalized,
     };
+    recordServices(db, user, a, p);
     if (old) Object.assign(old, row);
     else db.records.push(row);
     if (p.finalized) a.status = 'completed';
-  } else if (type === 'pay') {
-    const a = db.appointments.find((a) => a.id === p.id);
-    requireThat(a, 'Không tìm thấy lịch hẹn.');
-    branchPermission(db, user, a.branchId);
-    requireThat(
-      a.status === 'completed' && !db.payments.some((t) => t.appointmentId === a.id),
-      'Lịch phải hoàn tất và chưa được thu tiền.',
-    );
-    db.payments.push({
-      id: uid('pay'),
-      appointmentId: a.id,
-      branchId: a.branchId,
-      amount: a.price,
-      date: today,
-      createdBy: user.id,
-    });
   } else if (type === 'save' || type === 'remove') {
     const { entity } = p;
     const allowed = [

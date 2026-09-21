@@ -1,3 +1,4 @@
+import { addBillingData } from './billingSeed.js';
 export const roles = {
   patient: 'Bệnh nhân',
   doctor: 'Bác sĩ',
@@ -333,18 +334,21 @@ export function createSeed() {
       date: a.date,
       createdBy: 'root',
     }));
-  return {
-    version: 2,
-    seededAt: dateKey(),
-    branches,
-    specialties,
-    departments,
-    doctors,
-    users,
-    packages,
-    schedules,
-    appointments,
-    records,
-    payments,
-  };
+  return addBillingData(
+    {
+      version: 2,
+      seededAt: dateKey(),
+      branches,
+      specialties,
+      departments,
+      doctors,
+      users,
+      packages,
+      schedules,
+      appointments,
+      records,
+      payments,
+    },
+    true,
+  );
 }

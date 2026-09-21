@@ -108,7 +108,9 @@ async function navigate(route) {
   await send('Page.navigate', { url: origin + route });
   await waitFor(
     () =>
-      evaluate("document.readyState === 'complete' && !!document.querySelector('h1, h2, .empty')"),
+      evaluate(
+        "document.readyState === 'complete' && !!document.querySelector('h1, h2, [data-testid=empty-state]')",
+      ),
     route,
   );
   await delay(100);
@@ -122,10 +124,16 @@ async function click(selector) {
   await delay(50);
 }
 async function pointerClick(selector) {
-  const point = await evaluate(
-    '(() => { const el=document.querySelector(' +
+  await evaluate(
+    'document.querySelector(' +
       JSON.stringify(selector) +
-      '); el.scrollIntoView({block:"center"}); const r=el.getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()',
+      ').scrollIntoView({block:"center",behavior:"instant"})',
+  );
+  await delay(100);
+  const point = await evaluate(
+    '(() => { const r=document.querySelector(' +
+      JSON.stringify(selector) +
+      ').getBoundingClientRect(); return {x:r.x+r.width/2,y:r.y+r.height/2}; })()',
   );
   const mobile = await evaluate('innerWidth < 768');
   if (mobile) {
@@ -219,16 +227,16 @@ try {
     mobile: false,
   });
   async function field(label, value) {
-    if (label === 'Cơ sở' && (await evaluate("!!document.querySelector('.branch-picker')"))) {
+    if (label === 'Cơ sở' && (await evaluate("!!document.querySelector('input[name=branchId]')"))) {
       await click('input[name="branchId"][value="' + value + '"]');
       return;
     }
     const index = await evaluate(
-      `Array.from((document.querySelector('dialog') || document).querySelectorAll('label.field')).findIndex(el => el.querySelector('span')?.textContent === ${JSON.stringify(label)})`,
+      `Array.from((document.querySelector('dialog') || document).querySelectorAll('label')).findIndex(el => el.querySelector(':scope > span')?.textContent === ${JSON.stringify(label)})`,
     );
     assert.ok(index >= 0, 'Missing field ' + label);
     await evaluate(
-      `(document.querySelector('dialog') || document).querySelectorAll('label.field')[${index}].setAttribute('data-test-field','active')`,
+      `(document.querySelector('dialog') || document).querySelectorAll('label')[${index}].setAttribute('data-test-field','active')`,
     );
     await fill(
       '[data-test-field="active"] input, [data-test-field="active"] select, [data-test-field="active"] textarea',
@@ -261,31 +269,31 @@ try {
       `(() => { const db = JSON.parse(localStorage.getItem('antam-data-v1')); return ${expression}; })()`,
     );
   await navigate('/');
-  assert.equal(await evaluate("document.querySelectorAll('.branch-card').length"), 4);
+  assert.equal(await evaluate("document.querySelectorAll('[data-testid=branch-card]').length"), 4);
   await waitFor(
-    () => evaluate("document.querySelector('.hero-photo').naturalWidth > 0"),
+    () => evaluate('document.querySelector(\'img[alt^="Đội ngũ bác sĩ"]\').naturalWidth > 0'),
     'local hero image',
   );
   await screenshot('desktop-home');
-  await click('.branch-card .card-image-link');
+  await click('[data-testid=branch-card] a[aria-label^="Xem "]');
   assert.equal(await evaluate('location.pathname'), '/co-so/trung-tam');
-  await click('.booking-promo .button');
+  await click('a[href^="/dat-lich?branchId="]');
   assert.equal(
     await evaluate("document.querySelector('input[name=branchId]:checked').value"),
     'b1',
   );
   await navigate('/bac-si/bac-si-1');
-  assert.ok(await evaluate("!!document.querySelector('.rating strong')"));
+  assert.ok(await evaluate("!!document.querySelector('[data-testid=rating] strong')"));
   assert.ok(await evaluate("document.body.textContent.includes('năm làm việc')"));
   assert.ok(await evaluate('!!document.querySelector(\'a[href^="tel:"]\')'));
   await navigate('/');
   await fill('#care-search', 'tim mach');
-  assert.ok(await evaluate("document.querySelectorAll('.search-results a').length>0"));
+  assert.ok(await evaluate("document.querySelectorAll('#care-results a').length>0"));
   await navigate('/co-so');
   await field('Tìm kiếm', 'thu duc');
-  assert.equal(await evaluate("document.querySelectorAll('.branch-card').length"), 1);
+  assert.equal(await evaluate("document.querySelectorAll('[data-testid=branch-card]').length"), 1);
   await field('Tìm kiếm', 'khongtontai');
-  assert.ok(await evaluate("!!document.querySelector('.empty')"));
+  assert.ok(await evaluate("!!document.querySelector('[data-testid=empty-state]')"));
   await navigate('/dat-lich?packageId=pkg1');
   await field('Cơ sở', 'b1');
   assert.equal(
@@ -311,11 +319,19 @@ try {
     "(() => {const d=new Date();d.setDate(d.getDate()+7);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')})()",
   );
   await field('Ngày khám', date);
-  await click('.time-grid button:not([disabled])');
+  await click('[data-testid=time-grid] button:not([disabled])');
   await click('form button[type=submit]');
   await field('Họ tên', 'Nguyễn Hoàng An');
   await field('Số điện thoại', '0920000000');
+  await click('[data-testid=insurance-fields] input[type="checkbox"]');
+  await field('Mã thẻ / định danh BHYT mẫu', 'DEMO12345678901');
+  await field('Nơi đăng ký khám ban đầu', 'An Tâm mẫu');
+  await field('Có giá trị từ ngày', '2020-01-01');
+  await field('Có giá trị đến ngày', '2099-12-31');
   await click('form button[type=submit]');
+  await field('Mã khuyến mãi', 'ANTAM50');
+  await textButton('Áp dụng');
+  assert.ok(await evaluate("document.body.textContent.includes('Chờ xác minh')"));
   await click('a[href^="/dang-nhap?next="]');
   await field('Vai trò', 'patient');
   await field('Tài khoản demo', 'p1');
@@ -330,9 +346,15 @@ try {
   await click('form button[type=submit]');
   await click('form button[type=submit]');
   await click('form button[type=submit]');
-  await waitFor(() => evaluate("!!document.querySelector('.confirmation')"), 'booking success');
+  await waitFor(
+    () => evaluate("!!document.querySelector('[data-testid=booking-confirmation]')"),
+    'booking success',
+  );
   const appointment = await stored('db.appointments.at(-1).id');
   assert.equal(await stored('db.appointments.at(-1).patientId'), 'p1');
+  assert.equal(await stored('db.appointments.at(-1).billing.insurance.status'), 'pending');
+  assert.equal(await stored('db.appointments.at(-1).billing.promotion.code'), 'ANTAM50');
+  assert.equal(await stored('db.appointments.at(-1).billing.estimate.patientDue'), null);
   await screenshot('booking-confirmation');
   await navigate('/lich-hen');
   assert.ok(await evaluate(`document.body.textContent.includes(${JSON.stringify(appointment)})`));
@@ -351,10 +373,10 @@ try {
   await textButton('Tất cả lịch');
   await field('Tìm bệnh nhân / mã lịch', appointment);
   await rowAction(appointment, 'Từ chối');
-  await click('dialog form .button');
+  await click('dialog form button:not([type])');
   assert.ok(await evaluate("!document.querySelector('dialog textarea').checkValidity()"));
   await field('Lý do', 'Không phù hợp lịch làm việc');
-  await click('dialog form .button');
+  await click('dialog form button:not([type])');
   assert.equal(
     await stored(`db.appointments.find(a=>a.id===${JSON.stringify(appointment)}).status`),
     'rejected',
@@ -362,7 +384,7 @@ try {
   await field('Tìm bệnh nhân / mã lịch', 'AT-DEMO-EXAM');
   await rowAction('AT-DEMO-EXAM', 'Ghi kết quả');
   await field('Triệu chứng', 'Khám định kỳ');
-  await click('.back-link');
+  await click('[data-testid=back-link]');
   assert.ok(await evaluate("document.querySelector('dialog').textContent.includes('chưa lưu')"));
   await textButton('Tiếp tục chỉnh sửa');
   assert.ok(await evaluate("location.pathname.includes('/kham/')"));
@@ -381,9 +403,18 @@ try {
   await login('branchAdmin', 'admin1');
   await navigate('/quan-tri/lich-hen');
   await field('Tìm bệnh nhân / mã lịch', 'AT-DEMO-EXAM');
-  await rowAction('AT-DEMO-EXAM', 'Thu 200.000 ₫');
-  await click('dialog form .button');
+  await rowAction('AT-DEMO-EXAM', 'Chi phí & BHYT');
+  await field('Ghi chú đối chiếu với khách', 'Đã đối chiếu phí khám mẫu.');
+  await textButton('Chốt bảng phí');
+  await textButton('Xác nhận đã thu 200.000 ₫');
   assert.equal(await stored("db.payments.filter(p=>p.appointmentId==='AT-DEMO-EXAM').length"), 1);
+  assert.equal(
+    await stored(
+      `db.promotionUses.find(u=>u.appointmentId===${JSON.stringify(appointment)}).status`,
+    ),
+    'released',
+  );
+  await click('dialog [aria-label="Đóng"]');
   await navigate('/quan-tri/admin');
   assert.ok(await evaluate("document.body.textContent.includes('không có quyền')"));
   await navigate('/quan-tri/co-so');
@@ -451,6 +482,8 @@ try {
       '/quan-tri',
       '/quan-tri/co-so',
       '/quan-tri/lich-hen',
+      '/quan-tri/khuyen-mai',
+      '/quan-tri/bao-hiem',
       '/co-so/trung-tam',
       '/bac-si/bac-si-1',
     ]) {
@@ -459,10 +492,44 @@ try {
     }
     await navigate('/');
     await screenshot('home-' + width);
+    await navigate('/quan-tri/khuyen-mai');
+    await textButton('+ Tạo chương trình');
+    await noOverflow();
+    assert.ok(
+      await evaluate(
+        "document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth",
+      ),
+      'Promotion dialog overflow',
+    );
+    await screenshot('promotion-editor-' + width);
+    await click('dialog [aria-label="Đóng"]');
+    await navigate('/quan-tri/bao-hiem');
+    await textButton('Tạo phiên bản cấu hình');
+    await noOverflow();
+    assert.ok(
+      await evaluate(
+        "document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth",
+      ),
+      'Insurance dialog overflow',
+    );
+    await screenshot('insurance-settings-' + width);
+    await click('dialog [aria-label="Đóng"]');
+    await navigate('/quan-tri/lich-hen');
+    await field('Tìm bệnh nhân / mã lịch', 'AT-TODAY');
+    await rowAction('AT-TODAY', 'Chi phí & BHYT');
+    await noOverflow();
+    assert.ok(
+      await evaluate(
+        "document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth",
+      ),
+      'Billing dialog overflow',
+    );
+    await screenshot('billing-' + width);
+    await click('dialog [aria-label="Đóng"]');
     await navigate('/quan-tri');
     await screenshot('dashboard-' + width);
     await navigate('/dat-lich?branchId=b1');
-    await pointerClick('.branch-option:nth-child(2) img');
+    await click('[data-branch-id=b2] img');
     assert.equal(
       await evaluate("document.querySelector('input[name=branchId]:checked').value"),
       'b2',
@@ -488,9 +555,14 @@ try {
     );
     await navigate('/quan-tri');
     if (width === 360) {
-      await click('.workspace-top .mobile-toggle');
-      assert.ok(await evaluate("document.querySelector('.sidebar').classList.contains('open')"));
-      await click('.sidebar-backdrop');
+      await click('[data-testid=staff-menu-toggle]');
+      assert.equal(
+        await evaluate(
+          "document.querySelector('[data-testid=staff-menu-toggle]').getAttribute('aria-expanded')",
+        ),
+        'true',
+      );
+      await click('button[aria-label="Đóng menu"]');
     }
   }
   await login('superAdmin', 'root');
@@ -513,19 +585,45 @@ try {
       if (width < 768 && route === '/lich-hen') {
         assert.equal(
           await evaluate(
-            "getComputedStyle(document.querySelector('.collapsible-filters')).display",
+            "getComputedStyle(document.querySelector('[data-testid=collapsible-filters]')).display",
           ),
           'none',
         );
-        await pointerClick('.filter-toggle');
+        await pointerClick('[data-testid=filter-toggle]');
         assert.equal(
-          await evaluate("document.querySelector('.filter-toggle').getAttribute('aria-expanded')"),
+          await evaluate(
+            "document.querySelector('[data-testid=filter-toggle]').getAttribute('aria-expanded')",
+          ),
           'true',
         );
         await field('Tìm lịch khám', 'AT-DEMO-PENDING');
-        assert.equal(await evaluate("document.querySelectorAll('.appointment-card').length"), 1);
+        assert.equal(
+          await evaluate("document.querySelectorAll('[data-appointment-id]').length"),
+          1,
+        );
       }
     }
+    await navigate('/dat-lich?doctorId=dr1');
+    await click('form button[type=submit]');
+    await field('Ngày khám', date);
+    await click('[data-testid=time-grid] button:not([disabled])');
+    await click('form button[type=submit]');
+    await click('[data-testid=insurance-fields] input[type="checkbox"]');
+    await field('Mã thẻ / định danh BHYT mẫu', 'DEMO12345678901');
+    await field('Nơi đăng ký khám ban đầu', 'An Tâm mẫu');
+    await field('Có giá trị từ ngày', '2020-01-01');
+    await field('Có giá trị đến ngày', '2099-12-31');
+    await noOverflow();
+    await screenshot('booking-insurance-' + width);
+    await click('form button[type=submit]');
+    await field('Mã khuyến mãi', 'UNKNOWN');
+    await textButton('Áp dụng');
+    assert.ok(await evaluate("!!document.querySelector('[aria-live=polite] [role=alert]')"));
+    await field('Mã khuyến mãi', 'ANTAM50');
+    await textButton('Áp dụng');
+    assert.ok(!(await evaluate("!!document.querySelector('[aria-live=polite] [role=alert]')")));
+    await noOverflow();
+    await screenshot('booking-promotion-' + width);
     await navigate('/ho-so-kham/rec-AT-1003');
     assert.ok(await evaluate("document.body.textContent.includes('không có quyền')"));
     await login('doctor', 'u-dr1');
@@ -541,15 +639,106 @@ try {
     }
   }
   // Migrate a persisted v1 snapshot without replacing its clinical data.
+  // Exercise the entire insured care and cashier workflow through actual controls.
+  await login('superAdmin', 'root');
+  await navigate('/quan-tri/khuyen-mai');
+  await textButton('+ Tạo chương trình');
+  await field('Tên chương trình', 'Ưu đãi kiểm thử UI');
+  await field('Mã khuyến mãi', 'UITEST50');
+  await textButton('Lưu chương trình');
+  assert.ok(await stored("db.promotions.some(p=>p.code==='UITEST50')"));
+  await navigate('/quan-tri/bao-hiem');
+  await textButton('Tạo phiên bản cấu hình');
+  await field('Lý do ban hành phiên bản', 'Biểu giá mẫu kiểm thử UI');
+  await textButton('Ban hành phiên bản mới');
+  assert.equal(
+    await stored(
+      "Math.max(...db.insurancePolicies.filter(p=>p.branchId==='b1').map(p=>p.version))",
+    ),
+    2,
+  );
+  // Make the sample appointment's time independent of the hour this test is run.
+  await evaluate(
+    "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); const a=d.appointments.find(a=>a.id==='AT-TODAY'); a.time='00:00'; d.schedules.find(s=>s.doctorId===a.doctorId&&s.date===a.date).times.push('00:00'); localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
+  );
+  await login('branchAdmin', 'admin1');
+  await navigate('/quan-tri/lich-hen');
+  await field('Tìm bệnh nhân / mã lịch', 'AT-TODAY');
+  await rowAction('AT-TODAY', 'Chi phí & BHYT');
+  await textButton('Xác nhận tiếp nhận');
+  await field('Kết quả kiểm tra', 'verified');
+  await field(
+    'Căn cứ kiểm tra / thông tin cần bổ sung',
+    'Đã kiểm tra hiệu lực và điều kiện hưởng hồ sơ mẫu.',
+  );
+  await textButton('Lưu xác minh mô phỏng');
+  assert.equal(
+    await stored("db.appointments.find(a=>a.id==='AT-TODAY').billing.insurance.status"),
+    'verified',
+  );
+  await screenshot('insurance-verified-mobile');
+  await click('dialog [aria-label="Đóng"]');
+  await login('doctor', 'u-dr1');
+  await navigate('/bac-si-lam-viec/kham/AT-TODAY');
+  await field('Triệu chứng', 'Thông tin khám mẫu');
+  await field('Chẩn đoán', 'Kết quả mẫu');
+  await click('[data-testid=service-option]:nth-child(2) input[type="checkbox"]');
+  await field(
+    'Lý do thay đổi dịch vụ so với dự toán',
+    'Điện tâm đồ đã thực hiện và đã trao đổi chi phí.',
+  );
+  await textButton('Hoàn tất buổi khám');
+  assert.equal(await stored("db.appointments.find(a=>a.id==='AT-TODAY').status"), 'completed');
+  await login('branchAdmin', 'admin1');
+  await navigate('/quan-tri/lich-hen');
+  await field('Tìm bệnh nhân / mã lịch', 'AT-TODAY');
+  await rowAction('AT-TODAY', 'Chi phí & BHYT');
+  await field('Ghi chú đối chiếu với khách', 'Đã đối chiếu BHYT, ưu đãi và dịch vụ thực hiện.');
+  await textButton('Chốt bảng phí');
+  assert.equal(
+    await stored("db.appointments.find(a=>a.id==='AT-TODAY').billing.finalized.price.patientDue"),
+    188000,
+  );
+  await textButton('Xác nhận đã thu 188.000 ₫');
+  await evaluate(
+    "Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='Điều chỉnh / hoàn tiền').click()",
+  );
+  await field('Số tiền điều chỉnh', '20000');
+  await field('Tham chiếu chứng từ điều chỉnh', 'UI-REFUND-01');
+  await field('Lý do và căn cứ điều chỉnh', 'Điều chỉnh phần tự trả theo biên bản mẫu.');
+  await textButton('Xác nhận giao dịch điều chỉnh');
+  assert.equal(await stored("db.adjustments.filter(r=>r.appointmentId==='AT-TODAY').length"), 1);
+  await field('Tham chiếu quyết toán mẫu', 'UI-QT-01');
+  await textButton('Ghi nhận BHYT đã thanh toán');
+  assert.equal(
+    await stored("db.insuranceSettlements.find(r=>r.appointmentId==='AT-TODAY').amount"),
+    112000,
+  );
+  await noOverflow();
+  await screenshot('cashier-settled-mobile');
+  await click('dialog [aria-label="Đóng"]');
+  await login('patient', 'p11');
+  await navigate('/lich-hen');
+  await textButton('Đã qua');
+  await rowAction('AT-TODAY', 'Chi phí & BHYT');
+  assert.ok(await evaluate("document.querySelector('dialog').textContent.includes('168.000')"));
+  assert.ok(
+    !(await evaluate(
+      "Array.from(document.querySelectorAll('dialog button')).some(b=>b.textContent.includes('Xác nhận giao dịch'))",
+    )),
+  );
+  await noOverflow();
+  await screenshot('patient-receipt-mobile');
+  await click('dialog [aria-label="Đóng"]');
   await evaluate(
     "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); d.version=1; d.medicines=[]; d.lots=[]; d.transactions=[]; d.restocks=[]; d.users.find(u=>u.id==='p1').address='Migration kept'; localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
   );
   await navigate('/');
-  assert.equal(await stored('db.version'), 2);
+  assert.equal(await stored('db.version'), 3);
   assert.equal(await stored("db.users.find(u=>u.id==='p1').address"), 'Migration kept');
   assert.ok(await stored("!('medicines' in db) && !('restocks' in db)"));
   await navigate('/dat-lich?doctorId=missing');
-  assert.ok(await evaluate("!!document.querySelector('.alert.error')"));
+  assert.ok(await evaluate("!!document.querySelector('[role=alert]')"));
   await login('superAdmin', 'root');
   await navigate('/removed-service');
   assert.ok(await evaluate("document.body.textContent.includes('Không tìm thấy')"));
@@ -571,11 +760,11 @@ try {
   await navigate('/quan-tri/he-thong');
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
-  assert.equal(await stored('db.version'), 2);
+  assert.equal(await stored('db.version'), 3);
   assert.equal(errors.length, 0, JSON.stringify(errors));
   assert.equal(submissions.length, 0, 'Unexpected non-GET network requests');
   console.log(
-    'PASS: 4 roles, booking/login persistence, clinical records, payment, branch scope, reports, migration, storage, reset, registration, routes and 5 viewport sizes.',
+    'PASS: 4 roles, booking/login persistence, promotion entry/management, insurance/receipt/refund workflow, clinical records, branch scope, reports, migration, storage, reset, registration, routes and 5 viewport sizes (including dialogs).',
   );
   console.log('Screenshots: ' + artifacts);
 } catch (error) {

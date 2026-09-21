@@ -1,3 +1,4 @@
+import { addBillingData } from './billingSeed.js';
 import { createSeed } from './seed.js';
 
 // Keep the existing key so open tabs and existing demo users migrate in place.
@@ -18,14 +19,33 @@ export const collections = [
 export function migrateData(value) {
   if (
     !value ||
-    ![1, 2].includes(value.version) ||
+    ![1, 2, 3].includes(value.version) ||
     collections.some(
       (key) =>
         !Array.isArray(value[key]) || value[key].some((row) => !row || typeof row.id !== 'string'),
     )
   )
     throw new Error('Dữ liệu demo không hợp lệ.');
-  if (value.version === 2) return value;
+  if (value.version === 3) {
+    const extra = [
+      'promotions',
+      'serviceCatalog',
+      'insurancePolicies',
+      'promotionUses',
+      'adjustments',
+      'auditLogs',
+      'insuranceSettlements',
+    ];
+    if (
+      extra.some((key) => !Array.isArray(value[key])) ||
+      value.appointments.some(
+        (a) => !a.billing || !Array.isArray(a.billing.items) || !a.billing.insurance,
+      )
+    )
+      throw new Error('Dữ liệu tài chính không hợp lệ.');
+    return value;
+  }
+  if (value.version === 2) return addBillingData(value);
   const next = {
     version: 2,
     seededAt: value.seededAt || '',
@@ -40,7 +60,7 @@ export function migrateData(value) {
     contactPhone: next.branches.find((b) => b.id === d.branchId)?.phone || '',
     ...d,
   }));
-  return next;
+  return addBillingData(next);
 }
 
 export function readData(storage) {

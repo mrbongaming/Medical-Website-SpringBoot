@@ -105,6 +105,7 @@ assert.ok(accessibleRecords(db, user('p1')).some((r) => r.appointmentId === 'AT-
 assert.ok(accessibleRecords(db, user('u-dr1')).every((r) => r.branchId === 'b1'));
 assert.equal(accessibleRecords(db, user('admin1')).length, 0);
 deny('admin2', 'pay', { id: 'AT-DEMO-EXAM' }, /quyền/);
+run('admin1', 'bill-finalize', { id: 'AT-DEMO-EXAM', reason: 'Đối chiếu phí khám.' });
 run('admin1', 'pay', { id: 'AT-DEMO-EXAM' });
 deny('admin1', 'pay', { id: 'AT-DEMO-EXAM' }, /chưa được thu/);
 deny('p1', 'appointment', { id: 'AT-DEMO-EXAM', status: 'cancelled' }, /Không thể/);
@@ -217,10 +218,13 @@ const legacy = {
 legacy.branches[0].description = 'Nội dung đã chỉnh sửa';
 delete legacy.doctors[0].image;
 const upgraded = migrateData(legacy);
-assert.equal(upgraded.version, 2);
+assert.equal(upgraded.version, 3);
 assert.equal(upgraded.branches[0].description, legacy.branches[0].description);
-for (const key of ['users', 'appointments', 'records', 'payments'])
-  assert.deepEqual(upgraded[key], legacy[key]);
+for (const key of ['users', 'records', 'payments']) assert.deepEqual(upgraded[key], legacy[key]);
+assert.deepEqual(
+  upgraded.appointments.map(({ billing: _billing, ...a }) => a),
+  legacy.appointments.map(({ billing: _billing, ...a }) => a),
+);
 for (const key of ['medicines', 'lots', 'transactions', 'restocks']) assert.ok(!(key in upgraded));
 assert.ok(upgraded.doctors[0].image);
 assert.equal(legacy.version, 1);
@@ -246,6 +250,8 @@ const saved = {
 };
 assert.deepEqual(initialBooking(seed, new URLSearchParams(), saved), {
   ...saved,
+  insurance: { enabled: false },
+  promotionCode: '',
   packageId: '',
   patientName: '',
   phone: '',
@@ -288,5 +294,5 @@ assert.ok(
   seed.doctors.some((d) => !seed.appointments.some((a) => a.doctorId === d.id && a.rating)),
 );
 console.log(
-  'PASS: v1 to v2 migration, draft/deep-link normalization, linked histories and rating integrity.',
+  'PASS: v1/v2 to v3 migration, draft/deep-link normalization, linked histories and rating integrity.',
 );
