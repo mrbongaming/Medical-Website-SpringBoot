@@ -23,18 +23,20 @@ export function AuthPage() {
         ? target
         : account?.role === 'doctor'
           ? '/bac-si-lam-viec'
-          : ['superAdmin', 'branchAdmin'].includes(account?.role)
-            ? '/quan-tri'
-            : '/lich-hen',
+          : account?.role === 'staff'
+            ? '/nhan-vien'
+            : ['superAdmin', 'branchAdmin'].includes(account?.role)
+              ? '/quan-tri'
+              : '/lich-hen',
     );
   }
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     try {
       setError('');
       if (register) {
         const f = Object.fromEntries(new FormData(e.currentTarget));
-        const accountId = dispatch('register', f);
+        const accountId = await dispatch('register', f);
         enter(accountId);
       } else enter(id);
     } catch (e) {

@@ -12,10 +12,12 @@
     "preview": "vite preview",
     "check:domain": "node scripts/check-domain.mjs",
     "check:billing": "node scripts/check-billing.mjs",
+    "check:inventory": "node scripts/check-inventory.mjs",
     "check:browser": "node scripts/check-browser.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.1",
+    "exceljs": "^4.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-icons": "^5.7.0",

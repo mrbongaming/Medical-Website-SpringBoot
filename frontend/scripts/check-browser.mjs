@@ -369,8 +369,7 @@ try {
   await navigate('/quan-tri');
   assert.ok(await evaluate("document.body.textContent.includes('không có quyền')"));
 
-  await login('doctor', 'u-dr1');
-  await textButton('Tất cả lịch');
+  await login('staff', 'staff-b1');
   await field('Tìm bệnh nhân / mã lịch', appointment);
   await rowAction(appointment, 'Từ chối');
   await click('dialog form button:not([type])');
@@ -381,8 +380,19 @@ try {
     await stored(`db.appointments.find(a=>a.id===${JSON.stringify(appointment)}).status`),
     'rejected',
   );
+  await evaluate(
+    `(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); const a=d.appointments.find(a=>a.id==='AT-DEMO-EXAM'); a.date=new Date().toLocaleDateString('en-CA'); a.status='confirmed'; a.billing.receivedAt=''; localStorage.setItem('antam-data-v1', JSON.stringify(d)); })()`,
+  );
+  await navigate('/nhan-vien');
   await field('Tìm bệnh nhân / mã lịch', 'AT-DEMO-EXAM');
-  await rowAction('AT-DEMO-EXAM', 'Ghi kết quả');
+  await rowAction('AT-DEMO-EXAM', 'Chi phí & BHYT');
+  await textButton('Xác nhận tiếp nhận');
+  await click('dialog [aria-label="Đóng"]');
+
+  await login('doctor', 'u-dr1');
+  await textButton('Tất cả lịch');
+  await field('Tìm bệnh nhân / mã lịch', 'AT-DEMO-EXAM');
+  await rowAction('AT-DEMO-EXAM', 'Khám');
   await field('Triệu chứng', 'Khám định kỳ');
   await click('[data-testid=back-link]');
   assert.ok(await evaluate("document.querySelector('dialog').textContent.includes('chưa lưu')"));
@@ -415,20 +425,21 @@ try {
     'released',
   );
   await click('dialog [aria-label="Đóng"]');
-  await navigate('/quan-tri/admin');
+  await navigate('/quan-tri/he-thong');
   assert.ok(await evaluate("document.body.textContent.includes('không có quyền')"));
   await navigate('/quan-tri/co-so');
   assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 1);
   await navigate('/quan-tri/kho-thuoc');
-  assert.ok(await evaluate("document.body.textContent.includes('Không tìm thấy')"));
+  assert.ok(await evaluate("document.body.textContent.includes('Quản lý kho thuốc')"));
+  assert.equal(await stored('db.medicines.length'), 60);
   await login('superAdmin', 'root');
   await navigate('/quan-tri');
   for (const label of ['Lịch hẹn & bệnh nhân', 'Bác sĩ & khoa', 'Tài chính'])
     await textButton(label);
   assert.ok(
-    !(await evaluate(
-      "Array.from(document.querySelectorAll('button,a')).some(e => /CSV|Restock|Kho thuốc/.test(e.textContent))",
-    )),
+    await evaluate(
+      "Array.from(document.querySelectorAll('button,a')).some(e => /Kho thuốc/.test(e.textContent))",
+    ),
   );
   await screenshot('desktop-dashboard');
   await navigate('/quan-tri/khoa-phong');
@@ -569,6 +580,9 @@ try {
   await navigate('/quan-tri/he-thong');
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
+  await evaluate(
+    `(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); const a=d.appointments.find(a=>a.id==='AT-DEMO-EXAM'); a.date=new Date().toLocaleDateString('en-CA'); a.status='confirmed'; a.billing.receivedAt=new Date().toISOString(); localStorage.setItem('antam-data-v1', JSON.stringify(d)); })()`,
+  );
   // Real patient/doctor pages at every viewport, including record details and editor.
   for (const width of [1440, 1024, 768, 390, 360]) {
     await send('Emulation.setDeviceMetricsOverride', {
@@ -577,6 +591,16 @@ try {
       deviceScaleFactor: 1,
       mobile: width < 768,
     });
+    await login('superAdmin', 'root');
+    await navigate('/quan-tri/kho-thuoc');
+    await noOverflow();
+    await screenshot('inventory-' + width);
+    if (width === 360) {
+      await login('staff', 'staff-b1');
+      await navigate('/nhan-vien/cap-thuoc');
+      await noOverflow();
+      await screenshot('dispensing-' + width);
+    }
     await login('patient', 'p1');
     for (const route of ['/lich-hen', '/ho-so-kham', '/ho-so-kham/rec-AT-1000']) {
       await navigate(route);
@@ -734,9 +758,11 @@ try {
     "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); d.version=1; d.medicines=[]; d.lots=[]; d.transactions=[]; d.restocks=[]; d.users.find(u=>u.id==='p1').address='Migration kept'; localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
   );
   await navigate('/');
-  assert.equal(await stored('db.version'), 3);
+  assert.equal(await stored('db.version'), 4);
   assert.equal(await stored("db.users.find(u=>u.id==='p1').address"), 'Migration kept');
-  assert.ok(await stored("!('medicines' in db) && !('restocks' in db)"));
+  assert.ok(
+    await stored("db.medicines.length===60 && db.inventory.length>0 && !('restocks' in db)"),
+  );
   await navigate('/dat-lich?doctorId=missing');
   assert.ok(await evaluate("!!document.querySelector('[role=alert]')"));
   await login('superAdmin', 'root');
@@ -760,11 +786,11 @@ try {
   await navigate('/quan-tri/he-thong');
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
-  assert.equal(await stored('db.version'), 3);
+  assert.equal(await stored('db.version'), 4);
   assert.equal(errors.length, 0, JSON.stringify(errors));
   assert.equal(submissions.length, 0, 'Unexpected non-GET network requests');
   console.log(
-    'PASS: 4 roles, booking/login persistence, promotion entry/management, insurance/receipt/refund workflow, clinical records, branch scope, reports, migration, storage, reset, registration, routes and 5 viewport sizes (including dialogs).',
+    'PASS: 5 roles, booking/login persistence, inventory, promotion entry/management, insurance/receipt/refund workflow, clinical records, branch scope, reports, migration, storage, reset, registration, routes and 5 viewport sizes (including dialogs).',
   );
   console.log('Screenshots: ' + artifacts);
 } catch (error) {

@@ -32,9 +32,9 @@ export function SystemPage() {
           <Alert error={error} />
           <button
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 bg-red-600 text-white hover:bg-red-700"
-            onClick={() => {
+            onClick={async () => {
               try {
-                reset();
+                await reset();
                 setConfirm(false);
                 setSuccess('Đã khôi phục dữ liệu mẫu.');
               } catch (e) {

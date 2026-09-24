@@ -10,10 +10,10 @@ export function ProfilePage() {
   const { user, dispatch } = useHospital();
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     try {
-      dispatch('profile', Object.fromEntries(new FormData(e.currentTarget)));
+      await dispatch('profile', Object.fromEntries(new FormData(e.currentTarget)));
       setSuccess('Đã cập nhật hồ sơ.');
       setError('');
     } catch (e) {

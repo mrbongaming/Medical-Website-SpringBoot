@@ -33,7 +33,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
       </Field>
     );
   }
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     const values = { ...row };
     delete values.timesText;
@@ -43,7 +43,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
         .map((s) => s.trim())
         .filter(Boolean);
     try {
-      dispatch('save', { entity, id: initial.id, values });
+      await dispatch('save', { entity, id: initial.id, values });
       saved();
     } catch (e) {
       setError(e.message);
@@ -111,6 +111,18 @@ export function EntityEditor({ entity, initial, close, saved }) {
             </>
           )}
           {entity === 'users' && input('phone', 'Số điện thoại', 'tel')}
+          {entity === 'users' && user.role === 'superAdmin' && !initial.id && (
+            <Select
+              label="Vai trò"
+              value={row.role}
+              onChange={(value) => change('role', value)}
+              options={[
+                { id: 'branchAdmin', name: 'Admin cơ sở' },
+                { id: 'staff', name: 'Nhân viên tiếp nhận' },
+              ]}
+              required
+            />
+          )}
           {entity === 'schedules' && (
             <>
               <Select

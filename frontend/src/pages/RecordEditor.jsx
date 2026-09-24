@@ -9,6 +9,8 @@ import { Badge } from '../components/Badge';
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';
 import { PageTitle } from '../components/PageTitle';
+import { PrescriptionEditor } from '../components/PrescriptionEditor';
+import { RecordSections } from './RecordSections';
 import { formatDate, name } from '../helpers/ClinicalHelpers';
 
 export function RecordEditor({ appointment }) {
@@ -21,9 +23,21 @@ export function RecordEditor({ appointment }) {
       .map((i) => ({ serviceId: i.serviceId, quantity: i.quantity })),
   );
   const [serviceReason, setServiceReason] = useState(appointment.billing?.serviceReason || '');
+  const [prescription, setPrescription] = useState(() =>
+    (record?.prescription || []).map((item) => ({
+      medicineId: item.medicineId,
+      quantity: item.quantity,
+      dosage: item.dosage,
+      route: item.route,
+      frequency: item.frequency,
+      duration: item.duration,
+      instructions: item.instructions || '',
+    })),
+  );
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [selectedHistory, setSelectedHistory] = useState(null);
   const allowNavigation = useRef(false);
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -44,17 +58,18 @@ export function RecordEditor({ appointment }) {
   const history = accessibleRecords(db, user)
     .filter((r) => r.patientId === appointment.patientId && r.id !== record?.id)
     .sort((a, b) => b.date.localeCompare(a.date));
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     try {
       const finalized = e.nativeEvent.submitter?.value === 'complete';
       allowNavigation.current = finalized;
-      dispatch('record', {
+      await dispatch('record', {
         ...Object.fromEntries(new FormData(e.currentTarget)),
         appointmentId: appointment.id,
         finalized,
         services,
         serviceReason,
+        prescription,
       });
       setDirty(false);
       setError('');
@@ -126,6 +141,16 @@ export function RecordEditor({ appointment }) {
               reason={serviceReason}
               onReason={setServiceReason}
             />
+            <PrescriptionEditor
+              db={db}
+              branchId={appointment.branchId}
+              value={prescription}
+              onChange={(value) => {
+                setPrescription(value);
+                setDirty(true);
+                setSuccess('');
+              }}
+            />
             <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               Hoàn tất sẽ chuyển kết quả sang chỉ đọc và hiển thị cho bệnh nhân.
             </p>
@@ -155,18 +180,19 @@ export function RecordEditor({ appointment }) {
         </section>
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
           <h2>Lịch sử liên quan</h2>
-          <p>Các lần khám của bệnh nhân tại cơ sở bạn được phép xem.</p>
+          <p>Các bệnh án đã hoàn tất trong toàn hệ thống của bệnh nhân được phân công.</p>
           {history.length ? (
             history.map((r) => (
-              <Link
-                className="grid gap-3 sm:grid-cols-2 [&>*]:rounded-xl [&>*]:bg-slate-50 [&>*]:p-3"
+              <button
+                type="button"
+                className="grid w-full gap-3 rounded-xl text-left hover:ring-2 hover:ring-sky-200 sm:grid-cols-2 [&>*]:rounded-xl [&>*]:bg-slate-50 [&>*]:p-3"
                 key={r.id}
-                to={'/bac-si-lam-viec/ho-so/' + r.id}
+                onClick={() => setSelectedHistory(r)}
               >
                 <small>{formatDate(r.date)}</small>
                 <strong>{r.diagnosis || 'Bản nháp'}</strong>
                 <span>{name(db, 'doctors', r.doctorId)}</span>
-              </Link>
+              </button>
             ))
           ) : (
             <p>Chưa có lần khám trước.</p>
@@ -193,6 +219,15 @@ export function RecordEditor({ appointment }) {
               Rời trang
             </button>
           </div>
+        </Modal>
+      )}
+      {selectedHistory && (
+        <Modal
+          wide
+          title={`Bệnh án ngày ${formatDate(selectedHistory.date)}`}
+          close={() => setSelectedHistory(null)}
+        >
+          <RecordSections record={selectedHistory} />
         </Modal>
       )}
     </>

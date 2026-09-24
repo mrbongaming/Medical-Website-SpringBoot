@@ -5,6 +5,7 @@ import {
   billingAction,
 } from './billing.js';
 import { dateKey } from './seed.js';
+import { inventoryAction, validateAndReservePrescription } from './inventory.js';
 
 export const isAdmin = (u) => ['superAdmin', 'branchAdmin'].includes(u?.role);
 export const inBranch = (u, id) => u?.role === 'superAdmin' || (!!id && u?.branchId === id);
@@ -46,10 +47,7 @@ export function accessibleRecords(db, user) {
       db.appointments.filter((a) => a.doctorId === user.doctorId).map((a) => a.patientId),
     );
     return db.records.filter(
-      (r) =>
-        r.branchId === user.branchId &&
-        ids.has(r.patientId) &&
-        (r.finalized || r.doctorId === user.doctorId),
+      (r) => ids.has(r.patientId) && (r.finalized || r.doctorId === user.doctorId),
     );
   }
   return [];
@@ -59,8 +57,10 @@ export function scopedAppointments(db, user) {
     user?.role === 'patient'
       ? a.patientId === user.id
       : user?.role === 'doctor'
-        ? a.doctorId === user.doctorId && a.branchId === user.branchId
-        : isAdmin(user) && inBranch(user, a.branchId),
+        ? a.doctorId === user.doctorId && a.branchId === user.branchId && a.status !== 'pending'
+        : user?.role === 'staff'
+          ? a.branchId === user.branchId
+          : isAdmin(user) && inBranch(user, a.branchId),
   );
 }
 function phoneValid(phone) {
@@ -136,6 +136,11 @@ export function act(source, actorId, type, payload = {}) {
       db.branches.some((b) => b.id === user.branchId && b.active),
       'Cơ sở đã ngừng hoạt động.',
     );
+  if (type.startsWith('stock-') || type.startsWith('inventory-') || type.startsWith('medicine-')) {
+    result = inventoryAction(db, user, type, p);
+    requireThat(result !== null, 'Thao tác kho thuốc không hợp lệ.');
+    return { db, result };
+  }
   if (
     [
       'service-save',
@@ -246,12 +251,12 @@ export function act(source, actorId, type, payload = {}) {
   } else if (type === 'appointment') {
     const a = db.appointments.find((a) => a.id === p.id);
     requireThat(a, 'Không tìm thấy lịch hẹn.');
-    const ownDoctor =
-      user.role === 'doctor' && a.doctorId === user.doctorId && a.branchId === user.branchId;
     if (p.status === 'confirmed' || p.status === 'rejected') {
       requireThat(
-        ownDoctor && a.status === 'pending',
-        'Chỉ bác sĩ phụ trách được duyệt lịch đang chờ.',
+        ((user.role === 'staff' && user.branchId === a.branchId) ||
+          (isAdmin(user) && inBranch(user, a.branchId))) &&
+          a.status === 'pending',
+        'Chỉ nhân viên hoặc quản trị đúng cơ sở được duyệt hồ sơ đang chờ.',
       );
       requireThat(p.status !== 'rejected' || p.reason?.trim(), 'Vui lòng nhập lý do từ chối.');
     } else if (p.status === 'cancelled') {
@@ -276,6 +281,10 @@ export function act(source, actorId, type, payload = {}) {
     a.status = p.status;
     a.reason = p.reason?.trim() || '';
     a.updatedAt = new Date().toISOString();
+    if (['confirmed', 'rejected'].includes(a.status)) {
+      a.reviewedBy = user.id;
+      a.reviewedAt = a.updatedAt;
+    }
     if (['cancelled', 'rejected', 'absent'].includes(a.status)) releasePromotion(db, user, a);
   } else if (type === 'record') {
     const a = db.appointments.find((a) => a.id === p.appointmentId);
@@ -283,10 +292,10 @@ export function act(source, actorId, type, payload = {}) {
       user.role === 'doctor' &&
         a?.doctorId === user.doctorId &&
         a.branchId === user.branchId &&
-        a.status === 'confirmed',
-      'Chỉ bác sĩ phụ trách được ghi kết quả lịch đã xác nhận.',
+        a.status === 'confirmed' &&
+        a.billing.receivedAt,
+      'Chỉ bác sĩ phụ trách được ghi kết quả lịch đã xác nhận và đã tiếp nhận.',
     );
-    requireThat(!future(a.date, a.time), 'Chưa đến giờ khám.');
     requireThat(
       !p.finalized || (p.symptoms?.trim() && p.diagnosis?.trim()),
       'Nhập triệu chứng và chẩn đoán trước khi hoàn tất.',
@@ -297,6 +306,11 @@ export function act(source, actorId, type, payload = {}) {
     );
     const old = db.records.find((r) => r.appointmentId === a.id);
     requireThat(!old?.finalized, 'Hồ sơ hoàn tất không thể chỉnh sửa.');
+    const prescription = p.finalized
+      ? validateAndReservePrescription(db, a, p)
+      : Array.isArray(p.prescription)
+        ? structuredClone(p.prescription)
+        : old?.prescription || [];
     const row = {
       id: old?.id || uid('record'),
       appointmentId: a.id,
@@ -309,8 +323,20 @@ export function act(source, actorId, type, payload = {}) {
       notes: p.notes || '',
       followUp: p.followUp || '',
       finalized: !!p.finalized,
+      prescription,
+      dispenseStatus:
+        p.finalized && prescription.length ? 'reserved' : old?.dispenseStatus || 'none',
     };
     recordServices(db, user, a, p);
+    if (p.finalized)
+      a.billing.medicineItems = prescription.map((item) => ({
+        serviceId: `medicine:${item.medicineId}`,
+        medicineId: item.medicineId,
+        name: `${item.name} · ${item.unit}`,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        discountable: false,
+      }));
     if (old) Object.assign(old, row);
     else db.records.push(row);
     if (p.finalized) a.status = 'completed';
@@ -328,13 +354,20 @@ export function act(source, actorId, type, payload = {}) {
     requireThat(isAdmin(user) && allowed.includes(entity), 'Không có quyền quản lý danh mục này.');
     const old = db[entity].find((r) => r.id === p.id);
     const row = { ...(old || {}), ...p.values, id: old?.id || uid(entity) };
-    if (['specialties', 'packages', 'users'].includes(entity) || (entity === 'branches' && !old))
+    if (
+      ['specialties', 'packages'].includes(entity) ||
+      (entity === 'users' && row.role === 'branchAdmin') ||
+      (entity === 'branches' && !old)
+    )
       requireThat(user.role === 'superAdmin', 'Chỉ admin tổng quản lý danh mục này.');
     if (entity === 'users')
       requireThat(
-        (!old || old.role === 'branchAdmin') && row.role === 'branchAdmin',
-        'Chỉ quản lý tài khoản admin cơ sở tại đây.',
+        (!old || ['branchAdmin', 'staff'].includes(old.role)) &&
+          ['branchAdmin', 'staff'].includes(row.role),
+        'Chỉ quản lý tài khoản admin cơ sở hoặc nhân viên tại đây.',
       );
+    if (entity === 'users' && row.role === 'branchAdmin')
+      requireThat(user.role === 'superAdmin', 'Chỉ admin tổng quản lý tài khoản admin cơ sở.');
     if (['departments', 'doctors', 'schedules', 'users'].includes(entity)) {
       branchPermission(db, user, old?.branchId || row.branchId);
       if (old)

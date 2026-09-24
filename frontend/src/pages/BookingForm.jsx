@@ -103,7 +103,7 @@ export function BookingForm() {
     );
   const patientName = form.patientName || user?.name || '';
   const phone = form.phone || user?.phone || '';
-  function next(e) {
+  async function next(e) {
     e.preventDefault();
     setError('');
     if (
@@ -145,7 +145,7 @@ export function BookingForm() {
       return;
     }
     try {
-      const id = dispatch('book', { ...form, patientName, phone });
+      const id = await dispatch('book', { ...form, patientName, phone });
       setResult(id);
       sessionStorage.removeItem(DRAFT);
     } catch (e) {

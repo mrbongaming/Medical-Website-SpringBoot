@@ -65,12 +65,17 @@ export default function HospitalProvider({ children }) {
     current.current = next;
     setDb(next);
   }
-  function dispatch(type, payload) {
-    if (storageError) throw new Error(storageError);
-    const latest = localStorage.getItem(KEY) ? read() : current.current;
-    const { db: next, result } = act(latest, user?.id, type, payload);
-    persist(next);
-    return result;
+  async function dispatch(type, payload) {
+    const mutate = async () => {
+      if (storageError) throw new Error(storageError);
+      const latest = localStorage.getItem(KEY) ? read() : current.current;
+      const { db: next, result } = act(latest, user?.id, type, payload);
+      persist(next);
+      return result;
+    };
+    return navigator.locks?.request
+      ? navigator.locks.request('antam-data-write', mutate)
+      : mutate();
   }
   function login(id) {
     const u = current.current.users.find((u) => u.id === id && u.active);
@@ -86,10 +91,15 @@ export default function HospitalProvider({ children }) {
     sessionStorage.removeItem(SESSION);
     setSession('');
   }
-  function reset() {
+  async function reset() {
     if (user?.role !== 'superAdmin') throw new Error('Chỉ admin tổng được khôi phục dữ liệu.');
-    persist(createSeed());
-    setStorageError('');
+    const restore = async () => {
+      persist(createSeed());
+      setStorageError('');
+    };
+    return navigator.locks?.request
+      ? navigator.locks.request('antam-data-write', restore)
+      : restore();
   }
   return (
     <HospitalContext.Provider value={{ db, user, dispatch, login, logout, reset, storageError }}>

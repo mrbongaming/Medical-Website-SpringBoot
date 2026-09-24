@@ -23,6 +23,7 @@ export function AppointmentsPage() {
   const { db, user, dispatch } = useHospital();
   const patient = user.role === 'patient';
   const doctor = user.role === 'doctor';
+  const receptionist = user.role === 'staff' || isAdmin(user);
   const [period, setPeriod] = useState('upcoming');
   const [status, setStatus] = useState('');
   const [date, setDate] = useState(doctor ? dateKey() : '');
@@ -38,10 +39,10 @@ export function AppointmentsPage() {
     setError('');
     setSuccess('');
   }
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     try {
-      dispatch(action.type === 'pay' ? 'pay' : 'appointment', {
+      await dispatch(action.type === 'pay' ? 'pay' : 'appointment', {
         id: action.row.id,
         status: action.type,
         ...Object.fromEntries(new FormData(e.currentTarget)),
@@ -59,7 +60,7 @@ export function AppointmentsPage() {
     const record = db.records.find((r) => r.appointmentId === a.id && r.finalized);
     return (
       <div className="flex flex-wrap gap-2 [&>a]:text-sm [&>a]:font-semibold [&>a]:text-sky-700 [&>button]:border-0 [&>button]:bg-transparent [&>button]:p-0 [&>button]:text-sm [&>button]:font-semibold [&>button]:text-sky-700">
-        {doctor && a.status === 'pending' && (
+        {receptionist && a.status === 'pending' && (
           <>
             <button onClick={() => open(a, 'confirmed')}>Chấp nhận</button>
             <button className="text-red-600!" onClick={() => open(a, 'rejected')}>
@@ -67,10 +68,15 @@ export function AppointmentsPage() {
             </button>
           </>
         )}
-        {doctor && a.status === 'confirmed' && !future(a.date, a.time) && (
+        {doctor && a.status === 'confirmed' && a.billing.receivedAt && (
           <Link className="font-bold text-sky-700" to={'/bac-si-lam-viec/kham/' + a.id}>
-            Ghi kết quả
+            Khám
           </Link>
+        )}
+        {doctor && a.status === 'confirmed' && !a.billing.receivedAt && (
+          <span className="text-sm text-slate-500" title="Nhân viên chưa tiếp nhận bệnh nhân">
+            Khám · chờ tiếp nhận
+          </span>
         )}
         {['pending', 'confirmed'].includes(a.status) &&
           !a.billing.receivedAt &&
@@ -83,7 +89,7 @@ export function AppointmentsPage() {
           a.status === 'confirmed' &&
           !a.billing.receivedAt &&
           !future(a.date, a.time) && <button onClick={() => open(a, 'absent')}>Vắng mặt</button>}
-        {(patient || isAdmin(user)) && (
+        {(patient || receptionist) && (
           <button onClick={() => setBillingId(a.id)}>Chi phí & BHYT</button>
         )}
         {isAdmin(user) && a.status === 'completed' && (
@@ -97,7 +103,7 @@ export function AppointmentsPage() {
           </Link>
         )}
         {doctor && (
-          <Link to={'/bac-si-lam-viec/ho-so?patientId=' + a.patientId}>Lịch sử khám →</Link>
+          <Link to={'/bac-si-lam-viec/ho-so?patientId=' + a.patientId}>Xem hồ sơ bệnh án</Link>
         )}
       </div>
     );
@@ -110,12 +116,20 @@ export function AppointmentsPage() {
     >
       <PageTitle
         title={
-          patient ? 'Lịch hẹn của tôi' : doctor ? 'Lịch khám & tiếp nhận' : 'Lịch hẹn & khoản thu'
+          patient
+            ? 'Lịch hẹn của tôi'
+            : doctor
+              ? 'Lịch khám được phân công'
+              : user.role === 'staff'
+                ? 'Duyệt hồ sơ & tiếp nhận'
+                : 'Lịch hẹn & khoản thu'
         }
         description={
           doctor
-            ? 'Bắt đầu từ lịch hôm nay. Chọn ngày khác để xem lịch và các yêu cầu đang chờ.'
-            : 'Thông tin lịch khám, trạng thái và các bước tiếp theo.'
+            ? 'Khám bệnh nhân đã được nhân viên duyệt và tiếp nhận; mở hồ sơ để xem lịch sử toàn hệ thống.'
+            : user.role === 'staff'
+              ? 'Duyệt thông tin đăng ký và xác nhận bệnh nhân đã đến tại cơ sở của bạn.'
+              : 'Thông tin lịch khám, trạng thái và các bước tiếp theo.'
         }
       >
         {patient && (

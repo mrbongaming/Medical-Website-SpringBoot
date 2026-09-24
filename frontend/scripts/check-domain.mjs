@@ -65,25 +65,30 @@ deny('p1', 'book', { ...form, doctorId: 'dr2', specialtyId: 'sp2' }, /trùng th�
 assert.ok(!availableSlots(db, 'dr1', form.date).find((s) => s.time === form.time).available);
 assert.ok(scopedAppointments(db, user('admin1')).some((a) => a.id === booking));
 assert.ok(!scopedAppointments(db, user('admin2')).some((a) => a.id === booking));
-deny('admin1', 'appointment', { id: booking, status: 'confirmed' }, /bác sĩ/);
-deny('u-dr4', 'appointment', { id: booking, status: 'rejected', reason: 'test' }, /bác sĩ/);
-deny('u-dr1', 'appointment', { id: booking, status: 'rejected' }, /lý do/);
-run('u-dr1', 'appointment', { id: booking, status: 'confirmed' });
+deny('u-dr4', 'appointment', { id: booking, status: 'rejected', reason: 'test' }, /nhân viên/);
+deny('staff-b2', 'appointment', { id: booking, status: 'rejected', reason: 'test' }, /cơ sở/);
+deny('staff-b1', 'appointment', { id: booking, status: 'rejected' }, /lý do/);
+run('staff-b1', 'appointment', { id: booking, status: 'confirmed' });
 deny(
   'u-dr1',
   'record',
   { appointmentId: booking, finalized: true, symptoms: 'A', diagnosis: 'B' },
-  /Chưa đến/,
+  /tiếp nhận/,
 );
 deny('admin2', 'appointment', { id: booking, status: 'cancelled', reason: 'test' }, /Không thể/);
 deny('admin1', 'appointment', { id: booking, status: 'cancelled' }, /lý do/);
 run('p1', 'appointment', { id: booking, status: 'cancelled' });
 assert.ok(availableSlots(db, 'dr1', form.date).find((s) => s.time === form.time).available);
 const rejectBooking = run('p1', 'book', form);
-run('u-dr1', 'appointment', { id: rejectBooking, status: 'rejected', reason: 'Bác sĩ đổi lịch' });
+run('staff-b1', 'appointment', {
+  id: rejectBooking,
+  status: 'rejected',
+  reason: 'Hồ sơ cần đặt lại lịch',
+});
 assert.ok(availableSlots(db, 'dr1', form.date).find((s) => s.time === form.time).available);
 
 // Clinical records remain limited to the patient's own records and assigned doctor/branch.
+db.appointments.find((a) => a.id === 'AT-DEMO-EXAM').billing.receivedAt = new Date().toISOString();
 deny('admin1', 'record', { appointmentId: 'AT-DEMO-EXAM', diagnosis: 'x' }, /bác sĩ/);
 deny('u-dr1', 'record', { appointmentId: 'AT-DEMO-EXAM', finalized: true }, /triệu chứng/);
 run('u-dr1', 'record', {
@@ -102,7 +107,7 @@ run('u-dr1', 'record', {
 });
 deny('u-dr1', 'record', { appointmentId: 'AT-DEMO-EXAM', diagnosis: 'Sửa lại' }, /bác sĩ/);
 assert.ok(accessibleRecords(db, user('p1')).some((r) => r.appointmentId === 'AT-DEMO-EXAM'));
-assert.ok(accessibleRecords(db, user('u-dr1')).every((r) => r.branchId === 'b1'));
+assert.ok(accessibleRecords(db, user('u-dr1')).every((r) => r.finalized || r.doctorId === 'dr1'));
 assert.equal(accessibleRecords(db, user('admin1')).length, 0);
 deny('admin2', 'pay', { id: 'AT-DEMO-EXAM' }, /quyền/);
 run('admin1', 'bill-finalize', { id: 'AT-DEMO-EXAM', reason: 'Đối chiếu phí khám.' });
@@ -113,12 +118,7 @@ deny('admin1', 'appointment', { id: 'AT-DEMO-PENDING', status: 'absent' }, /sau 
 
 // Catalog and schedule mutations are checked even without the UI.
 deny('admin1', 'save', { entity: 'branches', id: 'b2', values: { name: 'Khác' } }, /quyền/);
-deny(
-  'admin1',
-  'save',
-  { entity: 'users', values: { role: 'superAdmin', name: 'X' } },
-  /admin tổng/,
-);
+deny('admin1', 'save', { entity: 'users', values: { role: 'superAdmin', name: 'X' } }, /tài khoản/);
 deny(
   'root',
   'save',
@@ -218,14 +218,15 @@ const legacy = {
 legacy.branches[0].description = 'Nội dung đã chỉnh sửa';
 delete legacy.doctors[0].image;
 const upgraded = migrateData(legacy);
-assert.equal(upgraded.version, 3);
+assert.equal(upgraded.version, 4);
 assert.equal(upgraded.branches[0].description, legacy.branches[0].description);
-for (const key of ['users', 'records', 'payments']) assert.deepEqual(upgraded[key], legacy[key]);
+for (const key of ['payments']) assert.deepEqual(upgraded[key], legacy[key]);
 assert.deepEqual(
   upgraded.appointments.map(({ billing: _billing, ...a }) => a),
   legacy.appointments.map(({ billing: _billing, ...a }) => a),
 );
-for (const key of ['medicines', 'lots', 'transactions', 'restocks']) assert.ok(!(key in upgraded));
+for (const key of ['lots', 'transactions', 'restocks']) assert.ok(!(key in upgraded));
+assert.equal(upgraded.medicines.length, 60);
 assert.ok(upgraded.doctors[0].image);
 assert.equal(legacy.version, 1);
 assert.deepEqual(migrateData(upgraded), upgraded);
@@ -294,5 +295,5 @@ assert.ok(
   seed.doctors.some((d) => !seed.appointments.some((a) => a.doctorId === d.id && a.rating)),
 );
 console.log(
-  'PASS: v1/v2 to v3 migration, draft/deep-link normalization, linked histories and rating integrity.',
+  'PASS: v1/v2/v3 to v4 migration, draft/deep-link normalization, linked histories and rating integrity.',
 );

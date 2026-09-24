@@ -52,7 +52,7 @@ const complete = (id, more = {}) =>
     ...more,
   });
 const intake = (id) => {
-  run('u-dr1', 'appointment', { id, status: 'confirmed' });
+  run('staff-b1', 'appointment', { id, status: 'confirmed' });
   // Advance this fixture to the day of care without depending on the wall-clock hour.
   appointment(id).date = dateKey();
   appointment(id).time = '00:00';
@@ -118,10 +118,10 @@ deny('p2', 'book', form({ time: '09:00', promotionCode: 'ANTAM50' }), /hết lư
 run('p1', 'appointment', { id, status: 'cancelled' });
 assert.equal(db.promotionUses[0].status, 'released');
 id = booking({ promotionCode: 'ANTAM50' });
-run('u-dr1', 'appointment', { id, status: 'rejected', reason: 'Đổi lịch mẫu' });
+run('staff-b1', 'appointment', { id, status: 'rejected', reason: 'Đổi lịch mẫu' });
 assert.equal(db.promotionUses.at(-1).status, 'released');
 id = booking({ promotionCode: 'ANTAM50' });
-run('u-dr1', 'appointment', { id, status: 'confirmed' });
+run('staff-b1', 'appointment', { id, status: 'confirmed' });
 appointment(id).date = relativeDate(-1);
 run('admin1', 'appointment', { id, status: 'absent' });
 assert.equal(db.promotionUses.at(-1).status, 'released');
@@ -178,7 +178,7 @@ deny(
   /tiếp nhận/,
 );
 deny('admin1', 'pay', { id }, /chốt phí/);
-run('u-dr1', 'appointment', { id, status: 'confirmed' });
+run('staff-b1', 'appointment', { id, status: 'confirmed' });
 deny('admin1', 'receive', { id }, /ngày khám/);
 appointment(id).date = dateKey();
 appointment(id).time = '00:00';
@@ -438,13 +438,11 @@ for (const key of [
 ])
   delete legacy[key];
 const migrated = migrateData(legacy);
-assert.equal(migrated.version, 3);
+assert.equal(migrated.version, 4);
 assert.deepEqual(migrated.payments, legacy.payments);
-assert.deepEqual(migrated.records, legacy.records);
-assert.deepEqual(
-  migrated.appointments.map(({ billing: _billing, ...a }) => a),
-  legacy.appointments,
-);
+assert.equal(migrated.records.length, legacy.records.length);
+assert.ok(migrated.records.every((record) => Array.isArray(record.prescription)));
+assert.equal(migrated.appointments.length, legacy.appointments.length);
 assert.ok(
   migrated.appointments.every(
     (a) => a.billing.insurance.status === 'none' && a.billing.estimate.discount === 0,

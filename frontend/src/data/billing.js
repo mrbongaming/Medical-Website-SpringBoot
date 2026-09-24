@@ -325,7 +325,11 @@ export function billingAction(db, user, type, p, today) {
     audit(db, user, type, a.id, a.branchId, 'Bệnh nhân bổ sung thông tin BHYT.');
     return;
   }
-  check(branchAccess(user, a.branchId), 'Không có quyền xử lý tài chính tại cơ sở này.');
+  check(
+    branchAccess(user, a.branchId) ||
+      (type === 'receive' && user.role === 'staff' && user.branchId === a.branchId),
+    'Không có quyền xử lý tại cơ sở này.',
+  );
   if (type === 'receive') {
     check(
       a.status === 'confirmed' && a.date === today && !b.receivedAt,
@@ -386,7 +390,11 @@ export function billingAction(db, user, type, p, today) {
       a.status === 'completed' && !b.finalized && !b.settledAt,
       'Chỉ chốt một lần sau khi hoàn tất khám.',
     );
-    const price = calculatePrice(b.items, b.insurance, b.promotion);
+    const price = calculatePrice(
+      [...b.items, ...(b.medicineItems || [])],
+      b.insurance,
+      b.promotion,
+    );
     check(!price.unresolved, 'BHYT chưa được xác minh hoặc cần bổ sung.');
     check(String(p.reason || '').trim(), 'Nhập ghi chú đối chiếu chi phí với khách.');
     b.finalized = { price, by: user.id, at: now(), reason: String(p.reason).trim() };

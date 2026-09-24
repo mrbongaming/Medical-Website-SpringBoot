@@ -23,7 +23,10 @@ export function ManagementPage({ entity }) {
   const rows = db[entity]
     .filter(
       (r) =>
-        (entity !== 'users' || r.role === 'branchAdmin') &&
+        (entity !== 'users' ||
+          (user.role === 'superAdmin'
+            ? ['branchAdmin', 'staff'].includes(r.role)
+            : r.role === 'staff')) &&
         (entity === 'branches'
           ? inBranch(user, r.id)
           : !r.branchId || inBranch(user, r.branchId)) &&
@@ -39,9 +42,9 @@ export function ManagementPage({ entity }) {
         ).includes(normalize(query)),
     )
     .sort((a, b) => (a.date || a.name || '').localeCompare(b.date || b.name || ''));
-  function remove() {
+  async function remove() {
     try {
-      dispatch('remove', { entity, id: deleting.id });
+      await dispatch('remove', { entity, id: deleting.id });
       setDeleting(null);
       setError('');
       setSuccess('Đã xóa dữ liệu chưa có liên kết.');
@@ -62,7 +65,12 @@ export function ManagementPage({ entity }) {
               setEditing({
                 branchId: user.branchId || branchId || db.branches.find((b) => b.active)?.id,
                 active: true,
-                role: entity === 'users' ? 'branchAdmin' : undefined,
+                role:
+                  entity === 'users'
+                    ? user.role === 'superAdmin'
+                      ? 'branchAdmin'
+                      : 'staff'
+                    : undefined,
               })
             }
           >

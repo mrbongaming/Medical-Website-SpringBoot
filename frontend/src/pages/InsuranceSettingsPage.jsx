@@ -13,10 +13,10 @@ function PolicyEditor({ policy, close }) {
   const set = (key, value) => setForm({ ...form, [key]: value });
   return (
     <form
-      onSubmit={(e) => {
+      onSubmit={async (e) => {
         e.preventDefault();
         try {
-          dispatch('policy-save', { values: form });
+          await dispatch('policy-save', { values: form });
           close();
         } catch (e) {
           setError(e.message);
@@ -198,11 +198,11 @@ export function InsuranceSettingsPage() {
       {service && (
         <Modal title={'Đơn giá: ' + service.name} close={() => setService(null)}>
           <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
               e.preventDefault();
               const values = Object.fromEntries(new FormData(e.currentTarget));
               try {
-                dispatch('service-save', {
+                await dispatch('service-save', {
                   id: service.id,
                   ...values,
                   active: values.active === 'on',

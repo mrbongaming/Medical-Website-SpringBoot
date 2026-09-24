@@ -1,6 +1,6 @@
 import { Link, useParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
-import { scopedAppointments, future } from '../data/domain';
+import { scopedAppointments } from '../data/domain';
 import { Empty } from '../components/Empty';
 import { RecordEditor } from './RecordEditor';
 
@@ -8,7 +8,7 @@ export function ExaminationPage() {
   const { db, user } = useHospital();
   const { appointmentId } = useParams();
   const a = scopedAppointments(db, user).find((a) => a.id === appointmentId);
-  if (!a || user.role !== 'doctor' || a.status !== 'confirmed' || future(a.date, a.time))
+  if (!a || user.role !== 'doctor' || a.status !== 'confirmed' || !a.billing.receivedAt)
     return (
       <>
         <Empty text="Lịch khám không tồn tại hoặc chưa được phép ghi kết quả." />

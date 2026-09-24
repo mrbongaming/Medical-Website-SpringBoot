@@ -28,6 +28,8 @@ import { RecordDetailPage } from './pages/RecordDetailPage';
 import { ExaminationPage } from './pages/ExaminationPage';
 import { ManagementPage } from './pages/ManagementPage';
 import { SystemPage } from './pages/SystemPage';
+import { InventoryPage } from './pages/InventoryPage';
+import { DispensingPage } from './pages/DispensingPage';
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 const router = createBrowserRouter(
@@ -79,6 +81,9 @@ const router = createBrowserRouter(
           <Route path="lich-hen" element={<AppointmentsPage />} />
           <Route path="khuyen-mai" element={<PromotionsPage />} />
           <Route path="bao-hiem" element={<InsuranceSettingsPage />} />
+          <Route path="kho-thuoc" element={<InventoryPage />} />
+          <Route path="cap-thuoc" element={<DispensingPage />} />
+          <Route path="nhan-vien" element={<ManagementPage entity="users" />} />
           {[
             ['co-so', 'branches'],
             ['khoa-phong', 'departments'],
@@ -93,7 +98,6 @@ const router = createBrowserRouter(
           ))}
           <Route element={<RequireRole roles={['superAdmin']} />}>
             {[
-              ['admin', 'users'],
               ['chuyen-khoa', 'specialties'],
               ['goi-kham', 'packages'],
             ].map(([path, entity]) => (
@@ -105,6 +109,14 @@ const router = createBrowserRouter(
             ))}
             <Route path="he-thong" element={<SystemPage />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
+        </Route>
+      </Route>
+      <Route element={<RequireRole roles={['staff']} />}>
+        <Route path="nhan-vien" element={<StaffLayout />}>
+          <Route index element={<AppointmentsPage />} />
+          <Route path="cap-thuoc" element={<DispensingPage />} />
+          <Route path="tai-khoan" element={<ProfilePage />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Route>

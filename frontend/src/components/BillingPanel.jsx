@@ -28,12 +28,13 @@ export function BillingPanel({ appointmentId }) {
   const b = a.billing;
   const balance = financialBalance(db, a);
   const staff = isAdmin(user);
+  const receptionist = staff || user.role === 'staff';
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [insurance, setInsurance] = useState({ ...b.insurance, enabled: true });
-  function run(type, values = {}) {
+  async function run(type, values = {}) {
     try {
-      dispatch(type, { ...values, id: a.id });
+      await dispatch(type, { ...values, id: a.id });
       setError('');
       setSuccess('Đã cập nhật và lưu lịch sử thao tác.');
     } catch (e) {
@@ -42,9 +43,9 @@ export function BillingPanel({ appointmentId }) {
     }
   }
   function submit(type) {
-    return (e) => {
+    return async (e) => {
       e.preventDefault();
-      run(type, Object.fromEntries(new FormData(e.currentTarget)));
+      await run(type, Object.fromEntries(new FormData(e.currentTarget)));
     };
   }
   const claim = db.insuranceSettlements.find((s) => s.appointmentId === a.id);
@@ -103,7 +104,7 @@ export function BillingPanel({ appointmentId }) {
           )}
         </div>
         <div className="space-y-5">
-          {staff && a.status === 'confirmed' && a.date === dateKey() && !b.receivedAt && (
+          {receptionist && a.status === 'confirmed' && a.date === dateKey() && !b.receivedAt && (
             <button
               className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50"
               onClick={() => run('receive')}

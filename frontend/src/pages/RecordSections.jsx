@@ -20,6 +20,34 @@ export function RecordSections({ record }) {
         </h2>
         <p>{record.followUp ? formatDate(record.followUp) : 'Chưa có chỉ định ngày tái khám.'}</p>
       </section>
+      <section>
+        <h2>Đơn thuốc</h2>
+        {record.prescription?.length ? (
+          <div className="space-y-3">
+            {record.prescription.map((item) => (
+              <div className="rounded-xl bg-slate-50 p-3" key={item.medicineId}>
+                <strong>
+                  {item.name} · {item.quantity} {item.unit}
+                </strong>
+                <p>
+                  {item.dosage} · {item.route} · {item.frequency} · {item.duration}
+                </p>
+                {item.instructions && <small>{item.instructions}</small>}
+              </div>
+            ))}
+            <p className="text-sm text-slate-500">
+              Trạng thái:{' '}
+              {record.dispenseStatus === 'dispensed'
+                ? 'Đã cấp thuốc'
+                : record.dispenseStatus === 'cancelled'
+                  ? 'Đã hủy cấp thuốc'
+                  : 'Đang chờ cấp'}
+            </p>
+          </div>
+        ) : (
+          <p>Buổi khám không có thuốc kê đơn.</p>
+        )}
+      </section>
     </div>
   );
 }

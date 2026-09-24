@@ -10,6 +10,7 @@ export function StaffLayout() {
   const { user, db, logout, storageError } = useHospital();
   const [open, setOpen] = useState(false);
   const doctor = user.role === 'doctor';
+  const receptionist = user.role === 'staff';
   const { base, links } = getStaffNavigation(user.role);
   return (
     <div className="min-h-screen bg-slate-100 lg:flex">
@@ -69,7 +70,7 @@ export function StaffLayout() {
           >
             <FiMenu />
           </button>
-          <span>Không gian {doctor ? 'bác sĩ' : 'quản trị'}</span>
+          <span>Không gian {doctor ? 'bác sĩ' : receptionist ? 'nhân viên' : 'quản trị'}</span>
           <div className="flex items-center gap-3 text-sm font-semibold text-slate-800 [&_small]:block [&_small]:font-normal [&_small]:text-slate-500">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sky-100 text-sm font-bold text-sky-800">
               {user.name.slice(0, 1)}

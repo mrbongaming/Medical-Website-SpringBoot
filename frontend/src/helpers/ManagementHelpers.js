@@ -3,7 +3,7 @@ export const titles = {
   departments: 'Khoa / phòng',
   doctors: 'Đội ngũ bác sĩ',
   schedules: 'Lịch làm việc',
-  users: 'Admin cơ sở',
+  users: 'Tài khoản nhân viên cơ sở',
   specialties: 'Danh mục chuyên khoa',
   packages: 'Gói khám sức khỏe',
 };

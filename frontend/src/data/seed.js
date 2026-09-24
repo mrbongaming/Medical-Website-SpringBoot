@@ -1,7 +1,9 @@
 import { addBillingData } from './billingSeed.js';
+import { addInventoryData } from './inventorySeed.js';
 export const roles = {
   patient: 'Bệnh nhân',
   doctor: 'Bác sĩ',
+  staff: 'Nhân viên tiếp nhận',
   branchAdmin: 'Admin cơ sở',
   superAdmin: 'Admin tổng',
 };
@@ -334,21 +336,24 @@ export function createSeed() {
       date: a.date,
       createdBy: 'root',
     }));
-  return addBillingData(
-    {
-      version: 2,
-      seededAt: dateKey(),
-      branches,
-      specialties,
-      departments,
-      doctors,
-      users,
-      packages,
-      schedules,
-      appointments,
-      records,
-      payments,
-    },
+  return addInventoryData(
+    addBillingData(
+      {
+        version: 2,
+        seededAt: dateKey(),
+        branches,
+        specialties,
+        departments,
+        doctors,
+        users,
+        packages,
+        schedules,
+        appointments,
+        records,
+        payments,
+      },
+      true,
+    ),
     true,
   );
 }

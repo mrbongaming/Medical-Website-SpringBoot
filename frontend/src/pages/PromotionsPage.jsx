@@ -35,10 +35,10 @@ function PromotionEditor({ promotion, close }) {
       key,
       form[key].includes(value) ? form[key].filter((v) => v !== value) : [...form[key], value],
     );
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault();
     try {
-      dispatch('promotion-save', { id: promotion?.id, values: form });
+      await dispatch('promotion-save', { id: promotion?.id, values: form });
       close();
     } catch (e) {
       setError(e.message);

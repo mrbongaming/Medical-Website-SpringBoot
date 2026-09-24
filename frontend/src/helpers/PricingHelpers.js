@@ -59,14 +59,17 @@ export function appointmentPrice(appointment) {
   return (
     appointment.billing?.finalized?.price ||
     calculatePrice(
-      appointment.billing?.items || [
-        {
-          serviceId: 'consultation',
-          name: appointment.serviceName,
-          unitPrice: appointment.price,
-          quantity: 1,
-          discountable: true,
-        },
+      [
+        ...(appointment.billing?.items || [
+          {
+            serviceId: 'consultation',
+            name: appointment.serviceName,
+            unitPrice: appointment.price,
+            quantity: 1,
+            discountable: true,
+          },
+        ]),
+        ...(appointment.billing?.medicineItems || []),
       ],
       appointment.billing?.insurance,
       appointment.billing?.promotion,
