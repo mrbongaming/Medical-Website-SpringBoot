@@ -80,6 +80,14 @@ export function DetailPage({ kind }) {
                 </dd>
                 <dt>Giờ làm việc</dt>
                 <dd>{row.hours}</dd>
+                <dt>Giờ tiếp nhận</dt>
+                <dd>
+                  {row.serviceHours?.open || '07:30'} – {row.serviceHours?.close || '17:00'}
+                </dd>
+                <dt>Cấp chuyên môn mô phỏng</dt>
+                <dd>{row.careLevel === 'specialized' ? 'Cấp chuyên sâu' : 'Cấp cơ bản'}</dd>
+                <dt>Hỗ trợ BHYT</dt>
+                <dd>{row.insuranceContract ? 'Có · xác minh theo từng dịch vụ' : 'Chưa hỗ trợ'}</dd>
               </dl>
               <h3>Khoa / phòng</h3>
               <div className="flex flex-wrap gap-2 [&>span]:rounded-full [&>span]:bg-slate-100 [&>span]:px-3 [&>span]:py-1 [&>span]:text-sm [&>span]:text-slate-700">
@@ -108,6 +116,12 @@ export function DetailPage({ kind }) {
                     <dd>{row.experience ?? 0} năm làm việc</dd>
                     <dt>Chuyên môn</dt>
                     <dd>{row.expertise || 'Đang cập nhật'}</dd>
+                    <dt>Đào tạo</dt>
+                    <dd>{row.education || 'Đang cập nhật'}</dd>
+                    <dt>Quá trình công tác</dt>
+                    <dd>{row.career || 'Đang cập nhật'}</dd>
+                    <dt>Thành tựu</dt>
+                    <dd>{row.achievements || 'Đang cập nhật'}</dd>
                   </>
                 )}
                 <dt>Cơ sở</dt>
@@ -174,7 +188,7 @@ export function DetailPage({ kind }) {
             </>
           )}
         </section>
-        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 rounded-2xl bg-sky-50 p-5">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
           <span className="grid size-12 place-items-center rounded-xl bg-sky-100 text-2xl text-sky-700">
             <FiCalendar />
           </span>
@@ -212,12 +226,12 @@ export function DetailPage({ kind }) {
                 <Link
                   className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
                   key={p.id}
-                  to={'/goi-kham/' + p.slug}
+                  to={'/dat-lich?branchId=' + row.id + '&packageId=' + p.id}
                 >
                   <h3>{p.name}</h3>
                   <p>{p.contents}</p>
                   <strong>{money(p.price)}</strong>
-                  <p>Xem chi tiết →</p>
+                  <p>Đặt tại {row.name} →</p>
                 </Link>
               ))}
           </div>

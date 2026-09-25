@@ -6,6 +6,8 @@ import { dateKey } from '../data/seed';
 import { Empty } from '../components/Empty';
 import { Field } from '../components/Field';
 import { PageTitle } from '../components/PageTitle';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 import { formatDate, name } from '../helpers/ClinicalHelpers';
 
 export function DoctorSchedulePage() {
@@ -14,6 +16,7 @@ export function DoctorSchedulePage() {
   const rows = db.schedules
     .filter((s) => s.doctorId === user.doctorId && inBranch(user, s.branchId) && s.date >= from)
     .sort((a, b) => a.date.localeCompare(b.date));
+  const pages = usePagination(rows, 10);
   return (
     <>
       <PageTitle
@@ -26,7 +29,7 @@ export function DoctorSchedulePage() {
         </Field>
       </div>
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((s) => (
+        {pages.pageItems.map((s) => (
           <article
             className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
             key={s.id}
@@ -43,6 +46,12 @@ export function DoctorSchedulePage() {
           </article>
         ))}
       </div>
+      <Pagination
+        page={pages.page}
+        pageCount={pages.pageCount}
+        total={rows.length}
+        onPage={pages.setPage}
+      />
       {!rows.length && <Empty />}
     </>
   );

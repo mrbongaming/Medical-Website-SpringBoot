@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useHospital } from '../state/context';
 import { dateKey, money, relativeDate } from '../data/seed';
 import { PageTitle } from '../components/PageTitle';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';
 import { Alert } from '../components/Alert';
@@ -23,6 +25,7 @@ function PromotionEditor({ promotion, close }) {
       branchIds: user.role === 'superAdmin' ? [] : [user.branchId],
       serviceIds: [],
       audience: 'all',
+      discountScope: 'patient',
       totalLimit: 100,
       perPatientLimit: 1,
       active: true,
@@ -121,6 +124,15 @@ function PromotionEditor({ promotion, close }) {
             <option value="new">Chưa có lần khám hoàn tất</option>
           </select>
         </Field>
+        <Field label="Phạm vi số tiền được giảm">
+          <select
+            value={form.discountScope || 'outside'}
+            onChange={(e) => set('discountScope', e.target.value)}
+          >
+            <option value="patient">Toàn bộ phần bệnh nhân phải trả sau BHYT</option>
+            <option value="outside">Chỉ khoản ngoài phạm vi BHYT</option>
+          </select>
+        </Field>
       </div>
       {user.role === 'superAdmin' && (
         <fieldset className="space-y-4 rounded-2xl border border-slate-200 p-5 [&_legend]:px-2 [&_legend]:font-bold [&_legend]:text-brand-900">
@@ -148,7 +160,7 @@ function PromotionEditor({ promotion, close }) {
       <fieldset className="space-y-4 rounded-2xl border border-slate-200 p-5 [&_legend]:px-2 [&_legend]:font-bold [&_legend]:text-brand-900">
         <legend>Dịch vụ được giảm</legend>
         <p className="text-slate-500">
-          Không chọn: tất cả dịch vụ cho phép khuyến mãi. Chỉ giảm phần ngoài phạm vi BHYT.
+          Không chọn: tất cả dịch vụ cho phép khuyến mãi. Phạm vi số tiền giảm theo lựa chọn ở trên.
         </p>
         <div className="grid gap-3 sm:grid-cols-2">
           {[...db.serviceCatalog, ...db.packages.map((p) => ({ ...p, id: `package:${p.id}` }))].map(
@@ -196,6 +208,7 @@ export function PromotionsPage() {
       (user.role === 'superAdmin' || !p.branchIds.length || p.branchIds.includes(user.branchId)) &&
       `${p.name} ${p.code}`.toLocaleLowerCase('vi').includes(query.toLocaleLowerCase('vi')),
   );
+  const pages = usePagination(rows, 9);
   return (
     <>
       <PageTitle
@@ -215,14 +228,14 @@ export function PromotionsPage() {
         </Field>
       </div>
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-        {rows.map((p) => {
+        {pages.pageItems.map((p) => {
           const uses = db.promotionUses.filter((u) => u.promotionId === p.id);
           const editable =
             user.role === 'superAdmin' ||
             (p.branchIds.length === 1 && p.branchIds[0] === user.branchId);
           return (
             <article
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 flex flex-col [&>button]:mt-auto"
+              className="flex flex-col rounded-lg border border-slate-200 bg-white p-5 [&>button]:mt-auto [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 sm:p-6"
               key={p.id}
             >
               <div className="mb-4 flex flex-wrap gap-2">
@@ -250,6 +263,10 @@ export function PromotionsPage() {
                   : 'Toàn hệ thống'}
                 <br />
                 {p.audience === 'new' ? 'Khách chưa có lần khám hoàn tất' : 'Tất cả khách hàng'}
+                <br />
+                {p.discountScope === 'patient'
+                  ? 'Giảm trên phần bệnh nhân phải trả sau BHYT'
+                  : 'Chỉ giảm khoản ngoài phạm vi BHYT'}
               </p>
               <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 text-sm [&_dt]:text-slate-500 [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-semibold">
                 <dt>Đang giữ</dt>
@@ -263,7 +280,7 @@ export function PromotionsPage() {
               </dl>
               {editable ? (
                 <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
+                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-semibold text-sky-800 hover:bg-sky-50"
                   onClick={() => setEditing(p)}
                 >
                   Chỉnh sửa chương trình
@@ -275,6 +292,12 @@ export function PromotionsPage() {
           );
         })}
       </div>
+      <Pagination
+        page={pages.page}
+        pageCount={pages.pageCount}
+        total={rows.length}
+        onPage={pages.setPage}
+      />
       {!rows.length && <Empty text="Chưa có chương trình phù hợp." />}
       {editing && (
         <Modal

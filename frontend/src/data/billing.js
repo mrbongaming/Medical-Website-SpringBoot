@@ -1,6 +1,7 @@
 import {
   insuranceInput,
   insurancePolicy,
+  deriveInsuranceCoverage,
   validInsuranceDate,
 } from '../helpers/InsuranceHelpers.js';
 import {
@@ -9,6 +10,7 @@ import {
   appointmentPrice,
   financialBalance,
 } from '../helpers/PricingHelpers.js';
+import { selectPromotion } from '../helpers/PromotionHelpers.js';
 
 const check = (ok, message) => {
   if (!ok) throw new Error(message);
@@ -34,20 +36,19 @@ export function audit(db, user, action, appointmentId, branchId, reason, details
 
 export function attachBookingBilling(db, user, appointment, form) {
   const insurance = insuranceInput(form.insurance);
+  const quote = bookingQuote(db, form, user.id);
   if (insurance.status !== 'none') {
     const policy = insurancePolicy(db, appointment.branchId, appointment.date);
     check(
       policy?.enabled &&
-        policy.services.some(
-          (s) =>
-            s.serviceId ===
-              (appointment.packageId ? `package:${appointment.packageId}` : 'consultation') &&
-            s.tariff > 0,
+        quote.items.some((item) =>
+          policy.services.some(
+            (service) => service.serviceId === item.serviceId && service.tariff > 0,
+          ),
         ),
       'Cơ sở hoặc dịch vụ chưa hỗ trợ BHYT cho ngày khám đã chọn.',
     );
   }
-  const quote = bookingQuote(db, form, user.id);
   check(!quote.error, quote.error);
   appointment.billing = {
     items: quote.items,
@@ -128,7 +129,10 @@ export function recordServices(db, user, appointment, payload) {
         discountable: previous?.discountable ?? service.discountable,
       };
     });
-    const next = [billing.items[0], ...extras];
+    const baseItems = billing.items.filter(
+      (item) => item.serviceId === 'consultation' || item.packageServiceId,
+    );
+    const next = [...baseItems, ...extras];
     check(
       integer(next.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0)),
       'Tổng chi phí dịch vụ vượt giới hạn mô phỏng.',
@@ -169,6 +173,7 @@ function savePromotion(db, user, p) {
     branchIds: [...new Set(v.branchIds || [])],
     serviceIds: [...new Set(v.serviceIds || [])],
     audience: v.audience,
+    discountScope: v.discountScope || 'patient',
     totalLimit: Number(v.totalLimit),
     perPatientLimit: Number(v.perPatientLimit),
     active: v.active === true,
@@ -187,7 +192,8 @@ function savePromotion(db, user, p) {
     row.name &&
       ['auto', 'code'].includes(row.mode) &&
       ['fixed', 'percent'].includes(row.kind) &&
-      ['all', 'new'].includes(row.audience),
+      ['all', 'new'].includes(row.audience) &&
+      ['outside', 'patient'].includes(row.discountScope),
     'Thông tin chương trình không hợp lệ.',
   );
   check(
@@ -325,9 +331,19 @@ export function billingAction(db, user, type, p, today) {
     audit(db, user, type, a.id, a.branchId, 'Bệnh nhân bổ sung thông tin BHYT.');
     return;
   }
+  const branchStaff = user.role === 'staff' && user.branchId === a.branchId;
   check(
     branchAccess(user, a.branchId) ||
-      (type === 'receive' && user.role === 'staff' && user.branchId === a.branchId),
+      (branchStaff &&
+        [
+          'receive',
+          'insurance-verify',
+          'billing-services',
+          'promotion-apply',
+          'bill-finalize',
+          'pay',
+        ].includes(type) &&
+        (a.bookingMode === 'facility' || type === 'receive')),
     'Không có quyền xử lý tại cơ sở này.',
   );
   if (type === 'receive') {
@@ -338,6 +354,45 @@ export function billingAction(db, user, type, p, today) {
     b.receivedAt = now();
     b.receivedBy = user.id;
     audit(db, user, type, a.id, a.branchId, 'Đã kiểm tra thông tin người khám.');
+  } else if (type === 'billing-services') {
+    check(
+      a.bookingMode === 'facility' && a.status === 'confirmed' && b.receivedAt && !b.finalized,
+      'Chỉ ghi dịch vụ cho lịch không chọn bác sĩ đã tiếp nhận và chưa chốt phí.',
+    );
+    recordServices(db, user, a, p);
+  } else if (type === 'promotion-apply') {
+    check(!b.finalized && !b.settledAt, 'Bảng phí đã chốt, không thể đổi ưu đãi.');
+    const items = [...b.items, ...(b.medicineItems || [])];
+    const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+    const selected = selectPromotion(
+      db,
+      {
+        date: a.date,
+        branchId: a.branchId,
+        patientId: a.patientId,
+        ignoreAppointmentId: a.id,
+        items: calculatePrice(items, b.insurance).items,
+        subtotal,
+      },
+      String(p.code || ''),
+    );
+    check(!selected.error, selected.error);
+    for (const use of db.promotionUses.filter(
+      (item) => item.appointmentId === a.id && item.status === 'reserved',
+    ))
+      use.status = 'released';
+    b.promotion = selected.promotion ? structuredClone(selected.promotion) : null;
+    if (selected.promotion)
+      db.promotionUses.push({
+        id: id('use'),
+        promotionId: selected.promotion.id,
+        appointmentId: a.id,
+        patientId: a.patientId,
+        branchId: a.branchId,
+        status: 'reserved',
+        at: now(),
+      });
+    audit(db, user, type, a.id, a.branchId, selected.promotion?.name || 'Không áp dụng ưu đãi');
   } else if (type === 'insurance-verify') {
     check(
       ['confirmed', 'completed'].includes(a.status) && !b.finalized && b.receivedAt,
@@ -368,14 +423,10 @@ export function billingAction(db, user, type, p, today) {
         insurance.validFrom <= a.date && insurance.validTo >= a.date,
         'BHYT không có hiệu lực tại ngày khám.',
       );
-      check(
-        [80, 95, 100].includes(Number(p.rate)) && [50, 100].includes(Number(p.routeRate)),
-        'Mức hưởng mô phỏng không hợp lệ.',
-      );
+      const coverage = deriveInsuranceCoverage(db, a, p);
       insurance = {
         ...insurance,
-        rate: Number(p.rate),
-        routeRate: Number(p.routeRate),
+        ...coverage,
         policy: structuredClone(policy),
       };
     }

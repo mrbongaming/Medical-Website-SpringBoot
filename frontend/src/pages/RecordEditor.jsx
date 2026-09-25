@@ -19,7 +19,7 @@ export function RecordEditor({ appointment }) {
   const record = db.records.find((r) => r.appointmentId === appointment.id);
   const [services, setServices] = useState(() =>
     (appointment.billing?.items || [])
-      .slice(1)
+      .filter((item) => item.serviceId !== 'consultation' && !item.packageServiceId)
       .map((i) => ({ serviceId: i.serviceId, quantity: i.quantity })),
   );
   const [serviceReason, setServiceReason] = useState(appointment.billing?.serviceReason || '');
@@ -161,9 +161,9 @@ export function RecordEditor({ appointment }) {
               </p>
             )}
             <Alert error={error} success={success} />
-            <div className="flex flex-wrap items-center gap-3 mt-6 flex flex-wrap items-center gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
+                className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-semibold text-sky-800 hover:bg-sky-50"
                 value="draft"
               >
                 Lưu nháp

@@ -12,7 +12,10 @@ export function ServiceEditor({ catalog, value, onChange, reason, onReason, save
       <div className="space-y-3">
         {catalog
           .filter(
-            (s) => (s.active || value.some((i) => i.serviceId === s.id)) && s.id !== 'consultation',
+            (s) =>
+              (s.active || value.some((i) => i.serviceId === s.id)) &&
+              s.id !== 'consultation' &&
+              !savedItems.some((item) => item.packageServiceId && item.serviceId === s.id),
           )
           .map((s) => {
             const line = value.find((i) => i.serviceId === s.id);

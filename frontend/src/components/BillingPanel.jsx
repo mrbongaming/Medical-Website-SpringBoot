@@ -8,6 +8,7 @@ import { PriceBreakdown } from './PriceBreakdown';
 import { InsuranceFields } from './InsuranceFields';
 import { Field } from './Field';
 import { Alert } from './Alert';
+import { ServiceEditor } from './ServiceEditor';
 
 const auditNames = {
   booking: 'Đặt lịch',
@@ -15,6 +16,8 @@ const auditNames = {
   'insurance-verify': 'Xác minh BHYT',
   'insurance-resubmit': 'Bổ sung BHYT',
   services: 'Dịch vụ thực hiện',
+  'billing-services': 'Dịch vụ thực hiện',
+  'promotion-apply': 'Áp dụng ưu đãi',
   'bill-finalize': 'Chốt bảng phí',
   pay: 'Thanh toán',
   'bill-adjust': 'Điều chỉnh thanh toán',
@@ -27,11 +30,19 @@ export function BillingPanel({ appointmentId }) {
   const a = db.appointments.find((r) => r.id === appointmentId);
   const b = a.billing;
   const balance = financialBalance(db, a);
-  const staff = isAdmin(user);
-  const receptionist = staff || user.role === 'staff';
+  const manager = isAdmin(user);
+  const receptionist = manager || user.role === 'staff';
+  const processor = manager || (user.role === 'staff' && a.bookingMode === 'facility');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [insurance, setInsurance] = useState({ ...b.insurance, enabled: true });
+  const [services, setServices] = useState(() =>
+    b.items
+      .filter((item) => item.serviceId !== 'consultation' && !item.packageServiceId)
+      .map((item) => ({ serviceId: item.serviceId, quantity: item.quantity })),
+  );
+  const [serviceReason, setServiceReason] = useState(b.serviceReason || '');
+  const [promotionCode, setPromotionCode] = useState(b.promotion?.code || '');
   async function run(type, values = {}) {
     try {
       await dispatch(type, { ...values, id: a.id });
@@ -97,8 +108,10 @@ export function BillingPanel({ appointmentId }) {
               </p>
               <p>
                 Giá trị tối thiểu {money(b.promotion.minimum)} · Giảm tối đa{' '}
-                {money(b.promotion.maxDiscount)}. Chỉ giảm trên khoản ngoài phạm vi BHYT được phép
-                áp dụng.
+                {money(b.promotion.maxDiscount)}.{' '}
+                {b.promotion.discountScope === 'patient'
+                  ? 'Áp dụng trên phần người bệnh phải trả sau BHYT.'
+                  : 'Chỉ áp dụng trên khoản ngoài phạm vi BHYT.'}
               </p>
             </details>
           )}
@@ -138,7 +151,7 @@ export function BillingPanel({ appointmentId }) {
                   điều kiện {b.insurance.routeRate}%. Không phải kết quả duyệt của BHXH.
                 </p>
               )}
-              {staff &&
+              {processor &&
                 b.receivedAt &&
                 !b.finalized &&
                 ['confirmed', 'completed'].includes(a.status) && (
@@ -154,19 +167,78 @@ export function BillingPanel({ appointmentId }) {
                       </select>
                     </Field>
                     <div className="grid gap-4 md:grid-cols-2">
-                      <Field label="Mức hưởng theo hồ sơ mẫu">
-                        <select name="rate" defaultValue={b.insurance.rate || 80}>
+                      <Field label="Mức hưởng theo nhóm đối tượng">
+                        <select
+                          name="benefitRate"
+                          defaultValue={b.insurance.benefitRate || b.insurance.rate || 80}
+                        >
                           <option value="80">80%</option>
                           <option value="95">95%</option>
                           <option value="100">100%</option>
                         </select>
                       </Field>
-                      <Field label="Hệ số điều kiện mô phỏng">
-                        <select name="routeRate" defaultValue={b.insurance.routeRate || 100}>
-                          <option value="100">100% mức hưởng</option>
-                          <option value="50">50% mức hưởng</option>
+                      <Field label="Loại điều trị">
+                        <select
+                          name="treatmentType"
+                          defaultValue={b.insurance.treatmentType || 'outpatient'}
+                        >
+                          <option value="outpatient">Ngoại trú</option>
+                          <option value="inpatient">Nội trú</option>
                         </select>
                       </Field>
+                      <Field label="Đồng chi trả lũy kế trong năm (đ)">
+                        <input
+                          name="annualCopayPaid"
+                          type="number"
+                          min="0"
+                          step="1000"
+                          defaultValue={b.insurance.annualCopayPaid || 0}
+                        />
+                      </Field>
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="flex items-start gap-3 text-sm text-slate-700">
+                        <input
+                          name="correctRoute"
+                          type="checkbox"
+                          defaultChecked={b.insurance.correctRoute}
+                        />
+                        Đúng nơi đăng ký hoặc có chuyển cơ sở hợp lệ
+                      </label>
+                      <label className="flex items-start gap-3 text-sm text-slate-700">
+                        <input
+                          name="emergency"
+                          type="checkbox"
+                          defaultChecked={b.insurance.emergency}
+                        />
+                        Cấp cứu
+                      </label>
+                      <label className="flex items-start gap-3 text-sm text-slate-700">
+                        <input
+                          name="specialDisease"
+                          type="checkbox"
+                          defaultChecked={b.insurance.specialDisease}
+                        />
+                        Bệnh/nhóm bệnh được hưởng theo quy định chuyển cấp
+                      </label>
+                      <label className="flex items-start gap-3 text-sm text-slate-700">
+                        <input
+                          name="fiveYearExempt"
+                          type="checkbox"
+                          defaultChecked={b.insurance.fiveYearExempt}
+                        />
+                        Đủ điều kiện miễn đồng chi trả 5 năm liên tục
+                      </label>
+                      {!!b.medicineItems?.some((item) => item.insuranceCondition) && (
+                        <label className="flex items-start gap-3 text-sm text-slate-700">
+                          <input
+                            name="medicineConditionsConfirmed"
+                            type="checkbox"
+                            defaultChecked={b.insurance.medicineConditionsConfirmed}
+                          />
+                          Đã đối chiếu điều kiện thanh toán của từng thuốc
+                        </label>
+                      )}
                     </div>
                     <Field label="Căn cứ kiểm tra / thông tin cần bổ sung">
                       <textarea
@@ -202,7 +274,53 @@ export function BillingPanel({ appointmentId }) {
                 )}
             </section>
           )}
-          {staff && a.status === 'completed' && !b.finalized && (
+          {processor &&
+            a.bookingMode === 'facility' &&
+            a.status === 'confirmed' &&
+            b.receivedAt &&
+            !b.finalized && (
+              <form
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  run('billing-services', { services, serviceReason });
+                }}
+              >
+                <ServiceEditor
+                  catalog={db.serviceCatalog}
+                  value={services}
+                  onChange={setServices}
+                  reason={serviceReason}
+                  onReason={setServiceReason}
+                  savedItems={b.items}
+                />
+                <button className="inline-flex min-h-11 items-center justify-center rounded-xl bg-sky-700 px-5 py-2.5 font-semibold text-white hover:bg-sky-800">
+                  Lưu dịch vụ thực hiện
+                </button>
+              </form>
+            )}
+          {processor && !b.finalized && (
+            <form
+              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+              onSubmit={(event) => {
+                event.preventDefault();
+                run('promotion-apply', { code: promotionCode });
+              }}
+            >
+              <h3>Ưu đãi trước khi chốt phí</h3>
+              <Field label="Mã khuyến mãi (để trống để dùng ưu đãi tự động)">
+                <input
+                  value={promotionCode}
+                  onChange={(event) => setPromotionCode(event.target.value.toUpperCase())}
+                  maxLength={30}
+                />
+              </Field>
+              <button className="inline-flex min-h-11 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-2.5 font-semibold text-slate-800 hover:bg-slate-50">
+                Tính lại ưu đãi
+              </button>
+            </form>
+          )}
+          {processor && a.status === 'completed' && !b.finalized && (
             <form
               className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
               onSubmit={submit('bill-finalize')}
@@ -223,7 +341,7 @@ export function BillingPanel({ appointmentId }) {
               </button>
             </form>
           )}
-          {staff && b.finalized && !balance.settled && (
+          {processor && b.finalized && !balance.settled && (
             <form
               className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
               onSubmit={submit('pay')}
@@ -274,7 +392,7 @@ export function BillingPanel({ appointmentId }) {
                   <p>{r.reason}</p>
                 </div>
               ))}
-              {staff && (
+              {manager && (
                 <details>
                   <summary>Điều chỉnh / hoàn tiền</summary>
                   <form onSubmit={submit('bill-adjust')}>
@@ -318,7 +436,7 @@ export function BillingPanel({ appointmentId }) {
                 {claim ? 'Đã ghi nhận quyết toán mô phỏng' : 'Chờ quyết toán mô phỏng'}:{' '}
                 {money(balance.price.insurer)}
               </p>
-              {staff && !claim && (
+              {manager && !claim && (
                 <form onSubmit={submit('insurance-settle')}>
                   <Field label="Tham chiếu quyết toán mẫu">
                     <input name="reason" required />

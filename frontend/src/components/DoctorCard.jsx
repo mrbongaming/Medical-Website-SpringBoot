@@ -8,7 +8,7 @@ import { Rating } from './Rating';
 export function DoctorCard({ doctor }) {
   const { db } = useHospital();
   return (
-    <article className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+    <article className="group overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:border-sky-300">
       <Link
         to={'/bac-si/' + doctor.slug}
         className="relative block overflow-hidden"
@@ -18,7 +18,7 @@ export function DoctorCard({ doctor }) {
           src={doctor.image}
           fallback="/images/doctor-male.jpg"
           alt={'Ảnh minh họa ' + doctor.name}
-          className="h-64 w-full object-cover object-top transition duration-500 group-hover:scale-105"
+          className="h-64 w-full object-cover object-top"
         />
       </Link>
       <div className="flex flex-1 flex-col p-5 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-brand-900 [&_p]:mb-2 [&_p]:text-sm [&_p]:text-slate-600">
@@ -39,7 +39,7 @@ export function DoctorCard({ doctor }) {
         <div className="mt-auto flex items-center justify-between gap-3 border-t border-slate-100 pt-4 [&>a:first-child]:font-semibold [&>a:first-child]:text-sky-700">
           <Link to={'/bac-si/' + doctor.slug}>Hồ sơ bác sĩ</Link>
           <Link
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-800"
             to={'/dat-lich?doctorId=' + doctor.id}
           >
             Đặt khám

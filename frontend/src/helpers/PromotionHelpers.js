@@ -6,7 +6,11 @@ export function promotionIssue(db, promotion, context, ignoreAppointmentId = '')
     return 'Khuyến mãi không áp dụng tại cơ sở này.';
   if (
     promotion.serviceIds.length &&
-    !context.items.some((i) => promotion.serviceIds.includes(i.serviceId))
+    !context.items.some(
+      (i) =>
+        promotion.serviceIds.includes(i.serviceId) ||
+        (i.packageServiceId && promotion.serviceIds.includes(i.packageServiceId)),
+    )
   )
     return 'Dịch vụ không thuộc chương trình.';
   if (
@@ -41,9 +45,18 @@ export function promotionDiscount(promotion, items, subtotal) {
     .filter(
       (i) =>
         i.discountable &&
-        (!promotion.serviceIds.length || promotion.serviceIds.includes(i.serviceId)),
+        (!promotion.serviceIds.length ||
+          promotion.serviceIds.includes(i.serviceId) ||
+          (i.packageServiceId && promotion.serviceIds.includes(i.packageServiceId))),
     )
-    .reduce((sum, i) => sum + i.outside, 0);
+    .reduce(
+      (sum, i) =>
+        sum +
+        (promotion.discountScope === 'patient'
+          ? (i.copay || 0) + (i.outside || 0)
+          : i.outside || 0),
+      0,
+    );
   return Math.max(
     0,
     Math.min(
@@ -62,11 +75,13 @@ export function selectPromotion(db, context, code = '') {
     ? db.promotions.find((p) => p.mode === 'code' && p.code === normalized)
     : null;
   if (normalized) {
-    const issue = promotionIssue(db, entered, context);
+    const issue = promotionIssue(db, entered, context, context.ignoreAppointmentId);
     if (issue) return { promotion: null, error: issue };
   }
   const candidates = db.promotions.filter(
-    (p) => (p.mode === 'auto' || p.id === entered?.id) && !promotionIssue(db, p, context),
+    (p) =>
+      (p.mode === 'auto' || p.id === entered?.id) &&
+      !promotionIssue(db, p, context, context.ignoreAppointmentId),
   );
   candidates.sort(
     (a, b) =>

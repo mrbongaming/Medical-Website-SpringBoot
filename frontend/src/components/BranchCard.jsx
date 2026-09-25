@@ -6,7 +6,7 @@ export function BranchCard({ branch }) {
   return (
     <article
       data-testid="branch-card"
-      className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+      className="group overflow-hidden rounded-lg border border-slate-200 bg-white transition hover:border-sky-300"
     >
       <Link
         className="relative block overflow-hidden"
@@ -16,7 +16,7 @@ export function BranchCard({ branch }) {
         <Photo
           src={branch.image}
           alt={'Ảnh minh họa ' + branch.name}
-          className="h-52 w-full object-cover transition duration-500 group-hover:scale-105"
+          className="h-52 w-full object-cover"
         />
         <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1 text-xs font-bold tracking-wide text-brand-900 backdrop-blur">
           CƠ SỞ AN TÂM
@@ -40,7 +40,7 @@ export function BranchCard({ branch }) {
             Xem chi tiết <FiArrowRight />
           </Link>
           <Link
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-sky-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-800"
             to={'/dat-lich?branchId=' + branch.id}
           >
             Đặt khám

@@ -5,8 +5,8 @@ import { availableStock, inventoryRow } from '../src/data/inventory.js';
 import { migrateData } from '../src/data/storage.js';
 
 let db = createSeed();
-assert.equal(db.version, 4);
-assert.equal(db.medicines.length, 60);
+assert.equal(db.version, 5);
+assert.equal(db.medicines.length, 61);
 assert.equal(db.inventory.length, db.branches.length * db.medicines.length);
 assert.equal(db.users.filter((u) => u.role === 'staff').length, db.branches.length);
 
@@ -120,8 +120,8 @@ delete old.stockRequests;
 delete old.inventoryTransactions;
 delete old.stockSchedule;
 const migrated = migrateData(old);
-assert.equal(migrated.version, 4);
-assert.equal(migrateData(migrated).medicines.length, 60);
+assert.equal(migrated.version, 5);
+assert.equal(migrateData(migrated).medicines.length, 61);
 
 console.log(
   'PASS: inventory schema, branch scope, restock approval, appointment review, prescription reservation, payment and dispensing.',

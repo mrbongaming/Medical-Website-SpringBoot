@@ -1,5 +1,6 @@
 import { addBillingData } from './billingSeed.js';
 import { addInventoryData } from './inventorySeed.js';
+import { addV5Data } from './v5.js';
 export const roles = {
   patient: 'Bệnh nhân',
   doctor: 'Bác sĩ',
@@ -18,7 +19,17 @@ export const statuses = {
 };
 export const dateKey = (value = new Date()) => {
   const d = new Date(value);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Ho_Chi_Minh',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .formatToParts(d)
+      .map((part) => [part.type, part.value]),
+  );
+  return `${parts.year}-${parts.month}-${parts.day}`;
 };
 export const relativeDate = (offset) => {
   const d = new Date();
@@ -336,24 +347,26 @@ export function createSeed() {
       date: a.date,
       createdBy: 'root',
     }));
-  return addInventoryData(
-    addBillingData(
-      {
-        version: 2,
-        seededAt: dateKey(),
-        branches,
-        specialties,
-        departments,
-        doctors,
-        users,
-        packages,
-        schedules,
-        appointments,
-        records,
-        payments,
-      },
+  return addV5Data(
+    addInventoryData(
+      addBillingData(
+        {
+          version: 2,
+          seededAt: dateKey(),
+          branches,
+          specialties,
+          departments,
+          doctors,
+          users,
+          packages,
+          schedules,
+          appointments,
+          records,
+          payments,
+        },
+        true,
+      ),
       true,
     ),
-    true,
   );
 }

@@ -20,10 +20,23 @@ export function InformationPage({ mode }) {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4 text-slate-600 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-brand-900 [&_h3]:font-bold [&_h3]:text-brand-900 [&_li]:ml-5 [&_li]:list-disc">
         {mode === 'about' ? (
           <>
-            <h2>Một bệnh viện, nhiều điểm chăm sóc</h2>
+            <h2>Một hệ thống, nhiều điểm chăm sóc</h2>
             <p>
               An Tâm kết nối đội ngũ bác sĩ tại bốn cơ sở, giúp bạn tìm hiểu chuyên môn và chủ động
               lựa chọn lịch khám.
+            </p>
+            <h3>Chuyên khoa đang phục vụ</h3>
+            <ul>
+              {db.specialties
+                .filter((item) => item.active)
+                .map((item) => (
+                  <li key={item.id}>{item.name}</li>
+                ))}
+            </ul>
+            <h3>Tiếp cận dịch vụ</h3>
+            <p>
+              Bạn có thể chọn bác sĩ và giờ khám, hoặc chỉ chọn cơ sở, chuyên khoa và ngày để nhân
+              viên sắp xếp giờ tiếp nhận. Quyền lợi BHYT được kiểm tra theo từng dịch vụ và thuốc.
             </p>
             <p>
               Thương hiệu, ảnh, hồ sơ, địa chỉ và thông tin y tế trong bản demo đều mang tính minh

@@ -16,6 +16,8 @@ import { Modal } from '../components/Modal';
 import { PageTitle } from '../components/PageTitle';
 import { Select } from '../components/Select';
 import { Table } from '../components/Table';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 import { formatDate, name, recordBase } from '../helpers/ClinicalHelpers';
 import { getFilteredAppointments } from '../helpers/AppointmentHelpers';
 
@@ -34,6 +36,7 @@ export function AppointmentsPage() {
   const [action, setAction] = useState(null);
   const [billingId, setBillingId] = useState('');
   const rows = getFilteredAppointments(db, user, { period, status, date, branchId, query });
+  const cards = usePagination(rows, 8);
   function open(row, type) {
     setAction({ row, type });
     setError('');
@@ -68,6 +71,13 @@ export function AppointmentsPage() {
             </button>
           </>
         )}
+        {receptionist &&
+          a.bookingMode === 'facility' &&
+          a.status === 'confirmed' &&
+          a.billing.receivedAt &&
+          !future(a.date, a.time) && (
+            <button onClick={() => open(a, 'completed')}>Đánh dấu đã khám</button>
+          )}
         {doctor && a.status === 'confirmed' && a.billing.receivedAt && (
           <Link className="font-bold text-sky-700" to={'/bac-si-lam-viec/kham/' + a.id}>
             Khám
@@ -158,15 +168,15 @@ export function AppointmentsPage() {
         </div>
       )}
       {doctor && (
-        <div className="flex flex-wrap items-center gap-3 flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm bg-sky-100 text-sky-800 shadow-none hover:bg-sky-200"
+            className="inline-flex min-h-9 items-center justify-center rounded-lg bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-200"
             onClick={() => setDate(dateKey())}
           >
             Hôm nay
           </button>
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
+            className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50"
             onClick={() => {
               setDate('');
               setStatus('pending');
@@ -175,7 +185,7 @@ export function AppointmentsPage() {
             Yêu cầu chờ duyệt
           </button>
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
+            className="inline-flex min-h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-50"
             onClick={() => {
               setDate('');
               setStatus('');
@@ -242,7 +252,7 @@ export function AppointmentsPage() {
               </td>
               <td>
                 {name(db, 'branches', a.branchId)}
-                <small>{name(db, 'doctors', a.doctorId)}</small>
+                <small>{a.doctorId ? name(db, 'doctors', a.doctorId) : 'Không chọn bác sĩ'}</small>
               </td>
               <td>
                 <Badge status={a.status} />
@@ -254,48 +264,62 @@ export function AppointmentsPage() {
           ))}
         </Table>
       ) : (
-        <div className="space-y-4">
-          {rows.map((a) => (
-            <article
-              className="grid gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-[8rem_minmax(0,1fr)]"
-              key={a.id}
-              data-appointment-id={a.id}
-            >
-              <div className="flex items-center gap-3 rounded-xl bg-sky-50 p-4 text-sky-800 md:flex-col md:justify-center md:text-center [&_strong]:text-xl">
-                <FiCalendar />
-                <strong>{a.time}</strong>
-                <span>{formatDate(a.date)}</span>
-              </div>
-              <div className="min-w-0">
-                <div className="mb-3 flex flex-wrap items-start justify-between gap-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-brand-900">
-                  <h2>{doctor ? a.patientName : a.serviceName}</h2>
-                  <Badge status={a.status} />
+        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white">
+          <div className="space-y-4 p-4 sm:p-5">
+            {cards.pageItems.map((a) => (
+              <article
+                className="grid gap-5 rounded-lg border border-slate-200 bg-white p-5 md:grid-cols-[8rem_minmax(0,1fr)]"
+                key={a.id}
+                data-appointment-id={a.id}
+              >
+                <div className="flex items-center gap-3 rounded-xl bg-sky-50 p-4 text-sky-800 md:flex-col md:justify-center md:text-center [&_strong]:text-xl">
+                  <FiCalendar />
+                  <strong>{a.time || 'Chờ giờ'}</strong>
+                  <span>{formatDate(a.date)}</span>
                 </div>
-                <p>{doctor ? a.serviceName + ' · ' + a.phone : name(db, 'doctors', a.doctorId)}</p>
-                <p>
-                  <FiMapPin /> {name(db, 'branches', a.branchId)} ·{' '}
-                  {name(db, 'departments', a.departmentId)}
-                </p>
-                <small className="break-all font-mono text-xs text-slate-600">
-                  Mã lịch: {a.id}
-                </small>
-                {a.reason && (
-                  <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                    {a.reason}
+                <div className="min-w-0">
+                  <div className="mb-3 flex flex-wrap items-start justify-between gap-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-brand-900">
+                    <h2>{doctor ? a.patientName : a.serviceName}</h2>
+                    <Badge status={a.status} />
+                  </div>
+                  <p>
+                    {doctor
+                      ? a.serviceName + ' · ' + a.phone
+                      : a.doctorId
+                        ? name(db, 'doctors', a.doctorId)
+                        : 'Không chọn bác sĩ · nhân viên cơ sở xử lý'}
                   </p>
-                )}
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
-                  <strong>
-                    {financialBalance(db, a).patientDue === null
-                      ? 'Chờ xác minh BHYT'
-                      : money(financialBalance(db, a).patientDue)}
-                  </strong>
-                  {actions(a)}
+                  <p>
+                    <FiMapPin /> {name(db, 'branches', a.branchId)} ·{' '}
+                    {name(db, 'departments', a.departmentId)}
+                  </p>
+                  <small className="break-all font-mono text-xs text-slate-600">
+                    Mã lịch: {a.id}
+                  </small>
+                  {a.reason && (
+                    <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                      {a.reason}
+                    </p>
+                  )}
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-slate-100 pt-4">
+                    <strong>
+                      {financialBalance(db, a).patientDue === null
+                        ? 'Chờ xác minh BHYT'
+                        : money(financialBalance(db, a).patientDue)}
+                    </strong>
+                    {actions(a)}
+                  </div>
                 </div>
-              </div>
-            </article>
-          ))}
-          {!rows.length && <Empty text="Không có lịch hẹn phù hợp." />}
+              </article>
+            ))}
+            {!rows.length && <Empty text="Không có lịch hẹn phù hợp." />}
+          </div>
+          <Pagination
+            page={cards.page}
+            pageCount={cards.pageCount}
+            total={rows.length}
+            onPage={cards.setPage}
+          />
         </div>
       )}
       {billingId && (
@@ -313,6 +337,11 @@ export function AppointmentsPage() {
               {action.row.patientName} · {formatDate(action.row.date)} · {action.row.time}
             </p>
             <p>{action.type === 'pay' ? money(action.row.price) : statuses[action.type]}</p>
+            {action.type === 'confirmed' && action.row.bookingMode === 'facility' && (
+              <Field label="Giờ tiếp nhận dự kiến">
+                <input name="time" type="time" required />
+              </Field>
+            )}
             {['rejected', 'cancelled'].includes(action.type) && (
               <Field label="Lý do">
                 <textarea name="reason" required={action.type === 'rejected' || isAdmin(user)} />

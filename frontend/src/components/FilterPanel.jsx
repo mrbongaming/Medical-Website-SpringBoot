@@ -19,7 +19,7 @@ export function FilterPanel({ children }) {
       <div
         id={id}
         data-testid="collapsible-filters"
-        className={`${open ? 'grid' : 'hidden'} gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid lg:grid-cols-4`}
+        className={`${open ? 'grid' : 'hidden'} gap-4 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid lg:grid-cols-4`}
       >
         {children}
       </div>

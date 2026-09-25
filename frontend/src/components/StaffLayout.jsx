@@ -13,7 +13,7 @@ export function StaffLayout() {
   const receptionist = user.role === 'staff';
   const { base, links } = getStaffNavigation(user.role);
   return (
-    <div className="min-h-screen bg-slate-100 lg:flex">
+    <div className="min-h-screen bg-slate-50 lg:grid lg:grid-cols-[17rem_minmax(0,1fr)]">
       <a
         href="#main-content"
         className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-brand-900 px-4 py-2 font-semibold text-white transition focus:translate-y-0"
@@ -22,7 +22,7 @@ export function StaffLayout() {
       </a>
       <aside
         data-testid="staff-sidebar"
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col bg-brand-900 py-5 shadow-2xl transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 flex w-68 flex-col border-r border-white/10 bg-[#123f5b] py-5 transition-transform duration-200 lg:sticky lg:top-0 lg:h-screen lg:w-auto lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <Brand inverse />
         <div className="mx-4 rounded-xl bg-white/10 p-3 text-sm font-semibold text-white [&_small]:mt-1 [&_small]:block [&_small]:font-normal [&_small]:text-sky-200">
@@ -37,7 +37,7 @@ export function StaffLayout() {
               key={path}
               onClick={() => setOpen(false)}
               className={({ isActive }) =>
-                `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold transition ${isActive ? 'bg-white text-brand-900 shadow-sm' : 'text-sky-100 hover:bg-white/10 hover:text-white'}`
+                `flex min-h-10 items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition ${isActive ? 'bg-white text-brand-900' : 'text-sky-100 hover:bg-white/10 hover:text-white'}`
               }
             >
               <Icon />

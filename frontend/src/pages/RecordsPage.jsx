@@ -10,6 +10,8 @@ import { Field } from '../components/Field';
 import { FilterPanel } from '../components/FilterPanel';
 import { PageTitle } from '../components/PageTitle';
 import { Select } from '../components/Select';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 import { formatDate, name, recordBase } from '../helpers/ClinicalHelpers';
 
 export function RecordsPage() {
@@ -36,6 +38,7 @@ export function RecordsPage() {
         )
         .sort((a, b) => b.date.localeCompare(a.date))
     : [];
+  const pages = usePagination(rows, 8);
   return (
     <div
       className={
@@ -86,7 +89,7 @@ export function RecordsPage() {
       {!valid && <Alert error="Ngày bắt đầu không được sau ngày kết thúc." />}
       <p className="text-slate-500">{rows.length} hồ sơ · Mới nhất trước</p>
       <div className="space-y-0">
-        {rows.map((r) => (
+        {pages.pageItems.map((r) => (
           <article
             className="relative ml-4 border-l-2 border-sky-100 pb-8 pl-8 last:pb-0"
             key={r.id}
@@ -127,6 +130,12 @@ export function RecordsPage() {
           </article>
         ))}
       </div>
+      <Pagination
+        page={pages.page}
+        pageCount={pages.pageCount}
+        total={rows.length}
+        onPage={pages.setPage}
+      />
       {!rows.length && valid && <Empty text="Chưa có hồ sơ khám phù hợp." />}
     </div>
   );

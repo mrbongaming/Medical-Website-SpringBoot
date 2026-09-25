@@ -5,6 +5,7 @@ import { roles } from '../data/seed';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
 import { Select } from '../components/Select';
+import { Button } from '../components/Button';
 
 export function AuthPage() {
   const { db, login, dispatch } = useHospital();
@@ -44,8 +45,8 @@ export function AuthPage() {
     }
   }
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 min-h-[55vh] py-10 sm:py-14 grid min-h-[70vh] overflow-hidden rounded-3xl bg-white shadow-xl lg:grid-cols-2">
-      <div className="bg-gradient-to-br from-brand-900 to-sky-700 p-8 text-white sm:p-12 [&_h1]:text-3xl [&_h1]:font-bold sm:[&_h1]:text-4xl [&_p]:mt-4 [&_p]:text-sky-100">
+    <div className="mx-auto my-8 grid min-h-[65vh] w-[calc(100%-2rem)] max-w-6xl overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-2">
+      <div className="bg-slate-900 p-6 text-white sm:p-10 [&_h1]:text-3xl [&_h1]:font-bold sm:[&_h1]:text-4xl [&_p]:mt-4 [&_p]:text-slate-300">
         <span className="mb-2 inline-block text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
           CHÀO MỪNG ĐẾN AN TÂM
         </span>
@@ -62,7 +63,7 @@ export function AuthPage() {
           Đây là phiên demo: chọn tài khoản để trải nghiệm vai trò, không nhập hay lưu mật khẩu.
         </p>
       </div>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+      <section className="bg-white p-5 sm:p-8 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
         <div className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-px [&>button]:min-h-11 [&>button]:shrink-0 [&>button]:border-b-2 [&>button]:border-transparent [&>button]:px-4 [&>button]:font-semibold [&>button]:text-slate-500">
           <button
             className={!register ? 'border-sky-600! text-sky-700!' : ''}
@@ -84,7 +85,7 @@ export function AuthPage() {
           </button>
         </div>
         <h2>{register ? 'Hồ sơ mới' : 'Chọn không gian của bạn'}</h2>
-        <form onSubmit={submit}>
+        <form className="space-y-4" onSubmit={submit}>
           {register ? (
             <>
               <Field label="Họ và tên">
@@ -136,12 +137,9 @@ export function AuthPage() {
             </>
           )}
           <Alert error={error} />
-          <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 w-full"
-            type="submit"
-          >
+          <Button className="w-full" type="submit">
             {register ? 'Tạo hồ sơ và tiếp tục' : 'Vào không gian làm việc'} →
-          </button>
+          </Button>
         </form>
         <p className="text-slate-500 text-sm text-slate-500">
           Dữ liệu chỉ lưu tại trình duyệt này. Có thể đổi vai trò bằng cách đăng xuất và chọn tài

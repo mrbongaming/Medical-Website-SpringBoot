@@ -12,6 +12,62 @@ export function insurancePolicy(db, branchId, date) {
     .sort((a, b) => b.version - a.version)[0];
 }
 
+export function insuranceRule(db, date) {
+  return (db.insuranceRules || [])
+    .filter((rule) => rule.effectiveFrom <= date && rule.effectiveTo >= date)
+    .sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom))[0];
+}
+
+export function deriveInsuranceCoverage(db, appointment, values) {
+  const branch = db.branches.find((item) => item.id === appointment.branchId);
+  const rule = insuranceRule(db, appointment.date);
+  const benefitRate = Number(values.benefitRate || values.rate);
+  if (![80, 95, 100].includes(benefitRate))
+    throw new Error('Mức hưởng BHYT theo nhóm đối tượng không hợp lệ.');
+  const treatmentType = values.treatmentType === 'inpatient' ? 'inpatient' : 'outpatient';
+  const legacyRoute = values.routeRate === undefined ? null : Number(values.routeRate);
+  const correctRoute =
+    values.correctRoute === true ||
+    values.correctRoute === 'true' ||
+    values.correctRoute === 'on' ||
+    values.emergency === true ||
+    values.emergency === 'on' ||
+    !!String(values.referral || '').trim() ||
+    legacyRoute === 100;
+  let routeRate = 100;
+  if (legacyRoute !== null) routeRate = legacyRoute;
+  else if (!correctRoute) {
+    if (treatmentType === 'inpatient') routeRate = branch?.careLevel === 'specialized' ? 40 : 100;
+    else if (appointment.date >= '2026-07-01') routeRate = 50;
+    else routeRate = values.specialDisease === 'on' ? 100 : 0;
+  }
+  const fiveYearExempt = values.fiveYearExempt === true || values.fiveYearExempt === 'on';
+  const annualCopayPaid = Math.max(0, Number(values.annualCopayPaid || 0));
+  if (!Number.isFinite(annualCopayPaid))
+    throw new Error('Số tiền đồng chi trả trong năm không hợp lệ.');
+  return {
+    benefitRate,
+    rate: benefitRate,
+    routeRate,
+    treatmentType,
+    correctRoute,
+    emergency: values.emergency === true || values.emergency === 'on',
+    specialDisease: values.specialDisease === true || values.specialDisease === 'on',
+    fullCoverage:
+      benefitRate === 100 ||
+      (fiveYearExempt &&
+        correctRoute &&
+        annualCopayPaid >= (rule?.annualCopayThreshold || Infinity)),
+    fiveYearExempt,
+    annualCopayPaid,
+    medicineConditionsConfirmed:
+      values.medicineConditionsConfirmed === true || values.medicineConditionsConfirmed === 'on',
+    lowCostThreshold: rule?.lowCostThreshold || 0,
+    annualCopayThreshold: rule?.annualCopayThreshold || 0,
+    rule: rule ? structuredClone(rule) : null,
+  };
+}
+
 export const validInsuranceDate = (value) => {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value || '')) return false;
   const date = new Date(value + 'T12:00:00Z');

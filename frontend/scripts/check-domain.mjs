@@ -3,7 +3,7 @@ import { createSeed, dateKey, relativeDate } from '../src/data/seed.js';
 import { act, availableSlots, accessibleRecords, scopedAppointments } from '../src/data/domain.js';
 import { report } from '../src/data/reports.js';
 import { migrateData } from '../src/data/storage.js';
-import { initialBooking } from '../src/data/booking.js';
+import { bookingStartStep, initialBooking } from '../src/data/booking.js';
 
 let db = createSeed();
 let checks = 0;
@@ -86,6 +86,43 @@ run('staff-b1', 'appointment', {
   reason: 'Hồ sơ cần đặt lại lịch',
 });
 assert.ok(availableSlots(db, 'dr1', form.date).find((s) => s.time === form.time).available);
+
+// Facility-managed appointments do not reserve a doctor slot and can only finish after reception/time.
+const facilityBooking = run('p1', 'book', {
+  ...form,
+  bookingMode: 'facility',
+  doctorId: '',
+  date: relativeDate(3),
+  time: '',
+});
+let facilityAppointment = db.appointments.find((a) => a.id === facilityBooking);
+assert.equal(facilityAppointment.bookingMode, 'facility');
+assert.equal(facilityAppointment.doctorId, '');
+assert.equal(
+  facilityAppointment.price,
+  db.serviceCatalog.find((s) => s.id === 'consultation').price,
+);
+deny(
+  'staff-b2',
+  'appointment',
+  { id: facilityBooking, status: 'confirmed', time: '10:00' },
+  /cơ sở/,
+);
+deny(
+  'staff-b1',
+  'appointment',
+  { id: facilityBooking, status: 'confirmed', time: '19:00' },
+  /giờ hoạt động/,
+);
+run('staff-b1', 'appointment', { id: facilityBooking, status: 'confirmed', time: '16:30' });
+deny('staff-b1', 'appointment', { id: facilityBooking, status: 'completed' }, /sau giờ hẹn/);
+facilityAppointment = db.appointments.find((a) => a.id === facilityBooking);
+facilityAppointment.date = relativeDate(-1);
+facilityAppointment.billing.receivedAt = new Date().toISOString();
+deny('u-dr1', 'appointment', { id: facilityBooking, status: 'completed' }, /hoàn tất/);
+run('staff-b1', 'appointment', { id: facilityBooking, status: 'completed' });
+facilityAppointment = db.appointments.find((a) => a.id === facilityBooking);
+assert.equal(facilityAppointment.status, 'completed');
 
 // Clinical records remain limited to the patient's own records and assigned doctor/branch.
 db.appointments.find((a) => a.id === 'AT-DEMO-EXAM').billing.receivedAt = new Date().toISOString();
@@ -218,7 +255,7 @@ const legacy = {
 legacy.branches[0].description = 'Nội dung đã chỉnh sửa';
 delete legacy.doctors[0].image;
 const upgraded = migrateData(legacy);
-assert.equal(upgraded.version, 4);
+assert.equal(upgraded.version, 5);
 assert.equal(upgraded.branches[0].description, legacy.branches[0].description);
 for (const key of ['payments']) assert.deepEqual(upgraded[key], legacy[key]);
 assert.deepEqual(
@@ -226,7 +263,7 @@ assert.deepEqual(
   legacy.appointments.map(({ billing: _billing, ...a }) => a),
 );
 for (const key of ['lots', 'transactions', 'restocks']) assert.ok(!(key in upgraded));
-assert.equal(upgraded.medicines.length, 60);
+assert.equal(upgraded.medicines.length, 61);
 assert.ok(upgraded.doctors[0].image);
 assert.equal(legacy.version, 1);
 assert.deepEqual(migrateData(upgraded), upgraded);
@@ -238,10 +275,17 @@ const params = new URLSearchParams('doctorId=dr1');
 const deepLink = initialBooking(seed, params, { branchId: 'b2', doctorId: 'dr4' });
 assert.equal(deepLink.branchId, 'b1');
 assert.equal(deepLink.doctorId, 'dr1');
+assert.equal(bookingStartStep(deepLink), 2);
 const conflicting = initialBooking(seed, new URLSearchParams('branchId=b2&doctorId=dr1'));
 assert.equal(conflicting.branchId, 'b2');
 assert.equal(conflicting.doctorId, '');
 assert.equal(initialBooking(seed, new URLSearchParams('doctorId=missing')).doctorId, '');
+const facilityLink = initialBooking(
+  seed,
+  new URLSearchParams('branchId=b1&specialtyId=sp1&bookingMode=facility'),
+);
+assert.equal(facilityLink.doctorId, '');
+assert.equal(bookingStartStep(facilityLink), 2);
 const saved = {
   branchId: 'b1',
   specialtyId: 'sp1',
@@ -251,6 +295,7 @@ const saved = {
 };
 assert.deepEqual(initialBooking(seed, new URLSearchParams(), saved), {
   ...saved,
+  bookingMode: 'doctor',
   insurance: { enabled: false },
   promotionCode: '',
   packageId: '',
@@ -262,6 +307,14 @@ assert.equal(
   initialBooking(seed, new URLSearchParams(), { ...saved, date: relativeDate(-2) }).time,
   '',
 );
+const resumedDoctor = initialBooking(seed, params, {
+  ...saved,
+  notes: 'Giữ dữ liệu khi đăng nhập quay lại',
+});
+assert.equal(resumedDoctor.date, saved.date);
+assert.equal(resumedDoctor.time, saved.time);
+assert.equal(resumedDoctor.notes, 'Giữ dữ liệu khi đăng nhập quay lại');
+assert.equal(bookingStartStep(resumedDoctor), 3);
 for (const a of seed.appointments) {
   const d = seed.doctors.find((d) => d.id === a.doctorId);
   assert.equal(a.specialtyId, d.specialtyId);
@@ -295,5 +348,5 @@ assert.ok(
   seed.doctors.some((d) => !seed.appointments.some((a) => a.doctorId === d.id && a.rating)),
 );
 console.log(
-  'PASS: v1/v2/v3 to v4 migration, draft/deep-link normalization, linked histories and rating integrity.',
+  'PASS: v1-v4 to v5 migration, draft/deep-link normalization, linked histories and rating integrity.',
 );

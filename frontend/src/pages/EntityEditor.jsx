@@ -11,6 +11,8 @@ export function EntityEditor({ entity, initial, close, saved }) {
   const { db, user, dispatch } = useHospital();
   const [row, setRow] = useState({
     ...initial,
+    serviceOpen: initial.serviceHours?.open || '07:30',
+    serviceClose: initial.serviceHours?.close || '17:00',
     timesText: initial.times?.join(', ') || '08:00, 09:00, 10:00, 13:30, 14:30, 15:30',
   });
   const [error, setError] = useState('');
@@ -37,6 +39,11 @@ export function EntityEditor({ entity, initial, close, saved }) {
     e.preventDefault();
     const values = { ...row };
     delete values.timesText;
+    if (entity === 'branches') {
+      values.serviceHours = { open: row.serviceOpen, close: row.serviceClose };
+      delete values.serviceOpen;
+      delete values.serviceClose;
+    }
     if (entity === 'schedules')
       values.times = row.timesText
         .split(',')
@@ -79,6 +86,10 @@ export function EntityEditor({ entity, initial, close, saved }) {
                   onChange={(e) => change('description', e.target.value)}
                 />
               </Field>
+              <div className="grid grid-cols-2 gap-4 md:col-span-2">
+                {input('serviceOpen', 'Giờ bắt đầu tiếp nhận', 'time', false)}
+                {input('serviceClose', 'Giờ kết thúc tiếp nhận', 'time', false)}
+              </div>
             </>
           )}
           {['departments', 'packages'].includes(entity) && (
@@ -105,8 +116,26 @@ export function EntityEditor({ entity, initial, close, saved }) {
               {input('expertise', 'Chuyên môn', 'text', false)}
               {input('contactPhone', 'Số liên hệ đặt khám', 'tel', false)}
               {input('image', 'Đường dẫn ảnh minh họa', 'text', false)}
-              <Field label="Giới thiệu">
+              <Field label="Giới thiệu" wide>
                 <textarea value={row.bio || ''} onChange={(e) => change('bio', e.target.value)} />
+              </Field>
+              <Field label="Đào tạo" wide>
+                <textarea
+                  value={row.education || ''}
+                  onChange={(e) => change('education', e.target.value)}
+                />
+              </Field>
+              <Field label="Quá trình công tác" wide>
+                <textarea
+                  value={row.career || ''}
+                  onChange={(e) => change('career', e.target.value)}
+                />
+              </Field>
+              <Field label="Thành tựu / hoạt động chuyên môn" wide>
+                <textarea
+                  value={row.achievements || ''}
+                  onChange={(e) => change('achievements', e.target.value)}
+                />
               </Field>
             </>
           )}
@@ -189,10 +218,10 @@ export function EntityEditor({ entity, initial, close, saved }) {
           )}
         </div>
         <Alert error={error} />
-        <div className="flex flex-wrap items-center gap-3 mt-6 flex flex-wrap items-center gap-3">
+        <div className="mt-6 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
+            className="inline-flex min-h-11 items-center justify-center rounded-lg border border-slate-300 bg-white px-5 py-2.5 font-semibold text-sky-800 hover:bg-sky-50"
             onClick={close}
           >
             Đóng

@@ -7,6 +7,8 @@ import { Empty } from '../components/Empty';
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';
 import { PageTitle } from '../components/PageTitle';
+import { Pagination } from '../components/Pagination';
+import { usePagination } from '../hooks/usePagination';
 
 export function DispensingPage() {
   const { db, user, dispatch } = useHospital();
@@ -19,6 +21,7 @@ export function DispensingPage() {
       record.prescription?.length &&
       record.dispenseStatus === 'reserved',
   );
+  const pages = usePagination(records, 8);
   async function run(type, appointmentId, reason = '') {
     try {
       await dispatch(type, { id: appointmentId, reason });
@@ -42,7 +45,7 @@ export function DispensingPage() {
       />
       <Alert error={error} success={success} />
       <div className="grid gap-4 lg:grid-cols-2">
-        {records.map((record) => {
+        {pages.pageItems.map((record) => {
           const appointment = db.appointments.find((a) => a.id === record.appointmentId);
           const balance = financialBalance(db, appointment);
           return (
@@ -101,6 +104,12 @@ export function DispensingPage() {
           );
         })}
       </div>
+      <Pagination
+        page={pages.page}
+        pageCount={pages.pageCount}
+        total={records.length}
+        onPage={pages.setPage}
+      />
       {!records.length && <Empty text="Không có đơn thuốc đang chờ cấp tại cơ sở." />}
       {cancelId && (
         <Modal title="Hủy phần cấp thuốc" close={() => setCancelId('')}>

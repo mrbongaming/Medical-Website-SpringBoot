@@ -278,10 +278,12 @@ try {
   await click('[data-testid=branch-card] a[aria-label^="Xem "]');
   assert.equal(await evaluate('location.pathname'), '/co-so/trung-tam');
   await click('a[href^="/dat-lich?branchId="]');
-  assert.equal(
-    await evaluate("document.querySelector('input[name=branchId]:checked').value"),
-    'b1',
+  assert.ok(
+    await evaluate(
+      "document.querySelector('[data-testid=locked-branch]').textContent.includes('An Tâm · Trung tâm')",
+    ),
   );
+  assert.equal(await evaluate("document.querySelector('input[name=branchId]')"), null);
   await navigate('/bac-si/bac-si-1');
   assert.ok(await evaluate("!!document.querySelector('[data-testid=rating] strong')"));
   assert.ok(await evaluate("document.body.textContent.includes('năm làm việc')"));
@@ -296,11 +298,10 @@ try {
   assert.ok(await evaluate("!!document.querySelector('[data-testid=empty-state]')"));
   await navigate('/dat-lich?packageId=pkg1');
   await field('Cơ sở', 'b1');
-  assert.equal(
+  assert.ok(
     await evaluate(
-      "Array.from(document.querySelectorAll('select')).find(s=>s.value==='pkg1')?.value",
+      "document.querySelector('[data-testid=locked-package]').textContent.includes('Khám tổng quát')",
     ),
-    'pkg1',
   );
   await field('Bác sĩ', 'dr1');
   await field('Cơ sở', 'b2');
@@ -309,12 +310,13 @@ try {
       "!Array.from(document.querySelectorAll('select')).some(s=>s.value==='pkg1'||s.value==='dr1')",
     ),
   );
+  await navigate('/dat-lich?branchId=b1');
+  assert.ok(await evaluate("!!document.querySelector('[data-testid=locked-branch]')"));
+  assert.equal(await evaluate("document.querySelector('input[name=branchId]')"), null);
+  assert.ok(await evaluate("document.body.innerText.includes('Chuyên khoa')"));
   await navigate('/dat-lich?doctorId=dr1');
-  assert.equal(
-    await evaluate("document.querySelector('input[name=branchId]:checked').value"),
-    'b1',
-  );
-  await click('form button[type=submit]');
+  assert.equal(await evaluate("document.querySelector('input[name=branchId]')"), null);
+  assert.ok(await evaluate("document.body.innerText.includes('Chọn khung giờ của bạn')"));
   const date = await evaluate(
     "(() => {const d=new Date();d.setDate(d.getDate()+7);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')})()",
   );
@@ -337,13 +339,8 @@ try {
   await field('Tài khoản demo', 'p1');
   await click('form button[type=submit]');
   await waitFor(() => evaluate("location.pathname === '/dat-lich'"), 'return with booking draft');
-  assert.equal(
-    await evaluate("document.querySelector('input[name=branchId]:checked').value"),
-    'b1',
-  );
-  await click('form button[type=submit]');
-  assert.equal(await evaluate("document.querySelector('input[type=date]').value"), date);
-  await click('form button[type=submit]');
+  assert.ok(await evaluate("document.body.innerText.includes('Thông tin người khám')"));
+  assert.equal(await evaluate("document.querySelector('input[name=branchId]')"), null);
   await click('form button[type=submit]');
   await click('form button[type=submit]');
   await waitFor(
@@ -431,7 +428,7 @@ try {
   assert.equal(await evaluate('document.querySelectorAll("tbody tr").length'), 1);
   await navigate('/quan-tri/kho-thuoc');
   assert.ok(await evaluate("document.body.textContent.includes('Quản lý kho thuốc')"));
-  assert.equal(await stored('db.medicines.length'), 60);
+  assert.equal(await stored('db.medicines.length'), 61);
   await login('superAdmin', 'root');
   await navigate('/quan-tri');
   for (const label of ['Lịch hẹn & bệnh nhân', 'Bác sĩ & khoa', 'Tài chính'])
@@ -539,7 +536,7 @@ try {
     await click('dialog [aria-label="Đóng"]');
     await navigate('/quan-tri');
     await screenshot('dashboard-' + width);
-    await navigate('/dat-lich?branchId=b1');
+    await navigate('/dat-lich');
     await click('[data-branch-id=b2] img');
     assert.equal(
       await evaluate("document.querySelector('input[name=branchId]:checked').value"),
@@ -627,8 +624,8 @@ try {
         );
       }
     }
+    await evaluate("sessionStorage.removeItem('antam-booking-draft')");
     await navigate('/dat-lich?doctorId=dr1');
-    await click('form button[type=submit]');
     await field('Ngày khám', date);
     await click('[data-testid=time-grid] button:not([disabled])');
     await click('form button[type=submit]');
@@ -721,9 +718,9 @@ try {
   await textButton('Chốt bảng phí');
   assert.equal(
     await stored("db.appointments.find(a=>a.id==='AT-TODAY').billing.finalized.price.patientDue"),
-    188000,
+    244000,
   );
-  await textButton('Xác nhận đã thu 188.000 ₫');
+  await textButton('Xác nhận đã thu 244.000 ₫');
   await evaluate(
     "Array.from(document.querySelectorAll('summary')).find(s=>s.textContent==='Điều chỉnh / hoàn tiền').click()",
   );
@@ -736,7 +733,7 @@ try {
   await textButton('Ghi nhận BHYT đã thanh toán');
   assert.equal(
     await stored("db.insuranceSettlements.find(r=>r.appointmentId==='AT-TODAY').amount"),
-    112000,
+    56000,
   );
   await noOverflow();
   await screenshot('cashier-settled-mobile');
@@ -745,7 +742,7 @@ try {
   await navigate('/lich-hen');
   await textButton('Đã qua');
   await rowAction('AT-TODAY', 'Chi phí & BHYT');
-  assert.ok(await evaluate("document.querySelector('dialog').textContent.includes('168.000')"));
+  assert.ok(await evaluate("document.querySelector('dialog').textContent.includes('224.000')"));
   assert.ok(
     !(await evaluate(
       "Array.from(document.querySelectorAll('dialog button')).some(b=>b.textContent.includes('Xác nhận giao dịch'))",
@@ -758,10 +755,10 @@ try {
     "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); d.version=1; d.medicines=[]; d.lots=[]; d.transactions=[]; d.restocks=[]; d.users.find(u=>u.id==='p1').address='Migration kept'; localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
   );
   await navigate('/');
-  assert.equal(await stored('db.version'), 4);
+  assert.equal(await stored('db.version'), 5);
   assert.equal(await stored("db.users.find(u=>u.id==='p1').address"), 'Migration kept');
   assert.ok(
-    await stored("db.medicines.length===60 && db.inventory.length>0 && !('restocks' in db)"),
+    await stored("db.medicines.length===61 && db.inventory.length>0 && !('restocks' in db)"),
   );
   await navigate('/dat-lich?doctorId=missing');
   assert.ok(await evaluate("!!document.querySelector('[role=alert]')"));
@@ -786,7 +783,7 @@ try {
   await navigate('/quan-tri/he-thong');
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
-  assert.equal(await stored('db.version'), 4);
+  assert.equal(await stored('db.version'), 5);
   assert.equal(errors.length, 0, JSON.stringify(errors));
   assert.equal(submissions.length, 0, 'Unexpected non-GET network requests');
   console.log(

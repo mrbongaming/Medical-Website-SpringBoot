@@ -43,6 +43,58 @@ const card = (more = {}) => ({
 });
 const booking = (more = {}) => run('p1', 'book', form(more));
 const appointment = (id) => db.appointments.find((a) => a.id === id);
+
+reset();
+const partialMedicine = db.medicines.find((medicine) => medicine.id === 'med061');
+const partialPrice = calculatePrice(
+  [
+    {
+      serviceId: partialMedicine.id,
+      name: partialMedicine.name,
+      unitPrice: partialMedicine.salePrice,
+      quantity: 1,
+      discountable: false,
+      insuranceTariff: partialMedicine.insurance.tariff,
+      insuranceRate: partialMedicine.insurance.paymentRate,
+      insuranceCondition: partialMedicine.insurance.condition,
+    },
+  ],
+  {
+    status: 'verified',
+    benefitRate: 80,
+    routeRate: 100,
+    correctRoute: true,
+    lowCostThreshold: 0,
+    medicineConditionsConfirmed: true,
+  },
+);
+assert.equal(partialPrice.items[0].paymentRate, 50);
+assert.equal(partialPrice.insurer, 1800000);
+assert.equal(partialPrice.patientDue, 2700000);
+
+const discountedPatientShare = calculatePrice(
+  [{ serviceId: 'consultation', unitPrice: 500000, quantity: 1, discountable: true }],
+  {
+    status: 'verified',
+    benefitRate: 80,
+    routeRate: 100,
+    correctRoute: true,
+    lowCostThreshold: 0,
+    policy: { services: [{ serviceId: 'consultation', tariff: 300000 }] },
+  },
+  {
+    name: 'Giảm phần người bệnh trả',
+    kind: 'percent',
+    value: 10,
+    minimum: 0,
+    maxDiscount: 100000,
+    serviceIds: [],
+    discountScope: 'patient',
+  },
+);
+assert.equal(discountedPatientShare.insurer, 240000);
+assert.equal(discountedPatientShare.discount, 26000);
+assert.equal(discountedPatientShare.patientDue, 234000);
 const complete = (id, more = {}) =>
   run('u-dr1', 'record', {
     appointmentId: id,
@@ -167,7 +219,7 @@ assert.equal(
 reset();
 deny('p1', 'book', form({ insurance: card({ validTo: '2026-02-30' }) }), /Thời hạn/);
 deny('p1', 'book', form({ insurance: card({ cardNumber: '123' }) }), /mã thẻ/);
-deny('p1', 'book', form({ packageId: 'pkg1', insurance: card() }), /hỗ trợ BHYT/);
+assert.ok(bookingQuote(db, form({ packageId: 'pkg1', insurance: card() }), 'p1').items.length > 1);
 id = booking({ insurance: card(), promotionCode: 'ANTAM50' });
 assert.equal(appointment(id).billing.estimate.insurer, null);
 assert.equal(appointment(id).billing.estimate.patientDue, null);
@@ -209,8 +261,8 @@ run('admin1', 'insurance-verify', {
 deny('p2', 'insurance-resubmit', { id, insurance: card() }, /Không thể/);
 run('p1', 'insurance-resubmit', { id, insurance: card() });
 verify(id);
-assert.equal(financialBalance(db, appointment(id)).price.patientDue, 110000);
-assert.equal(financialBalance(db, appointment(id)).price.copay, 10000);
+assert.equal(financialBalance(db, appointment(id)).price.patientDue, 100000);
+assert.equal(financialBalance(db, appointment(id)).price.copay, 0);
 assert.equal(financialBalance(db, appointment(id)).price.discount, 50000);
 const policy = structuredClone(appointment(id).billing.insurance.policy);
 deny('admin1', 'policy-save', { values: policy }, /admin tổng/);
@@ -245,7 +297,7 @@ complete(id, {
   services: [{ serviceId: 'ecg', quantity: 1 }],
   serviceReason: 'Điện tâm đồ đã thực hiện và đối chiếu chi phí.',
 });
-assert.equal(financialBalance(db, appointment(id)).price.patientDue, 188000);
+assert.equal(financialBalance(db, appointment(id)).price.patientDue, 160000);
 deny('p1', 'bill-finalize', { id, reason: 'x' }, /quyền/);
 finalize(id);
 const frozenBill = structuredClone(appointment(id).billing.finalized);
@@ -253,7 +305,7 @@ deny('admin1', 'bill-finalize', { id, reason: 'x' }, /một lần/);
 deny('admin1', 'insurance-verify', { id, status: 'rejected', reason: 'x' }, /chốt phí/);
 deny('admin2', 'pay', { id }, /quyền/);
 run('admin1', 'pay', { id, amount: 1, method: 'transfer' });
-assert.equal(db.payments.at(-1).amount, 188000, 'Ignore forged amount from UI');
+assert.equal(db.payments.at(-1).amount, 160000, 'Ignore forged amount from UI');
 assert.equal(db.promotionUses.find((u) => u.appointmentId === id).status, 'redeemed');
 deny('admin1', 'pay', { id }, /chưa được thu/);
 deny(
@@ -290,7 +342,7 @@ run('admin1', 'bill-adjust', {
   reason: 'Đối chiếu thiếu khoản tự trả.',
   reference: 'A1',
 });
-assert.equal(financialBalance(db, appointment(id)).paid, 178000);
+assert.equal(financialBalance(db, appointment(id)).paid, 150000);
 assert.deepEqual(appointment(id).billing.finalized, frozenBill);
 const filters = { from: dateKey(), to: dateKey() };
 let summary = report(
@@ -298,9 +350,9 @@ let summary = report(
   db.users.find((u) => u.id === 'admin1'),
   filters,
 );
-assert.equal(summary.revenue, 178000);
+assert.equal(summary.revenue, 150000);
 assert.equal(summary.refunds, 20000);
-assert.equal(summary.insuranceDebt, 112000);
+assert.equal(summary.insuranceDebt, 140000);
 assert.equal(
   summary.finance.filter((f) => f.field === 'branchId').reduce((sum, f) => sum + f.amount, 0),
   summary.revenue,
@@ -312,9 +364,9 @@ summary = report(
   db.users.find((u) => u.id === 'admin1'),
   filters,
 );
-assert.equal(summary.revenue, 178000);
+assert.equal(summary.revenue, 150000);
 assert.equal(summary.insuranceDebt, 0);
-assert.equal(summary.insuranceReceived, 112000);
+assert.equal(summary.insuranceReceived, 140000);
 assert.equal(
   report(
     db,
@@ -438,7 +490,7 @@ for (const key of [
 ])
   delete legacy[key];
 const migrated = migrateData(legacy);
-assert.equal(migrated.version, 4);
+assert.equal(migrated.version, 5);
 assert.deepEqual(migrated.payments, legacy.payments);
 assert.equal(migrated.records.length, legacy.records.length);
 assert.ok(migrated.records.every((record) => Array.isArray(record.prescription)));

@@ -131,6 +131,15 @@ const medicineRows = [
     'viên',
     1900,
   ],
+  [
+    'MED061',
+    'Cetuximab 100 mg/20 ml',
+    'Cetuximab',
+    'Điều trị ung thư',
+    'Dung dịch tiêm truyền',
+    'lọ',
+    4500000,
+  ],
 ];
 
 export function addInventoryData(source, demo = false) {

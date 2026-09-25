@@ -15,7 +15,7 @@ export const requireThat = (ok, message) => {
 export const uid = (prefix) => `${prefix}-${crypto.randomUUID()}`;
 const live = (a) => ['pending', 'confirmed'].includes(a.status);
 export const future = (date, time = '23:59') =>
-  new Date(`${date}T${time}:00`).getTime() > Date.now();
+  new Date(`${date}T${time || '23:59'}:00+07:00`).getTime() > Date.now();
 export const normalize = (text) =>
   String(text)
     .toLowerCase()
@@ -149,6 +149,8 @@ export function act(source, actorId, type, payload = {}) {
       'receive',
       'insurance-verify',
       'insurance-resubmit',
+      'billing-services',
+      'promotion-apply',
       'bill-finalize',
       'pay',
       'bill-adjust',
@@ -181,6 +183,11 @@ export function act(source, actorId, type, payload = {}) {
   } else if (type === 'book') {
     requireThat(user.role === 'patient', 'Chỉ tài khoản bệnh nhân được đặt lịch.');
     const branch = db.branches.find((b) => b.id === p.branchId && b.active);
+    const bookingMode = p.bookingMode === 'facility' ? 'facility' : 'doctor';
+    const specialty = db.specialties.find((s) => s.id === p.specialtyId && s.active);
+    const department = db.departments.find(
+      (d) => d.branchId === branch?.id && d.specialtyId === specialty?.id && d.active,
+    );
     const doctor = db.doctors.find(
       (d) =>
         d.id === p.doctorId &&
@@ -190,9 +197,10 @@ export function act(source, actorId, type, payload = {}) {
     );
     requireThat(
       branch &&
-        doctor &&
-        db.departments.some((d) => d.id === doctor.departmentId && d.active) &&
-        db.specialties.some((s) => s.id === p.specialtyId && s.active),
+        specialty &&
+        department &&
+        (bookingMode === 'facility' ||
+          (doctor && db.departments.some((d) => d.id === doctor.departmentId && d.active))),
       'Cơ sở, chuyên khoa hoặc bác sĩ không còn nhận khám.',
     );
     const pack = p.packageId
@@ -201,26 +209,29 @@ export function act(source, actorId, type, payload = {}) {
             k.id === p.packageId &&
             k.active &&
             k.branchIds.includes(branch.id) &&
-            k.specialtyId === doctor.specialtyId,
+            k.specialtyId === specialty.id,
         )
       : null;
     requireThat(!p.packageId || pack, 'Gói khám không áp dụng cho lựa chọn này.');
+    if (bookingMode === 'doctor')
+      requireThat(
+        availableSlots(db, doctor.id, p.date).some((s) => s.time === p.time && s.available),
+        'Khung giờ không còn trống hoặc đã qua.',
+      );
+    else requireThat(validDate(p.date) && future(p.date), 'Ngày khám không hợp lệ hoặc đã qua.');
     requireThat(
-      availableSlots(db, doctor.id, p.date).some((s) => s.time === p.time && s.available),
-      'Khung giờ không còn trống hoặc đã qua.',
-    );
-    requireThat(
-      !db.appointments.some(
-        (a) =>
-          a.patientId === user.id &&
-          a.date === p.date &&
-          live(a) &&
-          Math.abs(
-            +a.time.slice(0, 2) * 60 +
-              +a.time.slice(3) -
-              (+p.time.slice(0, 2) * 60 + +p.time.slice(3)),
-          ) < 30,
-      ),
+      !p.time ||
+        !db.appointments.some(
+          (a) =>
+            a.patientId === user.id &&
+            a.date === p.date &&
+            live(a) &&
+            Math.abs(
+              +a.time.slice(0, 2) * 60 +
+                +a.time.slice(3) -
+                (+p.time.slice(0, 2) * 60 + +p.time.slice(3)),
+            ) < 30,
+        ),
       'Bạn đã có lịch khám trùng thời gian này.',
     );
     requireThat(p.patientName?.trim() && phoneValid(p.phone), 'Thông tin người khám chưa hợp lệ.');
@@ -228,16 +239,20 @@ export function act(source, actorId, type, payload = {}) {
       id: uid('AT'),
       patientId: user.id,
       branchId: branch.id,
-      doctorId: doctor.id,
-      departmentId: doctor.departmentId,
-      specialtyId: doctor.specialtyId,
+      bookingMode,
+      doctorId: bookingMode === 'doctor' ? doctor.id : '',
+      departmentId: bookingMode === 'doctor' ? doctor.departmentId : department.id,
+      specialtyId: specialty.id,
       packageId: pack?.id || '',
-      serviceName:
-        pack?.name || 'Khám ' + db.specialties.find((s) => s.id === doctor.specialtyId).name,
-      price: pack?.price || doctor.price,
+      serviceName: pack?.name || 'Khám ' + specialty.name,
+      price:
+        pack?.price ||
+        (bookingMode === 'doctor'
+          ? doctor.price
+          : db.serviceCatalog.find((s) => s.id === 'consultation')?.price || 0),
       duration: 30,
       date: p.date,
-      time: p.time,
+      time: bookingMode === 'doctor' ? p.time : '',
       patientName: p.patientName.trim(),
       phone: p.phone,
       notes: p.notes || '',
@@ -259,6 +274,35 @@ export function act(source, actorId, type, payload = {}) {
         'Chỉ nhân viên hoặc quản trị đúng cơ sở được duyệt hồ sơ đang chờ.',
       );
       requireThat(p.status !== 'rejected' || p.reason?.trim(), 'Vui lòng nhập lý do từ chối.');
+      if (p.status === 'confirmed' && a.bookingMode === 'facility') {
+        const branch = db.branches.find((b) => b.id === a.branchId);
+        const open = branch?.serviceHours?.open || '07:30';
+        const close = branch?.serviceHours?.close || '17:00';
+        requireThat(
+          /^\d{2}:\d{2}$/.test(p.time || '') && p.time >= open && p.time <= close,
+          'Giờ tiếp nhận phải nằm trong giờ hoạt động của cơ sở.',
+        );
+        requireThat(future(a.date, p.time), 'Giờ tiếp nhận phải ở tương lai.');
+        requireThat(
+          !db.appointments.some(
+            (other) =>
+              other.id !== a.id &&
+              other.patientId === a.patientId &&
+              other.date === a.date &&
+              other.time &&
+              live(other) &&
+              Math.abs(
+                +other.time.slice(0, 2) * 60 +
+                  +other.time.slice(3) -
+                  (+p.time.slice(0, 2) * 60 + +p.time.slice(3)),
+              ) < 30,
+          ),
+          'Bệnh nhân đã có lịch trùng thời gian này.',
+        );
+        a.time = p.time;
+        a.scheduledBy = user.id;
+        a.scheduledAt = new Date().toISOString();
+      }
     } else if (p.status === 'cancelled') {
       requireThat(
         live(a) &&
@@ -268,6 +312,17 @@ export function act(source, actorId, type, payload = {}) {
         'Không thể hủy lịch hẹn này.',
       );
       requireThat(!isAdmin(user) || p.reason?.trim(), 'Vui lòng nhập lý do hủy.');
+    } else if (p.status === 'completed') {
+      requireThat(
+        a.bookingMode === 'facility' &&
+          ((user.role === 'staff' && user.branchId === a.branchId) ||
+            (isAdmin(user) && inBranch(user, a.branchId))) &&
+          a.status === 'confirmed' &&
+          a.billing.receivedAt &&
+          a.time &&
+          !future(a.date, a.time),
+        'Chỉ hoàn tất lịch không chọn bác sĩ sau giờ hẹn và khi đã tiếp nhận.',
+      );
     } else if (p.status === 'absent') {
       requireThat(
         isAdmin(user) &&
@@ -336,6 +391,11 @@ export function act(source, actorId, type, payload = {}) {
         unitPrice: item.unitPrice,
         quantity: item.quantity,
         discountable: false,
+        insuranceTariff: db.medicines.find((m) => m.id === item.medicineId)?.insurance?.tariff || 0,
+        insuranceRate:
+          db.medicines.find((m) => m.id === item.medicineId)?.insurance?.paymentRate || 0,
+        insuranceCondition:
+          db.medicines.find((m) => m.id === item.medicineId)?.insurance?.condition || '',
       }));
     if (old) Object.assign(old, row);
     else db.records.push(row);

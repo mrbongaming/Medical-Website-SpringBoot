@@ -46,7 +46,7 @@ export function HomePage() {
     : [];
   return (
     <>
-      <section className="overflow-hidden bg-gradient-to-b from-sky-50 to-white py-12 sm:py-16">
+      <section className="overflow-hidden bg-slate-50 py-12 sm:py-16">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 grid items-center gap-10 lg:grid-cols-2">
           <div className="[&_h1]:text-4xl [&_h1]:font-bold [&_h1]:tracking-tight [&_h1]:text-brand-900 sm:[&_h1]:text-5xl lg:[&_h1]:text-6xl [&_em]:not-italic [&_em]:text-sky-600 [&>p]:mt-5 [&>p]:max-w-xl [&>p]:text-lg [&>p]:text-slate-600">
             <span className="mb-2 inline-block text-xs font-bold uppercase tracking-[0.16em] text-sky-700 inline-flex items-center gap-2 rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold text-sky-800">
@@ -220,13 +220,13 @@ export function HomePage() {
         </div>
       </section>
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-        <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-gradient-to-br from-brand-900 to-sky-700 p-7 text-white shadow-xl sm:p-10 lg:flex-row lg:items-center [&_h2]:text-2xl [&_h2]:font-bold sm:[&_h2]:text-3xl [&_p]:mt-2 [&_p]:max-w-2xl [&_p]:text-sky-100">
+        <div className="flex flex-col items-start justify-between gap-6 rounded-2xl bg-slate-900 p-6 text-white sm:p-8 lg:flex-row lg:items-center [&_h2]:text-2xl [&_h2]:font-bold sm:[&_h2]:text-3xl [&_p]:mt-2 [&_p]:max-w-2xl [&_p]:text-slate-300">
           <div>
             <h2>Sẵn sàng cho lần khám tiếp theo?</h2>
             <p>Lịch hẹn và kết quả khám, được lưu trong cùng một không gian.</p>
           </div>
           <Link
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 bg-white text-sky-700 hover:bg-slate-100"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-white px-5 py-2.5 font-semibold text-slate-900 transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             to="/dat-lich"
           >
             Đặt lịch khám <FiArrowRight />
