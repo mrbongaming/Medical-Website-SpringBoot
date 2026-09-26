@@ -8,6 +8,7 @@ import {
   FiShield,
   FiUsers,
   FiActivity,
+  FiBookOpen,
 } from 'react-icons/fi';
 import { useHospital } from '../state/context';
 import { normalize } from '../data/domain';
@@ -21,6 +22,14 @@ export function HomePage() {
   const [query, setQuery] = useState('');
   const branches = db.branches.filter((b) => b.active);
   const doctors = db.doctors.filter((d) => d.active && branches.some((b) => b.id === d.branchId));
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(
+    new Date(),
+  );
+  const campaign = db.campaigns?.find(
+    (item) => item.status === 'published' && item.startsAt <= today && item.endsAt >= today,
+  );
+  const facts = db.healthFacts?.filter((item) => item.status === 'published') || [];
+  const fact = facts.length ? facts[new Date(`${today}T12:00:00`).getDate() % facts.length] : null;
   const search = normalize(query.trim());
   const results = search
     ? [
@@ -144,6 +153,45 @@ export function HomePage() {
           </Link>
         ))}
       </div>
+      {campaign && (
+        <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+          <div className="grid overflow-hidden rounded-2xl border border-slate-200 bg-white lg:grid-cols-[minmax(0,1fr)_26rem]">
+            <div className="flex flex-col justify-center p-6 sm:p-9 lg:p-12">
+              <span className="text-sm font-bold uppercase tracking-[0.14em] text-sky-700">
+                Chương trình sức khỏe tháng này
+              </span>
+              <h2 className="mt-3 text-3xl font-bold leading-tight text-brand-900">
+                {campaign.title}
+              </h2>
+              <p className="mt-4 max-w-2xl leading-7 text-slate-600">{campaign.summary}</p>
+              <p className="mt-3 text-sm text-slate-500">
+                Thời gian: {campaign.startsAt} – {campaign.endsAt} · Áp dụng tại{' '}
+                {campaign.branchIds.length} cơ sở
+              </p>
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-sky-700 px-5 font-semibold text-white hover:bg-sky-800"
+                  to="/goi-kham"
+                >
+                  Xem gói khám <FiArrowRight />
+                </Link>
+                <Link
+                  className="inline-flex min-h-11 items-center rounded-xl border border-slate-300 px-5 font-semibold text-sky-800 hover:bg-sky-50"
+                  to="/co-so"
+                >
+                  Chọn cơ sở
+                </Link>
+              </div>
+              <small className="mt-5 text-slate-500">{campaign.disclaimer}</small>
+            </div>
+            <Photo
+              src={campaign.image}
+              alt="Chương trình sức khỏe An Tâm"
+              className="h-full min-h-72 w-full object-cover"
+            />
+          </div>
+        </section>
+      )}
       <section className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <SectionHeading
           eyebrow="GẦN BẠN, THUẬN TIỆN CHO BẠN"
@@ -158,6 +206,29 @@ export function HomePage() {
           ))}
         </div>
       </section>
+      {fact && (
+        <section className="border-y border-slate-200 bg-white py-12 sm:py-16">
+          <div className="mx-auto grid w-full max-w-7xl gap-6 px-4 sm:px-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:px-8">
+            <div>
+              <span className="grid size-12 place-items-center rounded-xl bg-sky-100 text-2xl text-sky-700">
+                <FiBookOpen />
+              </span>
+              <p className="mt-4 text-sm font-bold uppercase tracking-[0.14em] text-sky-700">
+                Kiến thức y tế
+              </p>
+              <p className="mt-2 text-sm text-slate-500">Thông tin tham khảo hôm nay</p>
+            </div>
+            <article className="rounded-2xl border border-slate-200 bg-slate-50 p-6 sm:p-8">
+              <span className="text-sm font-semibold text-sky-700">{fact.topic}</span>
+              <h2 className="mt-2 text-2xl font-bold text-brand-900">{fact.title}</h2>
+              <p className="mt-4 leading-7 text-slate-700">{fact.content}</p>
+              <small className="mt-5 block border-t border-slate-200 pt-4 text-slate-500">
+                {fact.source} · Kiểm tra ngày {fact.reviewedAt}
+              </small>
+            </article>
+          </div>
+        </section>
+      )}
       <section className="bg-slate-100 py-12 sm:py-16">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading

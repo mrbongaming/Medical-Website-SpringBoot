@@ -58,6 +58,8 @@ export function InventoryPage() {
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');
   const [stockState, setStockState] = useState('');
+  const [settingsQuery, setSettingsQuery] = useState('');
+  const [medicineStatus, setMedicineStatus] = useState('');
   const [kind, setKind] = useState('normal');
   const [requestStatus, setRequestStatus] = useState('');
   const [requestDate, setRequestDate] = useState('');
@@ -90,6 +92,20 @@ export function InventoryPage() {
       }),
     [summary.stocks, db, query, group, stockState],
   );
+  const configuredMedicines = useMemo(
+    () =>
+      db.medicines.filter(
+        (medicine) =>
+          normalize(`${medicine.code} ${medicine.name} ${medicine.activeIngredient}`).includes(
+            normalize(settingsQuery),
+          ) &&
+          (!medicineStatus || (medicineStatus === 'active' ? medicine.active : !medicine.active)),
+      ),
+    [db.medicines, medicineStatus, settingsQuery],
+  );
+  const settingBranches = scopeBranch
+    ? db.branches.filter((branch) => branch.id === scopeBranch)
+    : db.branches;
   const name = (collection, id) => db[collection].find((r) => r.id === id)?.name || id;
   const clearMessage = () => {
     setErrors([]);
@@ -593,103 +609,143 @@ export function InventoryPage() {
               ))}
             </div>
           </section>
-          <Table headers={['Thuốc', 'Giá bán', 'Trạng thái', 'Ngưỡng theo cơ sở']}>
-            <>
-              {db.medicines.map((medicine) => (
-                <tr key={medicine.id}>
-                  <td>
-                    <strong>
-                      {medicine.code} · {medicine.name}
-                    </strong>
-                    <small>
-                      {medicine.form} · {medicine.unit}
-                    </small>
-                  </td>
-                  <td colSpan={2}>
-                    <form
-                      className="flex min-w-64 flex-wrap items-end gap-2"
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        const form = new FormData(e.currentTarget);
-                        try {
-                          await dispatch('medicine-save', {
-                            id: medicine.id,
-                            salePrice: form.get('salePrice'),
-                            active: form.get('active') === 'on',
-                          });
-                          setSuccess('Đã cập nhật danh mục thuốc.');
-                        } catch (error) {
-                          setErrors([error.message]);
-                        }
-                      }}
-                    >
-                      <Field label="Giá bán">
-                        <input
-                          name="salePrice"
-                          type="number"
-                          min="1"
-                          defaultValue={medicine.salePrice}
-                        />
-                      </Field>
-                      <label className="flex min-h-11 items-center gap-2">
-                        <input name="active" type="checkbox" defaultChecked={medicine.active} />{' '}
-                        Hoạt động
-                      </label>
-                      <button className="min-h-11 font-semibold text-sky-700">Lưu thuốc</button>
-                    </form>
-                  </td>
-                  <td>
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      {db.branches.map((branch) => {
-                        const setting = settingRow(db, branch.id, medicine.id);
-                        return (
-                          <form
-                            className="rounded-lg bg-slate-50 p-2"
-                            key={branch.id}
-                            onSubmit={async (e) => {
-                              e.preventDefault();
-                              const form = Object.fromEntries(new FormData(e.currentTarget));
-                              try {
-                                await dispatch('inventory-settings-save', {
-                                  branchId: branch.id,
-                                  medicineId: medicine.id,
-                                  min: form.min,
-                                  max: form.max,
-                                });
-                                setSuccess('Đã lưu ngưỡng tồn.');
-                              } catch (error) {
-                                setErrors([error.message]);
-                              }
-                            }}
-                          >
-                            <small>{branch.name}</small>
-                            <div className="flex gap-2">
-                              <input
-                                aria-label={`Tối thiểu ${branch.name} ${medicine.code}`}
-                                className="min-w-0"
-                                name="min"
-                                type="number"
-                                min="0"
-                                defaultValue={setting.min}
-                              />
-                              <input
-                                aria-label={`Tối đa ${branch.name} ${medicine.code}`}
-                                className="min-w-0"
-                                name="max"
-                                type="number"
-                                min="1"
-                                defaultValue={setting.max}
-                              />
-                              <button className="font-semibold text-sky-700">Lưu</button>
-                            </div>
-                          </form>
-                        );
-                      })}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </>
+          <section className="rounded-xl border border-slate-200 bg-white p-4">
+            <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem_auto] md:items-end">
+              <Field label="Tìm trong danh mục thuốc">
+                <input
+                  type="search"
+                  value={settingsQuery}
+                  onChange={(event) => setSettingsQuery(event.target.value)}
+                  placeholder="Mã, tên hoặc hoạt chất"
+                />
+              </Field>
+              <Select
+                label="Trạng thái"
+                value={medicineStatus}
+                onChange={setMedicineStatus}
+                options={[
+                  { id: 'active', name: 'Đang hoạt động' },
+                  { id: 'inactive', name: 'Ngừng sử dụng' },
+                ]}
+                placeholder="Tất cả trạng thái"
+              />
+              <button
+                type="button"
+                className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:border-sky-400 hover:text-sky-700"
+                onClick={() => {
+                  setSettingsQuery('');
+                  setMedicineStatus('');
+                }}
+              >
+                Xóa bộ lọc
+              </button>
+            </div>
+          </section>
+          <Table
+            headers={['Thuốc', 'Giá bán & trạng thái', 'Ngưỡng theo cơ sở']}
+            empty={!configuredMedicines.length}
+            paginationKey={`${settingsQuery}|${medicineStatus}|${scopeBranch}`}
+          >
+            {configuredMedicines.map((medicine) => (
+              <tr key={medicine.id}>
+                <td className="min-w-64">
+                  <strong className="block text-slate-950">
+                    {medicine.code} · {medicine.name}
+                  </strong>
+                  <small className="mt-1 block text-slate-500">
+                    {medicine.activeIngredient} · {medicine.form} · {medicine.unit}
+                  </small>
+                </td>
+                <td>
+                  <form
+                    className="grid min-w-64 gap-3"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      const form = new FormData(e.currentTarget);
+                      try {
+                        await dispatch('medicine-save', {
+                          id: medicine.id,
+                          salePrice: form.get('salePrice'),
+                          active: form.get('active') === 'on',
+                        });
+                        setSuccess('Đã cập nhật danh mục thuốc.');
+                      } catch (error) {
+                        setErrors([error.message]);
+                      }
+                    }}
+                  >
+                    <Field label="Giá bán">
+                      <input
+                        name="salePrice"
+                        type="number"
+                        min="1"
+                        defaultValue={medicine.salePrice}
+                      />
+                    </Field>
+                    <label className="flex min-h-11 items-center gap-2 text-sm text-slate-700">
+                      <input name="active" type="checkbox" defaultChecked={medicine.active} /> Hoạt
+                      động
+                    </label>
+                    <button className="min-h-10 w-fit rounded-lg border border-sky-200 px-3 font-semibold text-sky-700 hover:bg-sky-50">
+                      Lưu thuốc
+                    </button>
+                  </form>
+                </td>
+                <td>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {settingBranches.map((branch) => {
+                      const setting = settingRow(db, branch.id, medicine.id);
+                      return (
+                        <form
+                          className="rounded-lg border border-slate-200 bg-slate-50 p-3"
+                          key={branch.id}
+                          onSubmit={async (e) => {
+                            e.preventDefault();
+                            const form = Object.fromEntries(new FormData(e.currentTarget));
+                            try {
+                              await dispatch('inventory-settings-save', {
+                                branchId: branch.id,
+                                medicineId: medicine.id,
+                                min: form.min,
+                                max: form.max,
+                              });
+                              setSuccess('Đã lưu ngưỡng tồn.');
+                            } catch (error) {
+                              setErrors([error.message]);
+                            }
+                          }}
+                        >
+                          <small className="mb-2 block font-medium text-slate-700">
+                            {branch.name}
+                          </small>
+                          <div className="grid grid-cols-[minmax(5rem,1fr)_minmax(5rem,1fr)_auto] gap-2">
+                            <input
+                              aria-label={`Tối thiểu ${branch.name} ${medicine.code}`}
+                              className="min-h-10 min-w-0 rounded-lg border border-slate-300 bg-white px-2"
+                              name="min"
+                              type="number"
+                              min="0"
+                              defaultValue={setting.min}
+                            />
+                            <input
+                              aria-label={`Tối đa ${branch.name} ${medicine.code}`}
+                              className="min-h-10 min-w-0 rounded-lg border border-slate-300 bg-white px-2"
+                              name="max"
+                              type="number"
+                              min="1"
+                              defaultValue={setting.max}
+                            />
+                            <button className="rounded-lg px-2 font-semibold text-sky-700 hover:bg-sky-100">
+                              Lưu
+                            </button>
+                          </div>
+                        </form>
+                      );
+                    })}
+                  </div>
+                </td>
+              </tr>
+            ))}
           </Table>
         </div>
       )}

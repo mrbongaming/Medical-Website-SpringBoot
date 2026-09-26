@@ -94,6 +94,7 @@ function references(db, entity, id) {
   return Object.entries(db).some(
     ([key, rows]) =>
       key !== entity &&
+      key !== 'auditLogs' &&
       !(entity === 'doctors' && key === 'users') &&
       Array.isArray(rows) &&
       rows.some(
@@ -111,6 +112,7 @@ export function act(source, actorId, type, payload = {}) {
   const user = db.users.find((u) => u.id === actorId && u.active);
   const p = payload;
   const today = dateKey();
+  const auditCount = db.auditLogs?.length || 0;
   let result;
   if (type === 'register') {
     requireThat(
@@ -400,6 +402,36 @@ export function act(source, actorId, type, payload = {}) {
     if (old) Object.assign(old, row);
     else db.records.push(row);
     if (p.finalized) a.status = 'completed';
+  } else if (type === 'content-save') {
+    requireThat(isAdmin(user), 'Chỉ quản trị viên được cập nhật nội dung.');
+    const collection = p.collection;
+    requireThat(['campaigns', 'healthFacts'].includes(collection), 'Loại nội dung không hợp lệ.');
+    requireThat(
+      collection !== 'healthFacts' || user.role === 'superAdmin',
+      'Chỉ admin tổng quản lý kiến thức y tế.',
+    );
+    const old = db[collection].find((row) => row.id === p.id);
+    requireThat(old, 'Không tìm thấy nội dung.');
+    if (user.role === 'branchAdmin')
+      requireThat(
+        old.branchIds?.length === 1 && old.branchIds[0] === user.branchId,
+        'Admin cơ sở chỉ sửa chương trình dành riêng cho cơ sở mình.',
+      );
+    const values = p.values || {};
+    requireThat(String(values.title || '').trim(), 'Vui lòng nhập tiêu đề.');
+    requireThat(
+      ['draft', 'published', 'hidden'].includes(values.status),
+      'Trạng thái không hợp lệ.',
+    );
+    Object.assign(old, {
+      title: String(values.title).trim(),
+      summary: String(values.summary || old.summary || '').trim(),
+      content: String(values.content || old.content || '').trim(),
+      status: values.status,
+      updatedBy: user.id,
+      updatedAt: new Date().toISOString(),
+    });
+    result = old.id;
   } else if (type === 'save' || type === 'remove') {
     const { entity } = p;
     const allowed = [
@@ -492,6 +524,24 @@ export function act(source, actorId, type, payload = {}) {
           db.specialties.some((s) => s.id === row.specialtyId && s.active),
           'Chọn chuyên khoa đang hoạt động.',
         );
+      if (entity === 'branches') {
+        row.establishedYear = Number(row.establishedYear || 0);
+        requireThat(
+          !row.establishedYear ||
+            (Number.isInteger(row.establishedYear) &&
+              row.establishedYear >= 1900 &&
+              row.establishedYear <= new Date().getFullYear()),
+          'Năm thành lập không hợp lệ.',
+        );
+        requireThat(
+          !row.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(row.email),
+          'Email cơ sở không hợp lệ.',
+        );
+        requireThat(
+          !row.website || /^https?:\/\/[^\s]+$/i.test(row.website),
+          'Website phải bắt đầu bằng http:// hoặc https://.',
+        );
+      }
       if (entity === 'doctors') {
         const dep = db.departments.find(
           (d) => d.id === row.departmentId && d.branchId === row.branchId && d.active,
@@ -609,5 +659,52 @@ export function act(source, actorId, type, payload = {}) {
       result = row.id;
     }
   } else throw new Error('Thao tác không hợp lệ.');
+  if (user && Array.isArray(db.auditLogs) && db.auditLogs.length === auditCount) {
+    const appointment = db.appointments.find(
+      (row) => row.id === p.id || row.id === p.appointmentId,
+    );
+    const request = db.stockRequests?.find((row) => row.id === p.id);
+    const entityRow = p.entity && db[p.entity]?.find((row) => row.id === (result || p.id));
+    const branchId =
+      p.branchId ||
+      appointment?.branchId ||
+      request?.branchId ||
+      entityRow?.branchId ||
+      (p.entity === 'branches' ? entityRow?.id : '') ||
+      user.branchId ||
+      '';
+    const warning = /(remove|cancel|reject|refund|policy|medicine|inventory-settings)/.test(type);
+    const module =
+      type === 'content-save'
+        ? 'content'
+        : type.startsWith('stock') || type.startsWith('inventory') || type.startsWith('medicine')
+          ? 'inventory'
+          : type === 'save' || type === 'remove'
+            ? 'catalog'
+            : type === 'appointment'
+              ? 'appointments'
+              : type === 'record'
+                ? 'clinical'
+                : type === 'book'
+                  ? 'booking'
+                  : 'system';
+    db.auditLogs.push({
+      id: uid('audit'),
+      actorId: user.id,
+      actorName: user.name,
+      actorRole: user.role,
+      action: type,
+      module,
+      subjectType: p.entity || module,
+      subjectId: String(result || p.id || p.appointmentId || ''),
+      appointmentId: appointment?.id || p.appointmentId || '',
+      branchId,
+      reason: String(p.reason || p.values?.name || `Đã thực hiện ${type}.`).trim(),
+      result: 'success',
+      severity: warning ? 'warning' : 'info',
+      details: {},
+      at: new Date().toISOString(),
+    });
+  }
   return { db, result };
 }

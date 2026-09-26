@@ -592,13 +592,79 @@ try {
     await navigate('/quan-tri/kho-thuoc');
     await noOverflow();
     await screenshot('inventory-' + width);
+    if (width === 1440) {
+      await textButton('Cấu hình & danh mục');
+      assert.equal(await evaluate("document.querySelectorAll('tbody tr').length"), 10);
+      await field('Tìm trong danh mục thuốc', 'MED061');
+      assert.equal(await evaluate("document.querySelectorAll('tbody tr').length"), 1);
+      assert.ok(await evaluate("document.querySelector('tbody').textContent.includes('MED061')"));
+      await screenshot('inventory-settings-pagination');
+      assert.ok(
+        await evaluate(
+          "[...document.querySelectorAll('[data-testid=staff-sidebar] a')].some((link) => link.textContent.includes('Nhật ký hoạt động') && link.getAttribute('href') === '/quan-tri/nhat-ky')",
+        ),
+      );
+      for (const route of ['/quan-tri/nhat-ky', '/quan-tri/canh-bao', '/quan-tri/noi-dung']) {
+        await navigate(route);
+        await noOverflow();
+        await screenshot('admin-' + route.split('/').at(-1));
+      }
+      await navigate('/quan-tri/co-so');
+      await textButton('Sửa');
+      await field('Email', 'capnhat@antam.example');
+      await field('Trang thiết bị (cách nhau bằng dấu phẩy)', 'Khu xét nghiệm, Máy siêu âm');
+      await textButton('Lưu dữ liệu');
+      assert.ok(
+        await stored(
+          "db.branches.some(branch => branch.email === 'capnhat@antam.example' && branch.equipment.includes('Máy siêu âm'))",
+        ),
+      );
+      await navigate('/quan-tri/bac-si');
+      await textButton('Sửa');
+      await field('Chức vụ hiện tại', 'Bác sĩ phụ trách chuyên môn');
+      await textButton('Lưu dữ liệu');
+      assert.ok(
+        await stored(
+          "db.doctors.some(doctor => doctor.currentPosition === 'Bác sĩ phụ trách chuyên môn')",
+        ),
+      );
+      await login('branchAdmin', 'admin1');
+      await navigate('/quan-tri/nhat-ky');
+      assert.ok(await evaluate("document.body.textContent.includes('An Tâm · Trung tâm')"));
+      assert.ok(!(await evaluate("document.body.textContent.includes('An Tâm · Thủ Đức')")));
+    }
     if (width === 360) {
+      await navigate('/quan-tri/nhat-ky');
+      await noOverflow();
+      await screenshot('admin-audit-mobile');
+      await navigate('/quan-tri/co-so');
+      await textButton('Sửa');
+      assert.ok(
+        await evaluate(
+          "document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth",
+        ),
+        'Branch editor dialog overflow',
+      );
+      await screenshot('admin-branch-editor-mobile');
+      await textButton('Đóng');
       await login('staff', 'staff-b1');
       await navigate('/nhan-vien/cap-thuoc');
       await noOverflow();
       await screenshot('dispensing-' + width);
     }
     await login('patient', 'p1');
+    await navigate('/bac-si/bac-si-1');
+    assert.ok(await evaluate("document.body.textContent.includes('Ngôn ngữ tư vấn')"));
+    assert.ok(await evaluate("document.body.textContent.includes('Chứng chỉ chuyên môn')"));
+    await noOverflow();
+    await screenshot('doctor-public-' + width);
+    await navigate('/co-so/trung-tam');
+    assert.ok(
+      await evaluate("document.body.textContent.includes('Trang thiết bị và khu chức năng')"),
+    );
+    assert.ok(await evaluate("document.body.textContent.includes('Hỗ trợ tiếp cận')"));
+    await noOverflow();
+    await screenshot('branch-public-' + width);
     for (const route of ['/lich-hen', '/ho-so-kham', '/ho-so-kham/rec-AT-1000']) {
       await navigate(route);
       await noOverflow();
@@ -755,7 +821,7 @@ try {
     "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); d.version=1; d.medicines=[]; d.lots=[]; d.transactions=[]; d.restocks=[]; d.users.find(u=>u.id==='p1').address='Migration kept'; localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
   );
   await navigate('/');
-  assert.equal(await stored('db.version'), 5);
+  assert.equal(await stored('db.version'), 7);
   assert.equal(await stored("db.users.find(u=>u.id==='p1').address"), 'Migration kept');
   assert.ok(
     await stored("db.medicines.length===61 && db.inventory.length>0 && !('restocks' in db)"),
@@ -783,7 +849,7 @@ try {
   await navigate('/quan-tri/he-thong');
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
-  assert.equal(await stored('db.version'), 5);
+  assert.equal(await stored('db.version'), 7);
   assert.equal(errors.length, 0, JSON.stringify(errors));
   assert.equal(submissions.length, 0, 'Unexpected non-GET network requests');
   console.log(

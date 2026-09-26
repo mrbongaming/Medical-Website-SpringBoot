@@ -59,7 +59,7 @@ export function RecordDetailPage() {
         </section>
         <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
           <h2>Thông tin buổi khám</h2>
-          <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 text-sm [&_dt]:text-slate-500 [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-semibold [&_dd]:text-slate-800">
+          <dl className="grid gap-x-4 gap-y-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)] [&_dt]:text-slate-500 [&_dd]:m-0 [&_dd]:min-w-0 [&_dd]:break-words [&_dd]:font-semibold [&_dd]:text-slate-800 sm:[&_dd]:text-right">
             <dt>Người khám</dt>
             <dd>{name(db, 'users', record.patientId)}</dd>
             <dt>Bác sĩ</dt>

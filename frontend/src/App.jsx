@@ -30,6 +30,9 @@ import { ManagementPage } from './pages/ManagementPage';
 import { SystemPage } from './pages/SystemPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { DispensingPage } from './pages/DispensingPage';
+import { AuditPage } from './pages/AuditPage';
+import { AlertsPage } from './pages/AlertsPage';
+import { ContentPage } from './pages/ContentPage';
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 
 const router = createBrowserRouter(
@@ -83,6 +86,9 @@ const router = createBrowserRouter(
           <Route path="bao-hiem" element={<InsuranceSettingsPage />} />
           <Route path="kho-thuoc" element={<InventoryPage />} />
           <Route path="cap-thuoc" element={<DispensingPage />} />
+          <Route path="nhat-ky" element={<AuditPage />} />
+          <Route path="canh-bao" element={<AlertsPage />} />
+          <Route path="noi-dung" element={<ContentPage />} />
           <Route path="nhan-vien" element={<ManagementPage entity="users" />} />
           {[
             ['co-so', 'branches'],

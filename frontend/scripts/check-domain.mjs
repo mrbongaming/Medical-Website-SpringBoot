@@ -255,7 +255,9 @@ const legacy = {
 legacy.branches[0].description = 'Nội dung đã chỉnh sửa';
 delete legacy.doctors[0].image;
 const upgraded = migrateData(legacy);
-assert.equal(upgraded.version, 5);
+assert.equal(upgraded.version, 7);
+assert.ok(upgraded.branches.every((branch) => Array.isArray(branch.equipment)));
+assert.ok(upgraded.doctors.every((doctor) => Array.isArray(doctor.consultationLanguages)));
 assert.equal(upgraded.branches[0].description, legacy.branches[0].description);
 for (const key of ['payments']) assert.deepEqual(upgraded[key], legacy[key]);
 assert.deepEqual(
@@ -348,5 +350,5 @@ assert.ok(
   seed.doctors.some((d) => !seed.appointments.some((a) => a.doctorId === d.id && a.rating)),
 );
 console.log(
-  'PASS: v1-v4 to v5 migration, draft/deep-link normalization, linked histories and rating integrity.',
+  'PASS: v1-v6 to v7 migration, draft/deep-link normalization, linked histories and rating integrity.',
 );

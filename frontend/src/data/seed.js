@@ -1,6 +1,8 @@
 import { addBillingData } from './billingSeed.js';
 import { addInventoryData } from './inventorySeed.js';
 import { addV5Data } from './v5.js';
+import { addV6Data } from './v6.js';
+import { addV7Data } from './v7.js';
 export const roles = {
   patient: 'Bệnh nhân',
   doctor: 'Bác sĩ',
@@ -347,26 +349,30 @@ export function createSeed() {
       date: a.date,
       createdBy: 'root',
     }));
-  return addV5Data(
-    addInventoryData(
-      addBillingData(
-        {
-          version: 2,
-          seededAt: dateKey(),
-          branches,
-          specialties,
-          departments,
-          doctors,
-          users,
-          packages,
-          schedules,
-          appointments,
-          records,
-          payments,
-        },
-        true,
+  return addV7Data(
+    addV6Data(
+      addV5Data(
+        addInventoryData(
+          addBillingData(
+            {
+              version: 2,
+              seededAt: dateKey(),
+              branches,
+              specialties,
+              departments,
+              doctors,
+              users,
+              packages,
+              schedules,
+              appointments,
+              records,
+              payments,
+            },
+            true,
+          ),
+          true,
+        ),
       ),
-      true,
     ),
   );
 }

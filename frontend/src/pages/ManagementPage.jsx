@@ -15,6 +15,7 @@ export function ManagementPage({ entity }) {
   const { db, user, dispatch } = useHospital();
   const [query, setQuery] = useState('');
   const [branchId, setBranchId] = useState('');
+  const [activeState, setActiveState] = useState('');
   const [from, setFrom] = useState(dateKey());
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
@@ -35,6 +36,7 @@ export function ManagementPage({ entity }) {
             ? r.id === branchId
             : r.branchId === branchId || r.branchIds?.includes(branchId))) &&
         (entity !== 'schedules' || r.date >= from) &&
+        (!activeState || (activeState === 'active' ? r.active !== false : r.active === false)) &&
         normalize(
           (r.name || db.doctors.find((d) => d.id === r.doctorId)?.name || '') +
             ' ' +
@@ -78,7 +80,7 @@ export function ManagementPage({ entity }) {
           </button>
         )}
       </PageTitle>
-      <div className="grid gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid gap-4 rounded-xl border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-4">
         <Field label="Tìm kiếm">
           <input
             placeholder="Tên hoặc mã…"
@@ -100,29 +102,67 @@ export function ManagementPage({ entity }) {
             <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
           </Field>
         )}
+        {entity !== 'schedules' && (
+          <Select
+            label="Trạng thái"
+            value={activeState}
+            onChange={setActiveState}
+            options={[
+              { id: 'active', name: 'Đang hoạt động' },
+              { id: 'inactive', name: 'Ngừng hoạt động' },
+            ]}
+            placeholder="Tất cả trạng thái"
+          />
+        )}
+        {(query || branchId || activeState || (entity === 'schedules' && from !== dateKey())) && (
+          <button
+            type="button"
+            className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:border-sky-400 hover:text-sky-700"
+            onClick={() => {
+              setQuery('');
+              setBranchId('');
+              setActiveState('');
+              setFrom(dateKey());
+            }}
+          >
+            Xóa bộ lọc
+          </button>
+        )}
       </div>
       <Alert success={success} />
-      <Table headers={['Thông tin', 'Chi tiết', 'Trạng thái', 'Thao tác']} empty={!rows.length}>
+      <Table
+        headers={['Thông tin', 'Chi tiết', 'Trạng thái', 'Thao tác']}
+        empty={!rows.length}
+        paginationKey={`${query}|${branchId}|${activeState}|${from}`}
+      >
         {rows.map((row) => (
           <tr key={row.id}>
-            <td>
-              <strong>{row.name || db.doctors.find((d) => d.id === row.doctorId)?.name}</strong>
-              <small>{row.code || row.date || row.id}</small>
+            <td className="min-w-52">
+              <strong className="block text-slate-950">
+                {row.name || db.doctors.find((d) => d.id === row.doctorId)?.name}
+              </strong>
+              <small className="mt-1 block text-slate-500">{row.code || row.date || row.id}</small>
             </td>
-            <td>
-              {row.branchId && <span>{db.branches.find((b) => b.id === row.branchId)?.name}</span>}
+            <td className="min-w-72">
+              {row.branchId && (
+                <span className="block font-medium text-slate-800">
+                  {db.branches.find((b) => b.id === row.branchId)?.name}
+                </span>
+              )}
               {row.specialtyId && (
-                <small>{db.specialties.find((s) => s.id === row.specialtyId)?.name}</small>
+                <small className="mt-1 block text-slate-500">
+                  {db.specialties.find((s) => s.id === row.specialtyId)?.name}
+                </small>
               )}
               {entity === 'branches' && (
                 <>
-                  <span>{row.address}</span>
-                  <small>
+                  <span className="block leading-6">{row.address}</span>
+                  <small className="mt-1 block text-slate-500">
                     {row.hours} · {row.phone}
                   </small>
                 </>
               )}
-              {row.price && <small>{money(row.price)}</small>}
+              {row.price && <small className="mt-1 block text-slate-500">{money(row.price)}</small>}
               {row.times && (
                 <div className="flex flex-wrap gap-2 [&>span]:rounded-full [&>span]:bg-slate-100 [&>span]:px-3 [&>span]:py-1 [&>span]:text-sm [&>span]:text-slate-700">
                   {row.times.map((t) => (
@@ -130,9 +170,11 @@ export function ManagementPage({ entity }) {
                   ))}
                 </div>
               )}
-              {entity === 'users' && <small>{row.phone}</small>}
+              {entity === 'users' && (
+                <small className="mt-1 block text-slate-500">{row.phone}</small>
+              )}
               {row.branchIds && (
-                <small>
+                <small className="mt-1 block text-slate-500">
                   {db.branches
                     .filter((b) => row.branchIds.includes(b.id))
                     .map((b) => b.name)

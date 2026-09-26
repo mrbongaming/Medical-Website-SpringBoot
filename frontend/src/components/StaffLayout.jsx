@@ -60,7 +60,7 @@ export function StaffLayout() {
         />
       )}
       <div className="min-w-0 flex-1">
-        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 shadow-sm sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between gap-2 border-b border-slate-200 bg-white px-4 shadow-sm sm:gap-4 sm:px-6 lg:px-8">
           <button
             className="inline-flex size-11 items-center justify-center rounded-xl border border-slate-200 bg-white text-xl text-slate-700 hover:bg-slate-50 lg:hidden"
             data-testid="staff-menu-toggle"
@@ -70,12 +70,14 @@ export function StaffLayout() {
           >
             <FiMenu />
           </button>
-          <span>Không gian {doctor ? 'bác sĩ' : receptionist ? 'nhân viên' : 'quản trị'}</span>
-          <div className="flex items-center gap-3 text-sm font-semibold text-slate-800 [&_small]:block [&_small]:font-normal [&_small]:text-slate-500">
+          <span className="hidden text-sm font-semibold text-slate-700 sm:block">
+            Không gian {doctor ? 'bác sĩ' : receptionist ? 'nhân viên' : 'quản trị'}
+          </span>
+          <div className="ml-auto flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-800 sm:gap-3 [&_small]:block [&_small]:font-normal [&_small]:text-slate-500">
             <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sky-100 text-sm font-bold text-sky-800">
               {user.name.slice(0, 1)}
             </span>
-            <span>
+            <span className="hidden min-w-0 sm:block">
               {user.name}
               <small>{roles[user.role]}</small>
             </span>

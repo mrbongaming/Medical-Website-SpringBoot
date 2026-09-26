@@ -1,4 +1,13 @@
-import { FiActivity, FiCalendar, FiGrid, FiLayers, FiPackage, FiUsers } from 'react-icons/fi';
+import {
+  FiActivity,
+  FiAlertTriangle,
+  FiBookOpen,
+  FiCalendar,
+  FiGrid,
+  FiLayers,
+  FiPackage,
+  FiUsers,
+} from 'react-icons/fi';
 
 export function getStaffNavigation(role) {
   const doctor = role === 'doctor';
@@ -24,6 +33,9 @@ export function getStaffNavigation(role) {
           ['/bao-hiem', 'Bảo hiểm y tế', FiActivity],
           ['/kho-thuoc', 'Kho thuốc', FiPackage],
           ['/cap-thuoc', 'Cấp thuốc', FiPackage],
+          ['/canh-bao', 'Cảnh báo', FiAlertTriangle],
+          ['/nhat-ky', 'Nhật ký hoạt động', FiBookOpen],
+          ['/noi-dung', 'Nội dung công khai', FiBookOpen],
           ['/nhan-vien', 'Nhân viên cơ sở', FiUsers],
           ['/co-so', 'Cơ sở', FiLayers],
           ['/khoa-phong', 'Khoa / phòng', FiLayers],

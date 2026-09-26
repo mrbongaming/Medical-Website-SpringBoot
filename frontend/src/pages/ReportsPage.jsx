@@ -295,7 +295,10 @@ export default function ReportsPage() {
               note="Theo ngày nhận · Tách khỏi tiền khách trả"
             />
           </div>
-          <nav className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-px [&>button]:min-h-11 [&>button]:shrink-0 [&>button]:border-b-2 [&>button]:border-transparent [&>button]:px-4 [&>button]:font-semibold [&>button]:text-slate-500 flex flex-wrap gap-2">
+          <nav
+            className="flex gap-2 overflow-x-auto border-b border-slate-200 pb-2"
+            aria-label="Nhóm báo cáo"
+          >
             {[
               ['appointments', 'Lịch hẹn & bệnh nhân'],
               ['staff', 'Bác sĩ & khoa'],
@@ -304,8 +307,8 @@ export default function ReportsPage() {
               <button
                 className={
                   tab === key
-                    ? 'bg-sky-600 text-white'
-                    : 'border border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-700'
+                    ? 'min-h-10 shrink-0 rounded-lg bg-sky-700 px-4 font-semibold text-white'
+                    : 'min-h-10 shrink-0 rounded-lg border border-slate-200 bg-white px-4 font-semibold text-slate-600 hover:border-sky-300 hover:text-sky-700'
                 }
                 onClick={() => setTab(key)}
                 key={key}

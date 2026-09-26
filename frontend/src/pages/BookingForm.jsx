@@ -207,7 +207,7 @@ export function BookingForm() {
       />
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
-          <ol className="mb-7 flex gap-2 overflow-x-auto pb-2 [&_li]:flex min-w-max items-center gap-2 rounded-full bg-slate-100 px-3 py-2 text-sm text-slate-500 [&_li>span]:grid [&_li>span]:size-6 [&_li>span]:place-items-center [&_li>span]:rounded-full [&_li>span]:bg-white [&_li>span]:font-bold">
+          <ol className="mb-7 flex gap-2 overflow-x-auto rounded-xl bg-slate-100 p-2 text-sm text-slate-500 [&_li]:flex [&_li]:min-w-max [&_li]:items-center [&_li]:gap-2 [&_li]:rounded-lg [&_li]:px-3 [&_li]:py-2 [&_li>span]:grid [&_li>span]:size-6 [&_li>span]:place-items-center [&_li>span]:rounded-full [&_li>span]:bg-white [&_li>span]:font-bold">
             {['Chọn nơi khám', 'Chọn lịch', 'Người khám', 'Xác nhận'].map((name, i) => (
               <li
                 className={

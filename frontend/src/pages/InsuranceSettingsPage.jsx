@@ -5,6 +5,9 @@ import { PageTitle } from '../components/PageTitle';
 import { Field } from '../components/Field';
 import { Alert } from '../components/Alert';
 import { Modal } from '../components/Modal';
+import { Select } from '../components/Select';
+import { Table } from '../components/Table';
+import { normalize } from '../data/domain';
 
 function PolicyEditor({ policy, close }) {
   const { db, dispatch } = useHospital();
@@ -92,6 +95,8 @@ export function InsuranceSettingsPage() {
   const [editing, setEditing] = useState(null);
   const [service, setService] = useState(null);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [serviceStatus, setServiceStatus] = useState('');
   const branches = db.branches.filter((b) => user.role === 'superAdmin' || b.id === user.branchId);
   return (
     <>
@@ -165,35 +170,76 @@ export function InsuranceSettingsPage() {
           Đơn giá mẫu dùng khi bác sĩ ghi nhận dịch vụ đã thực hiện. Giá khám chính được quản lý
           theo bác sĩ/gói khám.
         </p>
-        <div className="space-y-3">
-          {db.serviceCatalog
-            .filter((s) => s.id !== 'consultation')
-            .map((s) => (
-              <div
-                className="flex flex-col justify-between gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center"
-                key={s.id}
-              >
-                <span>
-                  <strong>{s.name}</strong>
-                  <small>
-                    {money(s.price)} · {s.active ? 'Đang hoạt động' : 'Ngừng sử dụng'} ·{' '}
-                    {s.discountable ? 'Cho phép ưu đãi phần ngoài BHYT' : 'Không khuyến mãi'}
-                  </small>
-                </span>
-                {user.role === 'superAdmin' && (
-                  <button
-                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
-                    onClick={() => {
-                      setService(s);
-                      setError('');
-                    }}
-                  >
-                    Sửa đơn giá
-                  </button>
-                )}
-              </div>
-            ))}
+        <div className="mb-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_16rem_auto] md:items-end">
+          <Field label="Tìm dịch vụ">
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Tên hoặc mã dịch vụ"
+            />
+          </Field>
+          <Select
+            label="Trạng thái"
+            value={serviceStatus}
+            onChange={setServiceStatus}
+            options={[
+              { id: 'active', name: 'Đang hoạt động' },
+              { id: 'inactive', name: 'Ngừng sử dụng' },
+            ]}
+            placeholder="Tất cả trạng thái"
+          />
+          <button
+            type="button"
+            className="min-h-11 rounded-xl border border-slate-300 px-4 font-semibold text-slate-700"
+            onClick={() => {
+              setQuery('');
+              setServiceStatus('');
+            }}
+          >
+            Xóa bộ lọc
+          </button>
         </div>
+        {(() => {
+          const services = db.serviceCatalog.filter(
+            (item) =>
+              item.id !== 'consultation' &&
+              normalize(`${item.id} ${item.name}`).includes(normalize(query)) &&
+              (!serviceStatus || (serviceStatus === 'active' ? item.active : !item.active)),
+          );
+          return (
+            <Table
+              headers={['Dịch vụ', 'Đơn giá', 'Ưu đãi', 'Trạng thái', 'Thao tác']}
+              empty={!services.length}
+              paginationKey={`${query}|${serviceStatus}`}
+            >
+              {services.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <strong className="block">{item.name}</strong>
+                    <small className="mt-1 block font-mono text-slate-500">{item.id}</small>
+                  </td>
+                  <td>{money(item.price)}</td>
+                  <td>{item.discountable ? 'Cho phép ngoài BHYT' : 'Không áp dụng'}</td>
+                  <td>{item.active ? 'Đang hoạt động' : 'Ngừng sử dụng'}</td>
+                  <td>
+                    {user.role === 'superAdmin' && (
+                      <button
+                        className="font-semibold text-sky-700"
+                        onClick={() => {
+                          setService(item);
+                          setError('');
+                        }}
+                      >
+                        Sửa đơn giá
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </Table>
+          );
+        })()}
       </section>
       {service && (
         <Modal title={'Đơn giá: ' + service.name} close={() => setService(null)}>

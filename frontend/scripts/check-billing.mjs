@@ -490,7 +490,7 @@ for (const key of [
 ])
   delete legacy[key];
 const migrated = migrateData(legacy);
-assert.equal(migrated.version, 5);
+assert.equal(migrated.version, 7);
 assert.deepEqual(migrated.payments, legacy.payments);
 assert.equal(migrated.records.length, legacy.records.length);
 assert.ok(migrated.records.every((record) => Array.isArray(record.prescription)));
