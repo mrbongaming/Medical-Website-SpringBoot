@@ -16,11 +16,12 @@ import { BranchCard } from '../components/BranchCard';
 import { DoctorCard } from '../components/DoctorCard';
 import { Photo } from '../components/Photo';
 import { SectionHeading } from './SectionHeading';
+import { selectPublicBranches } from '../helpers/BranchHelpers';
 
 export function HomePage() {
   const { db } = useHospital();
   const [query, setQuery] = useState('');
-  const branches = db.branches.filter((b) => b.active);
+  const branches = selectPublicBranches(db);
   const doctors = db.doctors.filter((d) => d.active && branches.some((b) => b.id === d.branchId));
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Ho_Chi_Minh' }).format(
     new Date(),
@@ -205,6 +206,11 @@ export function HomePage() {
             <BranchCard key={b.id} branch={b} />
           ))}
         </div>
+        {!branches.length && (
+          <p className="rounded-2xl border border-slate-200 bg-white p-6 text-center text-slate-600">
+            Chưa có cơ sở đang hoạt động. Vui lòng liên hệ tổng đài để được hỗ trợ.
+          </p>
+        )}
       </section>
       {fact && (
         <section className="border-y border-slate-200 bg-white py-12 sm:py-16">

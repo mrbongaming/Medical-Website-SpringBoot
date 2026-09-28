@@ -11,10 +11,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
   const { db, user, dispatch } = useHospital();
   const [row, setRow] = useState({
     ...initial,
-    serviceOpen: initial.serviceHours?.open || '07:30',
-    serviceClose: initial.serviceHours?.close || '17:00',
     timesText: initial.times?.join(', ') || '08:00, 09:00, 10:00, 13:30, 14:30, 15:30',
-    equipmentText: initial.equipment?.join(', ') || '',
     consultationLanguagesText: initial.consultationLanguages?.join(', ') || '',
     patientGroupsText: initial.patientGroups?.join(', ') || '',
     focusAreasText: initial.focusAreas?.join(', ') || '',
@@ -22,6 +19,17 @@ export function EntityEditor({ entity, initial, close, saved }) {
     membershipsText: initial.memberships?.join(', ') || '',
   });
   const [error, setError] = useState('');
+  const placeholders = {
+    name: 'Nhập tên hiển thị',
+    phone: 'VD: 0901234567',
+    price: 'VD: 200000',
+    experience: 'VD: 8',
+    qualification: 'VD: Bác sĩ chuyên khoa II',
+    currentPosition: 'VD: Trưởng khoa',
+    expertise: 'Nhập chuyên môn chính',
+    contactPhone: 'VD: 0901234567',
+    image: 'VD: /images/doctor-female.jpg',
+  };
   const change = (key, value) =>
     setRow((r) => ({
       ...r,
@@ -30,13 +38,14 @@ export function EntityEditor({ entity, initial, close, saved }) {
     }));
   function input(key, label, type = 'text', required = true) {
     return (
-      <Field key={key} label={label}>
+      <Field key={key} label={label} required={required} optional={!required}>
         <input
           type={type}
           value={row[key] ?? ''}
           onChange={(e) => change(key, e.target.value)}
           required={required}
           min={type === 'number' ? 0 : undefined}
+          placeholder={placeholders[key] || `Nhập ${label.toLowerCase()}`}
         />
       </Field>
     );
@@ -45,7 +54,6 @@ export function EntityEditor({ entity, initial, close, saved }) {
     e.preventDefault();
     const values = { ...row };
     delete values.timesText;
-    delete values.equipmentText;
     delete values.consultationLanguagesText;
     delete values.patientGroupsText;
     delete values.focusAreasText;
@@ -56,12 +64,6 @@ export function EntityEditor({ entity, initial, close, saved }) {
         .split(',')
         .map((item) => item.trim())
         .filter(Boolean);
-    if (entity === 'branches') {
-      values.serviceHours = { open: row.serviceOpen, close: row.serviceClose };
-      values.equipment = list(row.equipmentText);
-      delete values.serviceOpen;
-      delete values.serviceClose;
-    }
     if (entity === 'doctors') {
       values.consultationLanguages = list(row.consultationLanguagesText);
       values.patientGroups = list(row.patientGroupsText);
@@ -85,7 +87,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
     <Modal
       title={(initial.id ? 'Cập nhật ' : 'Thêm ') + titles[entity].toLowerCase()}
       close={close}
-      wide={['branches', 'doctors'].includes(entity)}
+      wide={entity === 'doctors'}
     >
       <form onSubmit={submit}>
         <div className="grid gap-4 md:grid-cols-2">
@@ -99,52 +101,6 @@ export function EntityEditor({ entity, initial, close, saved }) {
               required
               disabled={!!initial.id || user.role !== 'superAdmin'}
             />
-          )}
-          {entity === 'branches' && (
-            <>
-              {input('address', 'Địa chỉ')}
-              {input('phone', 'Điện thoại', 'tel')}
-              {input('hours', 'Giờ hoạt động')}
-              {input('facilityType', 'Loại hình cơ sở', 'text', false)}
-              {input('establishedYear', 'Năm thành lập', 'number', false)}
-              {input('email', 'Email', 'email', false)}
-              {input('website', 'Website', 'url', false)}
-              {input('image', 'Đường dẫn ảnh minh họa', 'text', false)}
-              <Field label="Giới thiệu" wide>
-                <textarea
-                  value={row.description || ''}
-                  onChange={(e) => change('description', e.target.value)}
-                />
-              </Field>
-              <Field label="Giới thiệu chi tiết" wide>
-                <textarea
-                  value={row.detailedIntroduction || ''}
-                  onChange={(e) => change('detailedIntroduction', e.target.value)}
-                />
-              </Field>
-              <Field label="Trang thiết bị (cách nhau bằng dấu phẩy)" wide>
-                <textarea
-                  value={row.equipmentText}
-                  onChange={(e) => change('equipmentText', e.target.value)}
-                />
-              </Field>
-              <Field label="Hướng dẫn di chuyển và gửi xe" wide>
-                <textarea
-                  value={row.transportGuide || ''}
-                  onChange={(e) => change('transportGuide', e.target.value)}
-                />
-              </Field>
-              <Field label="Hỗ trợ tiếp cận" wide>
-                <textarea
-                  value={row.accessibility || ''}
-                  onChange={(e) => change('accessibility', e.target.value)}
-                />
-              </Field>
-              <div className="grid gap-4 sm:grid-cols-2 md:col-span-2">
-                {input('serviceOpen', 'Giờ bắt đầu tiếp nhận', 'time', false)}
-                {input('serviceClose', 'Giờ kết thúc tiếp nhận', 'time', false)}
-              </div>
-            </>
           )}
           {['departments', 'packages'].includes(entity) && (
             <Select
@@ -291,7 +247,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
               </fieldset>
             </>
           )}
-          {entity !== 'schedules' && !(entity === 'branches' && user.role !== 'superAdmin') && (
+          {entity !== 'schedules' && (
             <label className="flex items-start gap-3 text-sm text-slate-700 md:col-span-2">
               <input
                 type="checkbox"

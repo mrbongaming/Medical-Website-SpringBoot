@@ -542,6 +542,20 @@ export function act(source, actorId, type, payload = {}) {
           'Chọn chuyên khoa đang hoạt động.',
         );
       if (entity === 'branches') {
+        row.name = row.name.trim();
+        row.address = String(row.address || '').trim();
+        row.phone = String(row.phone || '').trim();
+        requireThat(row.address, 'Vui lòng nhập địa chỉ cơ sở.');
+        requireThat(/^0\d{9,10}$/.test(row.phone), 'Số điện thoại cơ sở không hợp lệ.');
+        const open = row.serviceHours?.open;
+        const close = row.serviceHours?.close;
+        requireThat(
+          /^([01]\d|2[0-3]):[0-5]\d$/.test(open || '') &&
+            /^([01]\d|2[0-3]):[0-5]\d$/.test(close || '') &&
+            open < close,
+          'Giờ tiếp nhận của cơ sở không hợp lệ.',
+        );
+        row.hours = `Thứ 2 – Chủ nhật · ${open} – ${close}`;
         row.establishedYear = Number(row.establishedYear || 0);
         requireThat(
           !row.establishedYear ||
@@ -558,6 +572,18 @@ export function act(source, actorId, type, payload = {}) {
           !row.website || /^https?:\/\/[^\s]+$/i.test(row.website),
           'Website phải bắt đầu bằng http:// hoặc https://.',
         );
+        requireThat(
+          !row.image || /^(\/|https?:\/\/)/i.test(row.image),
+          'Đường dẫn ảnh cơ sở không hợp lệ.',
+        );
+        for (const key of ['equipment', 'amenities']) {
+          requireThat(
+            row[key] === undefined ||
+              (Array.isArray(row[key]) && row[key].every((item) => typeof item === 'string')),
+            'Danh sách tiện ích hoặc trang thiết bị không hợp lệ.',
+          );
+          row[key] = [...new Set((row[key] || []).map((item) => item.trim()).filter(Boolean))];
+        }
       }
       if (entity === 'doctors') {
         const dep = db.departments.find(

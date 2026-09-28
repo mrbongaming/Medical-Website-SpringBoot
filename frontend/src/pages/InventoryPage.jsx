@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { availableStock, inventorySummary, settingRow } from '../data/inventory';
 import { money } from '../data/mockData';
@@ -52,8 +53,14 @@ function requestRowsFromWorksheet(worksheet, db) {
 
 export function InventoryPage() {
   const { db, user, dispatch } = useHospital();
+  const [params] = useSearchParams();
   const [tab, setTab] = useState('stock');
-  const [branchId, setBranchId] = useState(user.branchId || '');
+  const [branchId, setBranchId] = useState(() => {
+    const requested = params.get('branchId');
+    return user.role === 'superAdmin' && db.branches.some((branch) => branch.id === requested)
+      ? requested
+      : user.branchId || '';
+  });
   const scopeBranch = user.role === 'superAdmin' ? branchId : user.branchId;
   const [query, setQuery] = useState('');
   const [group, setGroup] = useState('');

@@ -9,6 +9,7 @@ import { Select } from '../components/Select';
 import { BranchCard } from '../components/BranchCard';
 import { DoctorCard } from '../components/DoctorCard';
 import { Pagination } from '../components/Pagination';
+import { selectPublicBranches } from '../helpers/BranchHelpers';
 
 export function DirectoryPage({ kind }) {
   const { db } = useHospital();
@@ -29,7 +30,8 @@ export function DirectoryPage({ kind }) {
     specialties: 'Chuyên khoa',
     packages: 'Gói khám sức khỏe',
   };
-  const rows = db[kind].filter(
+  const sourceRows = kind === 'branches' ? selectPublicBranches(db) : db[kind];
+  const rows = sourceRows.filter(
     (r) =>
       r.active &&
       normalize(
@@ -80,7 +82,7 @@ export function DirectoryPage({ kind }) {
                 label="Cơ sở"
                 value={branchId}
                 onChange={(v) => set('branchId', v)}
-                options={db.branches.filter((b) => b.active)}
+                options={selectPublicBranches(db)}
                 placeholder="Tất cả cơ sở"
               />
             )}

@@ -8,14 +8,18 @@ export function Select({
   placeholder = 'Chọn…',
   required = false,
   disabled = false,
+  hint = '',
+  error = '',
+  optional = false,
 }) {
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint} error={error} required={required} optional={optional}>
       <select
         value={value || ''}
         onChange={(e) => onChange(e.target.value)}
         required={required}
         disabled={disabled}
+        aria-invalid={!!error}
       >
         <option value="">{placeholder}</option>
         {options.map((o) => (

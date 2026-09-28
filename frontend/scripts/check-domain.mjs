@@ -217,9 +217,17 @@ const sId = run('admin1', 'save', {
 run('admin1', 'remove', { entity: 'schedules', id: sId });
 const newBranch = run('root', 'save', {
   entity: 'branches',
-  values: { name: 'Cơ sở thử', active: true },
+  values: {
+    name: 'Cơ sở thử',
+    address: '1 Đường Thử, TP.HCM',
+    phone: '02812345679',
+    serviceHours: { open: '07:30', close: '17:00' },
+    active: true,
+  },
 });
+assert.equal(db.branches.filter((branch) => branch.active).length, 5);
 run('root', 'remove', { entity: 'branches', id: newBranch });
+assert.equal(db.branches.filter((branch) => branch.active).length, 4);
 const newDoc = run('admin1', 'save', {
   entity: 'doctors',
   values: { name: 'BS. Thử', branchId: 'b1', departmentId: 'dep1', price: 200000, active: true },

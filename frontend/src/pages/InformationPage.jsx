@@ -3,6 +3,7 @@ import { FiArrowRight, FiPhone } from 'react-icons/fi';
 import { useHospital } from '../state/context';
 import { hospital } from '../data/mockData';
 import { PageTitle } from '../components/PageTitle';
+import { publicBranchCount, selectPublicBranches } from '../helpers/BranchHelpers';
 
 export function InformationPage({ mode }) {
   const { db } = useHospital();
@@ -22,8 +23,8 @@ export function InformationPage({ mode }) {
           <>
             <h2>Một hệ thống, nhiều điểm chăm sóc</h2>
             <p>
-              An Tâm kết nối đội ngũ bác sĩ tại bốn cơ sở, giúp bạn tìm hiểu chuyên môn và chủ động
-              lựa chọn lịch khám.
+              An Tâm kết nối đội ngũ bác sĩ tại {publicBranchCount(db)} cơ sở, giúp bạn tìm hiểu
+              chuyên môn và chủ động lựa chọn lịch khám.
             </p>
             <h3>Chuyên khoa đang phục vụ</h3>
             <ul>
@@ -63,19 +64,18 @@ export function InformationPage({ mode }) {
             <p>
               <FiPhone /> {hospital.phone} · {hospital.email}
             </p>
-            {db.branches
-              .filter((b) => b.active)
-              .map((b) => (
-                <div key={b.id}>
-                  <h3>
-                    <Link to={'/co-so/' + b.slug}>{b.name}</Link>
-                  </h3>
-                  <p>{b.address}</p>
-                  <p>
-                    <a href={'tel:' + b.phone}>{b.phone}</a> · {b.hours}
-                  </p>
-                </div>
-              ))}
+            {!publicBranchCount(db) && <p>Chưa có cơ sở đang hoạt động.</p>}
+            {selectPublicBranches(db).map((b) => (
+              <div key={b.id}>
+                <h3>
+                  <Link to={'/co-so/' + b.slug}>{b.name}</Link>
+                </h3>
+                <p>{b.address}</p>
+                <p>
+                  <a href={'tel:' + b.phone}>{b.phone}</a> · {b.hours}
+                </p>
+              </div>
+            ))}
           </>
         )}
         <Link

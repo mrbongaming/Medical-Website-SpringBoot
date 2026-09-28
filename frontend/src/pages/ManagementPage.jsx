@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { inBranch, normalize } from '../data/domain';
 import { dateKey, money } from '../data/mockData';
@@ -10,17 +11,20 @@ import { Select } from '../components/Select';
 import { Table } from '../components/Table';
 import { titles } from '../helpers/ManagementHelpers';
 import { EntityEditor } from './EntityEditor';
+import { BranchEditor } from './BranchEditor';
 
 export function ManagementPage({ entity }) {
   const { db, user, dispatch } = useHospital();
+  const [params] = useSearchParams();
   const [query, setQuery] = useState('');
-  const [branchId, setBranchId] = useState('');
+  const [branchId, setBranchId] = useState(() => params.get('branchId') || '');
   const [activeState, setActiveState] = useState('');
   const [from, setFrom] = useState(dateKey());
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [createdBranchId, setCreatedBranchId] = useState('');
   const rows = db[entity]
     .filter(
       (r) =>
@@ -63,9 +67,15 @@ export function ManagementPage({ entity }) {
         {!(entity === 'branches' && user.role !== 'superAdmin') && (
           <button
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50"
-            onClick={() =>
+            onClick={() => {
+              setSuccess('');
+              setCreatedBranchId('');
               setEditing({
-                branchId: user.branchId || branchId || db.branches.find((b) => b.active)?.id,
+                ...(entity === 'branches'
+                  ? {}
+                  : {
+                      branchId: user.branchId || branchId || db.branches.find((b) => b.active)?.id,
+                    }),
                 active: true,
                 role:
                   entity === 'users'
@@ -73,8 +83,8 @@ export function ManagementPage({ entity }) {
                       ? 'branchAdmin'
                       : 'staff'
                     : undefined,
-              })
-            }
+              });
+            }}
           >
             + Thêm mới
           </button>
@@ -130,6 +140,27 @@ export function ManagementPage({ entity }) {
         )}
       </div>
       <Alert success={success} />
+      {createdBranchId && (
+        <section
+          className="mb-5 rounded-xl border border-emerald-200 bg-emerald-50 p-4"
+          aria-label="Bước cấu hình tiếp theo"
+        >
+          <h2 className="font-bold text-emerald-950">Tiếp tục cấu hình cơ sở vừa tạo</h2>
+          <p className="mt-1 text-sm text-emerald-900">
+            Thêm các dữ liệu cần thiết trước khi mở lịch đặt khám tại cơ sở này.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2 [&_a]:rounded-lg [&_a]:border [&_a]:border-emerald-300 [&_a]:bg-white [&_a]:px-3 [&_a]:py-2 [&_a]:text-sm [&_a]:font-semibold [&_a]:text-emerald-900 hover:[&_a]:bg-emerald-100">
+            <Link to={`/quan-tri/khoa-phong?branchId=${createdBranchId}`}>Thêm khoa/phòng</Link>
+            <Link to={`/quan-tri/nhan-vien?branchId=${createdBranchId}`}>Tạo admin cơ sở</Link>
+            <Link to={`/quan-tri/bac-si?branchId=${createdBranchId}`}>Thêm bác sĩ</Link>
+            <Link to={`/quan-tri/lich-lam-viec?branchId=${createdBranchId}`}>
+              Tạo lịch làm việc
+            </Link>
+            <Link to={`/quan-tri/kho-thuoc?branchId=${createdBranchId}`}>Cấu hình kho thuốc</Link>
+            <Link to={`/quan-tri/bao-hiem?branchId=${createdBranchId}`}>Cấu hình BHYT</Link>
+          </div>
+        </section>
+      )}
       <Table
         headers={['Thông tin', 'Chi tiết', 'Trạng thái', 'Thao tác']}
         empty={!rows.length}
@@ -208,17 +239,28 @@ export function ManagementPage({ entity }) {
           </tr>
         ))}
       </Table>
-      {editing && (
-        <EntityEditor
-          entity={entity}
-          initial={editing}
-          close={() => setEditing(null)}
-          saved={() => {
-            setEditing(null);
-            setSuccess('Đã lưu thay đổi.');
-          }}
-        />
-      )}
+      {editing &&
+        (entity === 'branches' ? (
+          <BranchEditor
+            initial={editing}
+            close={() => setEditing(null)}
+            saved={({ id, created, keepOpen }) => {
+              if (!keepOpen) setEditing(null);
+              setSuccess(created ? 'Đã thêm cơ sở mới.' : 'Đã lưu thay đổi.');
+              setCreatedBranchId(created ? id : '');
+            }}
+          />
+        ) : (
+          <EntityEditor
+            entity={entity}
+            initial={editing}
+            close={() => setEditing(null)}
+            saved={() => {
+              setEditing(null);
+              setSuccess('Đã lưu thay đổi.');
+            }}
+          />
+        ))}
       {deleting && (
         <Modal title="Xóa dữ liệu" close={() => setDeleting(null)}>
           <p>

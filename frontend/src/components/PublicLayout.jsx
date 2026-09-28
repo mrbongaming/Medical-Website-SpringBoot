@@ -5,9 +5,10 @@ import { useHospital } from '../state/context';
 import { hospital, roles } from '../data/mockData';
 import { Brand } from './Brand';
 import { roleProfilePath, roleWorkspacePath } from '../helpers/StaffHelpers';
+import { publicBranchCount } from '../helpers/BranchHelpers';
 
 export function PublicLayout() {
-  const { user, logout, storageError } = useHospital();
+  const { db, user, logout, storageError } = useHospital();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   return (
@@ -20,7 +21,7 @@ export function PublicLayout() {
       </a>
       <div className="hidden bg-brand-900 py-2 text-xs text-sky-50 sm:block">
         <div className="mx-auto flex w-full max-w-7xl justify-between px-4 sm:px-6 lg:px-8">
-          <span>Một hệ thống chăm sóc · Bốn cơ sở kết nối</span>
+          <span>Một hệ thống chăm sóc · {publicBranchCount(db)} cơ sở kết nối</span>
           <span>Tư vấn / đặt khám: {hospital.phone}</span>
         </div>
       </div>

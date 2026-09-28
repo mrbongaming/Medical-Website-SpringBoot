@@ -232,7 +232,7 @@ try {
       return;
     }
     const index = await evaluate(
-      `Array.from((document.querySelector('dialog') || document).querySelectorAll('label')).findIndex(el => el.querySelector(':scope > span')?.textContent === ${JSON.stringify(label)})`,
+      `Array.from((document.querySelector('dialog') || document).querySelectorAll('label')).findIndex(el => el.querySelector(':scope > span')?.childNodes[0]?.textContent?.trim() === ${JSON.stringify(label)})`,
     );
     assert.ok(index >= 0, 'Missing field ' + label);
     await evaluate(
@@ -270,6 +270,7 @@ try {
     );
   await navigate('/');
   assert.equal(await evaluate("document.querySelectorAll('[data-testid=branch-card]').length"), 4);
+  assert.ok(await evaluate("document.body.textContent.includes('4 cơ sở kết nối')"));
   await waitFor(
     () => evaluate('document.querySelector(\'img[alt^="Đội ngũ bác sĩ"]\').naturalWidth > 0'),
     'local hero image',
@@ -451,6 +452,32 @@ try {
     ),
   );
   await screenshot('desktop-dashboard');
+  await navigate('/quan-tri/co-so');
+  await textButton('+ Thêm mới');
+  await field('Tên cơ sở', 'An Tâm · Cơ sở kiểm thử');
+  await field('Điện thoại', '02812345679');
+  await field('Địa chỉ', '1 Đường Kiểm Thử, TP.HCM');
+  await textButton('Lưu dữ liệu');
+  assert.equal(await stored('db.branches.filter(branch => branch.active).length'), 5);
+  const testBranchId = await stored(
+    "db.branches.find(branch => branch.name === 'An Tâm · Cơ sở kiểm thử').id",
+  );
+  assert.ok(
+    await evaluate("document.body.textContent.includes('Tiếp tục cấu hình cơ sở vừa tạo')"),
+  );
+  await navigate('/quan-tri/kho-thuoc?branchId=' + testBranchId);
+  assert.equal(await evaluate("document.querySelector('select').value"), testBranchId);
+  await navigate('/quan-tri/bao-hiem?branchId=' + testBranchId);
+  assert.ok(await evaluate("document.body.textContent.includes('An Tâm · Cơ sở kiểm thử')"));
+  await navigate('/');
+  assert.ok(await evaluate("document.body.textContent.includes('5 cơ sở kết nối')"));
+  await navigate('/quan-tri/co-so');
+  const testBranchRow = `Array.from(document.querySelectorAll('tbody tr')).find(row => row.textContent.includes('An Tâm · Cơ sở kiểm thử'))`;
+  await textButton('Xóa', testBranchRow);
+  await textButton('Xác nhận xóa');
+  assert.equal(await stored('db.branches.filter(branch => branch.active).length'), 4);
+  await navigate('/');
+  assert.ok(await evaluate("document.body.textContent.includes('4 cơ sở kết nối')"));
   await navigate('/quan-tri/khoa-phong');
   await textButton('+ Thêm mới');
   await field('Tên', 'Khoa kiểm thử');
@@ -548,6 +575,20 @@ try {
     await click('dialog [aria-label="Đóng"]');
     await navigate('/quan-tri');
     await screenshot('dashboard-' + width);
+    await navigate('/quan-tri/co-so');
+    await textButton('Sửa');
+    assert.equal(
+      await evaluate("document.querySelector('[data-branch-field=name]').placeholder"),
+      'VD: An Tâm – Chi nhánh Thủ Đức',
+    );
+    assert.ok(
+      await evaluate(
+        "document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth",
+      ),
+      'Branch editor dialog overflow at ' + width,
+    );
+    await screenshot('branch-editor-' + width);
+    await click('dialog [aria-label="Đóng"]');
     await navigate('/dat-lich');
     await click('[data-branch-id=b2] img');
     assert.equal(
@@ -624,7 +665,7 @@ try {
       await navigate('/quan-tri/co-so');
       await textButton('Sửa');
       await field('Email', 'capnhat@antam.example');
-      await field('Trang thiết bị (cách nhau bằng dấu phẩy)', 'Khu xét nghiệm, Máy siêu âm');
+      await fill('[data-testid="equipment-item-0"]', 'Máy siêu âm');
       await textButton('Lưu dữ liệu');
       assert.ok(
         await stored(
@@ -651,6 +692,10 @@ try {
       await screenshot('admin-audit-mobile');
       await navigate('/quan-tri/co-so');
       await textButton('Sửa');
+      assert.equal(
+        await evaluate("document.querySelector('[data-branch-field=name]').placeholder"),
+        'VD: An Tâm – Chi nhánh Thủ Đức',
+      );
       assert.ok(
         await evaluate(
           "document.querySelector('dialog').scrollWidth <= document.querySelector('dialog').clientWidth",

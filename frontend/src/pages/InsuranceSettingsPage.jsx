@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { dateKey, money } from '../data/mockData';
 import { PageTitle } from '../components/PageTitle';
@@ -93,12 +94,18 @@ function PolicyEditor({ policy, close }) {
 
 export function InsuranceSettingsPage() {
   const { db, user, dispatch } = useHospital();
+  const [params] = useSearchParams();
   const [editing, setEditing] = useState(null);
   const [service, setService] = useState(null);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [serviceStatus, setServiceStatus] = useState('');
-  const branches = db.branches.filter((b) => user.role === 'superAdmin' || b.id === user.branchId);
+  const requestedBranchId = user.role === 'superAdmin' ? params.get('branchId') || '' : '';
+  const branches = db.branches.filter(
+    (branch) =>
+      (user.role === 'superAdmin' || branch.id === user.branchId) &&
+      (!requestedBranchId || branch.id === requestedBranchId),
+  );
   return (
     <div className="space-y-6">
       <PageTitle
