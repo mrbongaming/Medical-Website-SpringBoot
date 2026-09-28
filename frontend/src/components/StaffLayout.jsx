@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { FiLogOut, FiMenu } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { roles } from '../data/seed';
+import { roles } from '../data/mockData';
 import { Brand } from './Brand';
 import { getStaffNavigation } from '../helpers/StaffHelpers';
 

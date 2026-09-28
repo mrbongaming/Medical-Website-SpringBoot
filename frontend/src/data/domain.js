@@ -4,7 +4,7 @@ import {
   recordServices,
   billingAction,
 } from './billing.js';
-import { dateKey } from './seed.js';
+import { dateKey } from './mockData.js';
 import { inventoryAction, validateAndReservePrescription } from './inventory.js';
 
 export const isAdmin = (u) => ['superAdmin', 'branchAdmin'].includes(u?.role);

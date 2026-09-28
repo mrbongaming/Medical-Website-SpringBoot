@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
-import { dateKey, money } from '../data/seed';
+import { dateKey, money } from '../data/mockData';
 import { PageTitle } from '../components/PageTitle';
 import { Field } from '../components/Field';
 import { Alert } from '../components/Alert';
@@ -16,6 +16,7 @@ function PolicyEditor({ policy, close }) {
   const set = (key, value) => setForm({ ...form, [key]: value });
   return (
     <form
+      className="space-y-5"
       onSubmit={async (e) => {
         e.preventDefault();
         try {
@@ -99,7 +100,7 @@ export function InsuranceSettingsPage() {
   const [serviceStatus, setServiceStatus] = useState('');
   const branches = db.branches.filter((b) => user.role === 'superAdmin' || b.id === user.branchId);
   return (
-    <>
+    <div className="space-y-6">
       <PageTitle
         title="Cấu hình BHYT"
         description="Quản lý biểu giá và thời gian áp dụng cho từng cơ sở. Toàn bộ quyền lợi tại đây là dữ liệu mô phỏng."
@@ -108,7 +109,7 @@ export function InsuranceSettingsPage() {
         Nhân viên phải xác minh hiệu lực thẻ, điều kiện khám và mức hưởng theo hồ sơ mẫu. Không có
         kết nối tra cứu hoặc duyệt của BHXH.
       </p>
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
         {branches.map((b) => {
           const versions = db.insurancePolicies
             .filter((p) => p.branchId === b.id)
@@ -123,48 +124,75 @@ export function InsuranceSettingsPage() {
           };
           return (
             <section
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
+              className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
               key={b.id}
             >
-              <h2>{b.name}</h2>
-              <p>
-                Phiên bản mới nhất: v{latest.version} ·{' '}
-                {latest.enabled ? 'Bật hỗ trợ' : 'Tắt hỗ trợ'}
-              </p>
-              <p className="text-slate-500">
-                {latest.effectiveFrom} → {latest.effectiveTo}
-              </p>
-              <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 text-sm [&_dt]:text-slate-500 [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-semibold">
-                {latest.services.map((s) => (
-                  <div className="border-t border-slate-100 pt-3" key={s.serviceId}>
-                    <dt>{db.serviceCatalog.find((r) => r.id === s.serviceId)?.name}</dt>
-                    <dd>{money(s.tariff)}</dd>
-                  </div>
-                ))}
-              </dl>
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h2 className="text-xl font-bold text-brand-900">{b.name}</h2>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Phiên bản v{latest.version} · {latest.effectiveFrom} → {latest.effectiveTo}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold ${
+                    latest.enabled
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-slate-100 text-slate-600'
+                  }`}
+                >
+                  {latest.enabled ? 'Đang hỗ trợ' : 'Đang tắt'}
+                </span>
+              </div>
+              <div className="mb-5 rounded-xl bg-slate-50 p-4">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-slate-500">
+                  Biểu giá đang áp dụng
+                </p>
+                <dl className="divide-y divide-slate-200 text-sm">
+                  {latest.services.map((s) => (
+                    <div
+                      className="flex items-start justify-between gap-4 py-3 first:pt-0 last:pb-0"
+                      key={s.serviceId}
+                    >
+                      <dt>{db.serviceCatalog.find((r) => r.id === s.serviceId)?.name}</dt>
+                      <dd className="m-0 shrink-0 font-semibold text-brand-900">
+                        {money(s.tariff)}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
               {user.role === 'superAdmin' && (
                 <button
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 border border-sky-200 bg-white text-sky-700 shadow-none hover:border-sky-300 hover:bg-sky-50"
+                  className="mb-4 inline-flex min-h-11 w-full items-center justify-center rounded-xl border border-sky-200 bg-white px-5 py-2.5 font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50"
                   onClick={() => setEditing(latest)}
                 >
                   Tạo phiên bản cấu hình
                 </button>
               )}
-              <details>
-                <summary>Lịch sử phiên bản ({versions.length})</summary>
-                {versions.map((p) => (
-                  <p key={p.id}>
-                    <strong>v{p.version}</strong> · {p.effectiveFrom} → {p.effectiveTo} ·{' '}
-                    {p.enabled ? 'Bật' : 'Tắt'}
-                    <small>{p.note}</small>
-                  </p>
-                ))}
+              <details className="mt-auto border-t border-slate-100 pt-4 text-sm">
+                <summary className="cursor-pointer font-semibold text-sky-700">
+                  Lịch sử phiên bản ({versions.length})
+                </summary>
+                <div className="mt-3 space-y-3">
+                  {versions.map((p) => (
+                    <div className="rounded-lg bg-slate-50 p-3" key={p.id}>
+                      <p className="font-semibold text-slate-800">
+                        v{p.version} · {p.enabled ? 'Bật hỗ trợ' : 'Tắt hỗ trợ'}
+                      </p>
+                      <p className="mt-1 text-slate-500">
+                        {p.effectiveFrom} → {p.effectiveTo}
+                      </p>
+                      {p.note && <p className="mt-1 text-slate-600">{p.note}</p>}
+                    </div>
+                  ))}
+                </div>
               </details>
             </section>
           );
         })}
       </div>
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
         <h2>Danh mục dịch vụ bổ sung</h2>
         <p className="text-slate-500">
           Đơn giá mẫu dùng khi bác sĩ ghi nhận dịch vụ đã thực hiện. Giá khám chính được quản lý
@@ -209,7 +237,13 @@ export function InsuranceSettingsPage() {
           );
           return (
             <Table
-              headers={['Dịch vụ', 'Đơn giá', 'Ưu đãi', 'Trạng thái', 'Thao tác']}
+              headers={[
+                'Dịch vụ',
+                'Đơn giá',
+                'Ưu đãi',
+                'Trạng thái',
+                ...(user.role === 'superAdmin' ? ['Thao tác'] : []),
+              ]}
               empty={!services.length}
               paginationKey={`${query}|${serviceStatus}`}
             >
@@ -222,8 +256,8 @@ export function InsuranceSettingsPage() {
                   <td>{money(item.price)}</td>
                   <td>{item.discountable ? 'Cho phép ngoài BHYT' : 'Không áp dụng'}</td>
                   <td>{item.active ? 'Đang hoạt động' : 'Ngừng sử dụng'}</td>
-                  <td>
-                    {user.role === 'superAdmin' && (
+                  {user.role === 'superAdmin' && (
+                    <td>
                       <button
                         className="font-semibold text-sky-700"
                         onClick={() => {
@@ -233,8 +267,8 @@ export function InsuranceSettingsPage() {
                       >
                         Sửa đơn giá
                       </button>
-                    )}
-                  </td>
+                    </td>
+                  )}
                 </tr>
               ))}
             </Table>
@@ -244,6 +278,7 @@ export function InsuranceSettingsPage() {
       {service && (
         <Modal title={'Đơn giá: ' + service.name} close={() => setService(null)}>
           <form
+            className="space-y-5"
             onSubmit={async (e) => {
               e.preventDefault();
               const values = Object.fromEntries(new FormData(e.currentTarget));
@@ -293,6 +328,6 @@ export function InsuranceSettingsPage() {
           <PolicyEditor policy={editing} close={() => setEditing(null)} />
         </Modal>
       )}
-    </>
+    </div>
   );
 }

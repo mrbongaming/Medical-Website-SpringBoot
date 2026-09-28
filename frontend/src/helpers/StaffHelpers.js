@@ -9,10 +9,23 @@ import {
   FiUsers,
 } from 'react-icons/fi';
 
+export function roleWorkspacePath(role) {
+  if (role === 'doctor') return '/bac-si-lam-viec';
+  if (role === 'staff') return '/nhan-vien';
+  if (role === 'superAdmin' || role === 'branchAdmin') return '/quan-tri';
+  return '/lich-hen';
+}
+
+export function roleProfilePath(role) {
+  if (role === 'doctor') return '/bac-si-lam-viec/tai-khoan';
+  if (role === 'staff') return '/nhan-vien/tai-khoan';
+  return '/tai-khoan';
+}
+
 export function getStaffNavigation(role) {
   const doctor = role === 'doctor';
   const receptionist = role === 'staff';
-  const base = doctor ? '/bac-si-lam-viec' : receptionist ? '/nhan-vien' : '/quan-tri';
+  const base = roleWorkspacePath(role);
   const links = doctor
     ? [
         ['', 'Lịch hẹn', FiCalendar],

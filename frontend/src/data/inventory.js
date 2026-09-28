@@ -1,4 +1,4 @@
-import { dateKey } from './seed.js';
+import { dateKey } from './mockData.js';
 
 const check = (ok, message) => {
   if (!ok) throw new Error(message);

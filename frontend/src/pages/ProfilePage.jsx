@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useHospital } from '../state/context';
-import { roles, dateKey } from '../data/seed';
+import { roles, dateKey } from '../data/mockData';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
 import { PageTitle } from '../components/PageTitle';
@@ -25,7 +25,7 @@ export function ProfilePage() {
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 min-h-[55vh] py-10 sm:py-14 max-w-4xl">
       <PageTitle title="Hồ sơ cá nhân" description={roles[user.role]} />
       <form
-        className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
+        className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
         onSubmit={submit}
         key={user.id}
       >

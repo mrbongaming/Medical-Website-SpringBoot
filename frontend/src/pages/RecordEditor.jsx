@@ -107,7 +107,7 @@ export function RecordEditor({ appointment }) {
         <Badge status="confirmed" />
       </div>
       <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_24rem]">
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
           <h2>Ghi kết quả khám</h2>
           <form
             onSubmit={submit}
@@ -178,7 +178,7 @@ export function RecordEditor({ appointment }) {
             </div>
           </form>
         </section>
-        <aside className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
+        <aside className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
           <h2>Lịch sử liên quan</h2>
           <p>Các bệnh án đã hoàn tất trong toàn hệ thống của bệnh nhân được phân công.</p>
           {history.length ? (

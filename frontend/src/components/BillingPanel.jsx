@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
 import { isAdmin } from '../data/domain';
-import { dateKey, money } from '../data/seed';
+import { dateKey, money } from '../data/mockData';
 import { financialBalance } from '../helpers/PricingHelpers';
 import { insuranceStatuses } from '../helpers/InsuranceHelpers';
 import { PriceBreakdown } from './PriceBreakdown';
@@ -126,7 +126,7 @@ export function BillingPanel({ appointmentId }) {
             </button>
           )}
           {b.insurance.status !== 'none' && (
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <h3>Hồ sơ BHYT mô phỏng</h3>
               <dl className="grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-3 text-sm [&_dt]:text-slate-500 [&_dd]:m-0 [&_dd]:text-right [&_dd]:font-semibold">
                 <dt>Mã mẫu</dt>
@@ -280,7 +280,7 @@ export function BillingPanel({ appointmentId }) {
             b.receivedAt &&
             !b.finalized && (
               <form
-                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+                className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
                 onSubmit={(event) => {
                   event.preventDefault();
                   run('billing-services', { services, serviceReason });
@@ -301,7 +301,7 @@ export function BillingPanel({ appointmentId }) {
             )}
           {processor && !b.finalized && (
             <form
-              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
               onSubmit={(event) => {
                 event.preventDefault();
                 run('promotion-apply', { code: promotionCode });
@@ -322,7 +322,7 @@ export function BillingPanel({ appointmentId }) {
           )}
           {processor && a.status === 'completed' && !b.finalized && (
             <form
-              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
               onSubmit={submit('bill-finalize')}
             >
               <h3>Đối chiếu và chốt phí</h3>
@@ -343,7 +343,7 @@ export function BillingPanel({ appointmentId }) {
           )}
           {processor && b.finalized && !balance.settled && (
             <form
-              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
               onSubmit={submit('pay')}
             >
               <h3>Thanh toán mô phỏng</h3>
@@ -364,7 +364,7 @@ export function BillingPanel({ appointmentId }) {
             </form>
           )}
           {balance.settled && (
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <h3>Phiếu và giao dịch</h3>
               <p className="break-all font-mono text-xs text-slate-600">{b.settlementId}</p>
               <p>
@@ -430,7 +430,7 @@ export function BillingPanel({ appointmentId }) {
             </section>
           )}
           {b.finalized && balance.price.insurer > 0 && (
-            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+            <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
               <h3>Khoản BHYT</h3>
               <p>
                 {claim ? 'Đã ghi nhận quyết toán mô phỏng' : 'Chờ quyết toán mô phỏng'}:{' '}
@@ -450,7 +450,7 @@ export function BillingPanel({ appointmentId }) {
           )}
         </div>
       </div>
-      <details className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
+      <details className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
         <summary>Lịch sử xử lý</summary>
         <ol className="space-y-3 text-sm">
           {db.auditLogs

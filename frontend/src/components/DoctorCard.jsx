@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiMapPin } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money } from '../data/seed';
+import { money } from '../data/mockData';
 import { Photo } from './Photo';
 import { Rating } from './Rating';
 
@@ -21,7 +21,7 @@ export function DoctorCard({ doctor }) {
           className="h-64 w-full object-cover object-top"
         />
       </Link>
-      <div className="flex flex-1 flex-col p-5 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-brand-900 [&_p]:mb-2 [&_p]:text-sm [&_p]:text-slate-600">
+      <div className="flex flex-1 flex-col p-4 sm:p-5 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-brand-900 [&_p]:mb-2 [&_p]:text-sm [&_p]:text-slate-600">
         <span className="mb-2 inline-block text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
           {db.specialties.find((s) => s.id === doctor.specialtyId)?.name}
         </span>

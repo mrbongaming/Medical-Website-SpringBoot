@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { FiPlus, FiTrash2 } from 'react-icons/fi';
 import { availableStock, inventoryRow } from '../data/inventory';
 import { normalize } from '../data/domain';
-import { money } from '../data/seed';
+import { money } from '../data/mockData';
 import { Field } from './Field';
 
 const emptyLine = () => ({

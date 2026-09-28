@@ -1,10 +1,10 @@
-import { money } from '../data/seed';
+import { money } from '../data/mockData';
 
 export function PriceBreakdown({ price, title = 'Chi phí dự kiến' }) {
   if (!price) return null;
   return (
     <section
-      className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 [&_h3]:font-bold [&_h3]:text-brand-900"
+      className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 [&_h3]:font-bold [&_h3]:text-brand-900"
       aria-label={title}
     >
       <h3>{title}</h3>

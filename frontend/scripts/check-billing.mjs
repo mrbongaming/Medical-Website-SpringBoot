@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createSeed, dateKey, relativeDate } from '../src/data/seed.js';
+import { createSeed, dateKey, relativeDate } from '../src/data/mockData.js';
 import { act } from '../src/data/domain.js';
 import { migrateData } from '../src/data/storage.js';
 import { report } from '../src/data/reports.js';

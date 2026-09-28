@@ -1,9 +1,5 @@
-import { addBillingData } from './billingSeed.js';
-import { addInventoryData } from './inventorySeed.js';
-import { createSeed } from './seed.js';
-import { addV5Data } from './v5.js';
-import { addV6Data } from './v6.js';
-import { addV7Data } from './v7.js';
+import { addBillingData, addInventoryData, createSeed } from './mockData.js';
+import { addV5Data, addV6Data, addV7Data } from './migrations.js';
 
 // Keep the existing key so open tabs and existing demo users migrate in place.
 export const DATA_KEY = 'antam-data-v1';

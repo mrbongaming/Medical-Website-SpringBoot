@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
-import { roles } from '../data/seed';
+import { roles } from '../data/mockData';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
 import { Select } from '../components/Select';
 import { Button } from '../components/Button';
+import { roleWorkspacePath } from '../helpers/StaffHelpers';
 
 export function AuthPage() {
   const { db, login, dispatch } = useHospital();
@@ -22,13 +23,7 @@ export function AuthPage() {
     navigate(
       target?.startsWith('/') && !target.startsWith('//')
         ? target
-        : account?.role === 'doctor'
-          ? '/bac-si-lam-viec'
-          : account?.role === 'staff'
-            ? '/nhan-vien'
-            : ['superAdmin', 'branchAdmin'].includes(account?.role)
-              ? '/quan-tri'
-              : '/lich-hen',
+        : roleWorkspacePath(account?.role),
     );
   }
   async function submit(e) {
@@ -141,7 +136,7 @@ export function AuthPage() {
             {register ? 'Tạo hồ sơ và tiếp tục' : 'Vào không gian làm việc'} →
           </Button>
         </form>
-        <p className="text-slate-500 text-sm text-slate-500">
+        <p className="text-sm text-slate-500">
           Dữ liệu chỉ lưu tại trình duyệt này. Có thể đổi vai trò bằng cách đăng xuất và chọn tài
           khoản khác.
         </p>

@@ -10,7 +10,7 @@ export function Modal({ title, children, close, wide = false }) {
   return (
     <dialog
       ref={ref}
-      className={`m-auto max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto rounded-2xl border-0 bg-white p-5 text-slate-800 shadow-2xl backdrop:bg-slate-950/60 sm:p-6 ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}
+      className={`m-auto max-h-[90vh] w-[calc(100%-2rem)] overflow-y-auto rounded-2xl border-0 bg-white p-4 text-slate-800 shadow-2xl backdrop:bg-slate-950/60 sm:p-6 ${wide ? 'max-w-5xl' : 'max-w-2xl'}`}
       onCancel={close}
       onClick={(e) => {
         if (e.target === e.currentTarget) close();

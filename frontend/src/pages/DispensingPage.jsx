@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
 import { financialBalance } from '../helpers/PricingHelpers';
-import { money } from '../data/seed';
+import { money } from '../data/mockData';
 import { Alert } from '../components/Alert';
 import { Empty } from '../components/Empty';
 import { Field } from '../components/Field';
@@ -50,7 +50,7 @@ export function DispensingPage() {
           const balance = financialBalance(db, appointment);
           return (
             <article
-              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
               key={record.id}
             >
               <div className="flex flex-wrap justify-between gap-3">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
-import { dateKey, money, relativeDate } from '../data/seed';
+import { dateKey, money, relativeDate } from '../data/mockData';
 import { PageTitle } from '../components/PageTitle';
 import { Pagination } from '../components/Pagination';
 import { usePagination } from '../hooks/usePagination';
@@ -222,7 +222,7 @@ export function PromotionsPage() {
           + Tạo chương trình
         </button>
       </PageTitle>
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
         <Field label="Tìm chương trình / mã">
           <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} />
         </Field>

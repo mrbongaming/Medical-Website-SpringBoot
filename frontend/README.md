@@ -64,7 +64,8 @@ Thử một vòng khám:
 
 ## Cấu trúc
 
-- `src/data/`: seed, nghiệp vụ, chuẩn hóa bản nháp đặt khám, nâng cấp dữ liệu và báo cáo.
+- `src/data/mockData.js`: nguồn dữ liệu mô phỏng duy nhất, chia theo cấu hình, cơ sở, người dùng, lịch khám, thanh toán/BHYT và kho thuốc.
+- Các file còn lại trong `src/data/`: nghiệp vụ, lưu trữ, chuẩn hóa bản nháp đặt khám, nâng cấp dữ liệu và báo cáo.
 - `src/helpers/`: tính phí, chọn khuyến mãi, kiểm tra BHYT và các hàm hỗ trợ giao diện. `data/billing.js` xử lý quyền, cập nhật dữ liệu và nhật ký tài chính.
 - `src/state/`: Context dữ liệu và phiên demo.
 - `src/pages/`: các trang công khai, bệnh nhân, lâm sàng và quản trị.

@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { FiArrowRight, FiMenu, FiX } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { hospital, roles } from '../data/seed';
+import { hospital, roles } from '../data/mockData';
 import { Brand } from './Brand';
+import { roleProfilePath, roleWorkspacePath } from '../helpers/StaffHelpers';
 
 export function PublicLayout() {
   const { user, logout, storageError } = useHospital();
@@ -57,7 +58,7 @@ export function PublicLayout() {
               </NavLink>
             ))}
             <Link
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm"
+              className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
               to="/dat-lich"
             >
               Đặt lịch khám <FiArrowRight />
@@ -70,18 +71,8 @@ export function PublicLayout() {
               <span>
                 {user.name} · {roles[user.role]}
               </span>
-              <Link
-                to={
-                  user.role === 'patient'
-                    ? '/lich-hen'
-                    : user.role === 'doctor'
-                      ? '/bac-si-lam-viec'
-                      : '/quan-tri'
-                }
-              >
-                Không gian của tôi
-              </Link>
-              <Link to="/tai-khoan">Hồ sơ</Link>
+              <Link to={roleWorkspacePath(user.role)}>Không gian của tôi</Link>
+              <Link to={roleProfilePath(user.role)}>Hồ sơ</Link>
               <button
                 className="border-0 bg-transparent p-0 font-semibold text-sky-700 hover:text-sky-900"
                 onClick={logout}

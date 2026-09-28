@@ -11,7 +11,7 @@ export function InsuranceFields({
   return (
     <fieldset
       data-testid="insurance-fields"
-      className="space-y-4 rounded-2xl border border-slate-200 p-5 [&_legend]:px-2 [&_legend]:font-bold [&_legend]:text-brand-900"
+      className="space-y-4 rounded-2xl border border-slate-200 p-4 sm:p-5 [&_legend]:px-2 [&_legend]:font-bold [&_legend]:text-brand-900"
     >
       <legend>Bảo hiểm y tế</legend>
       {allowToggle && (

@@ -10,7 +10,7 @@ import {
   FiPhone,
 } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money, hospital, dateKey } from '../data/seed';
+import { money, hospital, dateKey } from '../data/mockData';
 import { availableSlots } from '../data/domain';
 import { DoctorCard } from '../components/DoctorCard';
 import { Photo } from '../components/Photo';
@@ -359,7 +359,7 @@ export function DetailPage({ kind }) {
         </section>
         <aside
           id="dat-lich"
-          className="scroll-mt-36 space-y-4 rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 lg:sticky lg:top-32 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
+          className="scroll-mt-36 space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 sm:p-6 lg:sticky lg:top-32 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
         >
           <span className="grid size-12 place-items-center rounded-xl bg-sky-100 text-2xl text-sky-700">
             <FiCalendar />
@@ -406,7 +406,7 @@ export function DetailPage({ kind }) {
               .filter((p) => p.active && p.branchIds.includes(row.id))
               .map((p) => (
                 <Link
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
                   key={p.id}
                   to={'/dat-lich?branchId=' + row.id + '&packageId=' + p.id}
                 >

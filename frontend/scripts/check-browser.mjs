@@ -371,6 +371,14 @@ try {
   assert.ok(await evaluate("document.body.textContent.includes('không có quyền')"));
 
   await login('staff', 'staff-b1');
+  await navigate('/');
+  await textButton('Không gian của tôi');
+  assert.equal(await evaluate('location.pathname'), '/nhan-vien');
+  await navigate('/');
+  await textButton('Hồ sơ');
+  assert.equal(await evaluate('location.pathname'), '/nhan-vien/tai-khoan');
+  assert.ok(!(await evaluate("document.body.textContent.includes('không có quyền')")));
+  await navigate('/nhan-vien');
   await field('Tìm bệnh nhân / mã lịch', appointment);
   await rowAction(appointment, 'Từ chối');
   await click('dialog form button:not([type])');

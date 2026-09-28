@@ -22,7 +22,7 @@ export function BranchCard({ branch }) {
           CƠ SỞ AN TÂM
         </span>
       </Link>
-      <div className="flex flex-1 flex-col p-5 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-brand-900 [&_p]:mb-2 [&_p]:text-sm [&_p]:text-slate-600">
+      <div className="flex flex-1 flex-col p-4 sm:p-5 [&_h3]:mb-2 [&_h3]:text-xl [&_h3]:font-bold [&_h3]:text-brand-900 [&_p]:mb-2 [&_p]:text-sm [&_p]:text-slate-600">
         <h3>
           <Link to={'/co-so/' + branch.slug}>{branch.name}</Link>
         </h3>

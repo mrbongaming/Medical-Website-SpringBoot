@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { createSeed } from '../data/seed';
+import { createSeed } from '../data/mockData';
 import { act } from '../data/domain';
 import { DATA_KEY as KEY, readData } from '../data/storage';
 import { HospitalContext } from './context';

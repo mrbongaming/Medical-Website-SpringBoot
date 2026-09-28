@@ -1,4 +1,4 @@
-import { statuses } from '../data/seed';
+import { statuses } from '../data/mockData';
 
 export function Badge({ status }) {
   const tones = {

@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import { FiCalendar, FiMapPin } from 'react-icons/fi';
 import { useHospital } from '../state/context';
 import { isAdmin, future } from '../data/domain';
-import { statuses, money, dateKey } from '../data/seed';
+import { statuses, money, dateKey } from '../data/mockData';
 import { Alert } from '../components/Alert';
 import { Badge } from '../components/Badge';
 import { Empty } from '../components/Empty';

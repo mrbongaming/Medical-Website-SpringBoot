@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
 import { inBranch, normalize } from '../data/domain';
-import { dateKey, money } from '../data/seed';
+import { dateKey, money } from '../data/mockData';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';

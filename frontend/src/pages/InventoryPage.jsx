@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useHospital } from '../state/context';
 import { availableStock, inventorySummary, settingRow } from '../data/inventory';
-import { money } from '../data/seed';
+import { money } from '../data/mockData';
 import { normalize } from '../data/domain';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
@@ -304,7 +304,7 @@ export function InventoryPage() {
         <div className="grid items-start gap-6 xl:grid-cols-[minmax(20rem,26rem)_1fr]">
           {user.role === 'branchAdmin' && (
             <form
-              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+              className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5"
               onSubmit={createRequest}
             >
               <h2 className="text-xl font-bold text-brand-900">Tạo yêu cầu nhập</h2>
@@ -420,7 +420,7 @@ export function InventoryPage() {
               .map((request) => (
                 <article
                   key={request.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div>

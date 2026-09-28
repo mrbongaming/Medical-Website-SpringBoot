@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiArrowRight, FiPhone } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { hospital } from '../data/seed';
+import { hospital } from '../data/mockData';
 import { PageTitle } from '../components/PageTitle';
 
 export function InformationPage({ mode }) {
@@ -17,7 +17,7 @@ export function InformationPage({ mode }) {
           }[mode]
         }
       />
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4 text-slate-600 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-brand-900 [&_h3]:font-bold [&_h3]:text-brand-900 [&_li]:ml-5 [&_li]:list-disc">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4 text-slate-600 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-brand-900 [&_h3]:font-bold [&_h3]:text-brand-900 [&_li]:ml-5 [&_li]:list-disc">
         {mode === 'about' ? (
           <>
             <h2>Một hệ thống, nhiều điểm chăm sóc</h2>

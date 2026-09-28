@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { FiArrowRight, FiActivity } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money } from '../data/seed';
+import { money } from '../data/mockData';
 import { normalize } from '../data/domain';
 import { Empty } from '../components/Empty';
 import { PageTitle } from '../components/PageTitle';
@@ -114,7 +114,7 @@ export function DirectoryPage({ kind }) {
                 <DoctorCard key={r.id} doctor={r} />
               ) : (
                 <article
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
                   key={r.id}
                 >
                   <span className="grid size-12 place-items-center rounded-xl bg-sky-100 text-2xl text-sky-700">

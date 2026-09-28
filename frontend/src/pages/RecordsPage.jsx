@@ -97,7 +97,7 @@ export function RecordsPage() {
             <div className="absolute -left-[9px] top-1 size-4 rounded-full border-4 border-white bg-sky-600 ring-2 ring-sky-200">
               <FiFileText />
             </div>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
               <div className="mb-3 flex flex-wrap items-start justify-between gap-3 [&_h2]:text-xl [&_h2]:font-bold [&_h2]:text-brand-900">
                 <span className="mb-2 inline-block text-xs font-bold uppercase tracking-[0.16em] text-sky-700">
                   {formatDate(r.date)}
@@ -120,7 +120,7 @@ export function RecordsPage() {
                   {r.followUp ? 'Tái khám: ' + formatDate(r.followUp) : 'Chưa hẹn ngày tái khám'}
                 </span>
                 <Link
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50 min-h-9 px-4 py-2 text-sm bg-sky-100 text-sky-800 shadow-none hover:bg-sky-200"
+                  className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-sky-100 px-4 py-2 text-sm font-semibold text-sky-800 transition hover:bg-sky-200"
                   to={recordBase(user) + '/' + r.id}
                 >
                   Xem chi tiết →

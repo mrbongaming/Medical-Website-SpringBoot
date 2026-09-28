@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FiCalendar } from 'react-icons/fi';
 import { useHospital } from '../state/context';
 import { inBranch } from '../data/domain';
-import { dateKey } from '../data/seed';
+import { dateKey } from '../data/mockData';
 import { Empty } from '../components/Empty';
 import { Field } from '../components/Field';
 import { PageTitle } from '../components/PageTitle';
@@ -31,7 +31,7 @@ export function DoctorSchedulePage() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {pages.pageItems.map((s) => (
           <article
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
+            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900"
             key={s.id}
           >
             <h2>

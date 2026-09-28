@@ -1,7 +1,7 @@
 import { appointmentPrice } from '../helpers/PricingHelpers';
 import { useState } from 'react';
 import { useHospital } from '../state/context';
-import { dateKey, relativeDate, money, statuses } from '../data/seed';
+import { dateKey, relativeDate, money, statuses } from '../data/mockData';
 import { inBranch } from '../data/domain';
 import { report } from '../data/reports';
 import { Empty } from '../components/Empty';
@@ -187,7 +187,7 @@ export default function ReportsPage() {
             : name('branches', user.branchId)
         }
       />
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
+      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900 space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <strong>Khoảng thời gian</strong>
           {[
@@ -259,7 +259,7 @@ export default function ReportsPage() {
         </p>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Tổng lịch hẹn" value={d.appointments.length} note="Theo ngày khám" />
             <Stat
               label="Bệnh nhân duy nhất"
@@ -277,7 +277,7 @@ export default function ReportsPage() {
               note={`${d.unfinalized.length} buổi chưa chốt phí chưa cộng vào công nợ`}
             />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4 sm:grid-cols-2 xl:grid-cols-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <Stat label="Đã hoàn khách" value={money(d.refunds)} note="Theo ngày hoàn tiền" />
             <Stat
               label="Ưu đãi đã chốt"
@@ -318,7 +318,7 @@ export default function ReportsPage() {
             ))}
           </nav>
           {tab === 'appointments' && (
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
               <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:tracking-tight [&_h2]:text-brand-900 sm:[&_h2]:text-3xl [&_p]:mt-2 [&_p]:max-w-2xl [&_p]:text-slate-600">
                 <h2>Xu hướng lịch hẹn</h2>
                 <Select

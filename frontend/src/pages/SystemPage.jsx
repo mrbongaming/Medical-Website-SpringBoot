@@ -12,7 +12,7 @@ export function SystemPage() {
   return (
     <>
       <PageTitle title="Dữ liệu demo" />
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6 [&>h2]:mb-4 [&>h2]:text-xl [&>h2]:font-bold [&>h2]:text-brand-900">
         <h2>Khôi phục dữ liệu ban đầu</h2>
         <p>
           Tạo lại toàn bộ cơ sở, tài khoản, lịch hẹn, khoản thu mẫu. Các thay đổi cục bộ sẽ được
