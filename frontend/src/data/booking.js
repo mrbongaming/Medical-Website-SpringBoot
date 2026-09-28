@@ -10,8 +10,12 @@ export function initialBooking(db, params, saved = {}) {
   const retained = sameEntry
     ? saved
     : {
+        recipientType: saved.recipientType,
+        relationship: saved.relationship,
         patientName: saved.patientName,
         phone: saved.phone,
+        patientBirthDate: saved.patientBirthDate,
+        patientAddress: saved.patientAddress,
         notes: saved.notes,
         promotionCode: saved.promotionCode,
         insurance: saved.insurance,
@@ -61,8 +65,12 @@ export function initialBooking(db, params, saved = {}) {
       availableSlots(db, doctor.id, date).some((s) => s.time === source.time && s.available)
         ? source.time
         : '',
+    recipientType: source.recipientType === 'relative' ? 'relative' : 'self',
+    relationship: source.relationship || '',
     patientName: source.patientName || '',
     phone: source.phone || '',
+    patientBirthDate: source.patientBirthDate || '',
+    patientAddress: source.patientAddress || '',
     notes: source.notes || '',
     promotionCode: String(source.promotionCode || ''),
     insurance:

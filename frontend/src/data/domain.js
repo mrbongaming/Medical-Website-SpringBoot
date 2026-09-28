@@ -236,7 +236,20 @@ export function act(source, actorId, type, payload = {}) {
         ),
       'Bạn đã có lịch khám trùng thời gian này.',
     );
-    requireThat(p.patientName?.trim() && phoneValid(p.phone), 'Thông tin người khám chưa hợp lệ.');
+    const recipientType = p.recipientType === 'relative' ? 'relative' : 'self';
+    const patientName = p.patientName?.trim();
+    const patientPhone = p.phone;
+    const patientBirthDate = p.patientBirthDate || '';
+    const patientAddress = p.patientAddress?.trim() || '';
+    requireThat(patientName && phoneValid(patientPhone), 'Thông tin người khám chưa hợp lệ.');
+    requireThat(
+      recipientType === 'self' ||
+        (p.relationship?.trim() &&
+          validDate(patientBirthDate) &&
+          patientBirthDate <= today &&
+          patientAddress),
+      'Nhập đầy đủ quan hệ, ngày sinh và địa chỉ của người thân.',
+    );
     const row = {
       id: uid('AT'),
       patientId: user.id,
@@ -255,8 +268,12 @@ export function act(source, actorId, type, payload = {}) {
       duration: 30,
       date: p.date,
       time: bookingMode === 'doctor' ? p.time : '',
-      patientName: p.patientName.trim(),
-      phone: p.phone,
+      recipientType,
+      relationship: recipientType === 'relative' ? p.relationship.trim() : '',
+      patientName,
+      phone: patientPhone,
+      patientBirthDate,
+      patientAddress,
       notes: p.notes || '',
       status: 'pending',
       reason: '',

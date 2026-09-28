@@ -65,6 +65,27 @@ deny('p1', 'book', { ...form, doctorId: 'dr2', specialtyId: 'sp2' }, /trùng th�
 assert.ok(!availableSlots(db, 'dr1', form.date).find((s) => s.time === form.time).available);
 assert.ok(scopedAppointments(db, user('admin1')).some((a) => a.id === booking));
 assert.ok(!scopedAppointments(db, user('admin2')).some((a) => a.id === booking));
+const relativeBooking = run('p1', 'book', {
+  ...form,
+  time: '09:00',
+  recipientType: 'relative',
+  relationship: 'Con',
+  patientName: 'Người thân thử',
+  phone: '0987654322',
+  patientBirthDate: '2015-05-20',
+  patientAddress: 'TP.HCM',
+});
+const relativeAppointment = db.appointments.find((a) => a.id === relativeBooking);
+assert.equal(relativeAppointment.recipientType, 'relative');
+assert.equal(relativeAppointment.patientName, 'Người thân thử');
+assert.equal(relativeAppointment.relationship, 'Con');
+deny(
+  'p2',
+  'book',
+  { ...form, time: '10:00', recipientType: 'relative' },
+  /quan hệ, ngày sinh và địa chỉ/,
+);
+run('p1', 'appointment', { id: relativeBooking, status: 'cancelled' });
 deny('u-dr4', 'appointment', { id: booking, status: 'rejected', reason: 'test' }, /nhân viên/);
 deny('staff-b2', 'appointment', { id: booking, status: 'rejected', reason: 'test' }, /cơ sở/);
 deny('staff-b1', 'appointment', { id: booking, status: 'rejected' }, /lý do/);
@@ -301,8 +322,12 @@ assert.deepEqual(initialBooking(seed, new URLSearchParams(), saved), {
   insurance: { enabled: false },
   promotionCode: '',
   packageId: '',
+  recipientType: 'self',
+  relationship: '',
   patientName: '',
   phone: '',
+  patientBirthDate: '',
+  patientAddress: '',
   notes: '',
 });
 assert.equal(

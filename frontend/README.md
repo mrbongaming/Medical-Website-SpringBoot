@@ -26,7 +26,7 @@ Browser check cần Node 22+ và Chrome trên Windows. Có thể đặt `CHROME_
 
 - Trang chủ tìm cơ sở, bác sĩ, chuyên khoa bằng từ khóa không dấu. Ảnh/tên cơ sở mở trang chi tiết; nút đặt khám chọn sẵn đúng cơ sở.
 - Trang bác sĩ có học vị, chuyên khoa, khoa/phòng, kinh nghiệm, chuyên môn, số liên hệ đặt khám, cơ sở, phí và lịch còn trống. Sao trung bình và số lượt được tính từ điểm mẫu của các buổi khám hoàn tất; không có bình luận hoặc form đánh giá.
-- Đặt khám gồm bốn bước; thẻ cơ sở dùng radio có ảnh. Lựa chọn phụ thuộc được kiểm tra lại khi đổi cơ sở, chuyên khoa, bác sĩ, ngày hoặc URL. Bản nháp được giữ khi chuyển qua đăng nhập.
+- Đặt khám gồm bốn bước; thẻ cơ sở dùng radio có ảnh. Lựa chọn phụ thuộc được kiểm tra lại khi đổi cơ sở, chuyên khoa, bác sĩ, ngày hoặc URL. Bản nháp được giữ khi chuyển qua đăng nhập. Người bệnh có thể dùng nhanh thông tin hồ sơ để đặt cho bản thân hoặc nhập thông tin cần thiết khi đặt cho người thân.
 - Bệnh nhân có lịch hẹn sắp tới/đã qua, lịch sử khám theo dòng thời gian, bộ lọc và trang kết quả riêng từng lần khám.
 - Bác sĩ tiếp nhận lịch, xem lịch sử trong phạm vi được phép, ghi kết quả tại trang riêng, lưu nháp và hoàn tất. Rời trang khi chưa lưu có cảnh báo.
 - Quản trị cơ sở/bác sĩ/lịch làm việc, thống kê khám và thu tiền mô phỏng. Không có kho thuốc, danh mục thuốc, restock hoặc chức năng nhập/xuất file.

@@ -323,6 +323,10 @@ try {
   await field('Ngày khám', date);
   await click('[data-testid=time-grid] button:not([disabled])');
   await click('form button[type=submit]');
+  await click('input[name="recipientType"][value="relative"]');
+  assert.ok(await evaluate("document.body.innerText.includes('Mối quan hệ')"));
+  assert.ok(await evaluate("document.querySelector('input[type=date][required]') !== null"));
+  await click('input[name="recipientType"][value="self"]');
   await field('Họ tên', 'Nguyễn Hoàng An');
   await field('Số điện thoại', '0920000000');
   await click('[data-testid=insurance-fields] input[type="checkbox"]');

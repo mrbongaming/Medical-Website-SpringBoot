@@ -116,8 +116,26 @@ export function BookingForm() {
     quote.items.some((item) =>
       policy.services.some((service) => service.serviceId === item.serviceId && service.tariff > 0),
     );
-  const patientName = form.patientName || user?.name || '';
-  const phone = form.phone || user?.phone || '';
+  const recipientType = form.recipientType === 'relative' ? 'relative' : 'self';
+  const ownProfile = recipientType === 'self' && user?.role === 'patient';
+  const patientName = ownProfile ? user.name || '' : form.patientName || '';
+  const phone = ownProfile ? user.phone || '' : form.phone || '';
+  const patientBirthDate = ownProfile ? user.birthDate || '' : form.patientBirthDate || '';
+  const patientAddress = ownProfile ? user.address || '' : form.patientAddress || '';
+  function selectRecipient(type) {
+    const self = type === 'self';
+    setForm((current) => ({
+      ...current,
+      recipientType: type,
+      relationship: '',
+      patientName: self ? user?.name || '' : '',
+      phone: self ? user?.phone || '' : '',
+      patientBirthDate: self ? user?.birthDate || '' : '',
+      patientAddress: self ? user?.address || '' : '',
+      insurance: { enabled: false },
+    }));
+    setError('');
+  }
   async function next(e) {
     e.preventDefault();
     setError('');
@@ -142,9 +160,21 @@ export function BookingForm() {
       setStep(2);
       return;
     }
-    if (step === 3 && (!patientName.trim() || !/^0\d{9}$/.test(phone))) {
-      setError('Nhập họ tên và số điện thoại hợp lệ.');
-      return;
+    if (step === 3) {
+      if (!patientName.trim() || !/^0\d{9}$/.test(phone)) {
+        setError('Nhập họ tên và số điện thoại hợp lệ.');
+        return;
+      }
+      if (
+        recipientType === 'relative' &&
+        (!form.relationship.trim() ||
+          !/^\d{4}-\d{2}-\d{2}$/.test(patientBirthDate) ||
+          patientBirthDate > dateKey() ||
+          !patientAddress.trim())
+      ) {
+        setError('Nhập đầy đủ quan hệ, ngày sinh và địa chỉ của người thân.');
+        return;
+      }
     }
     if (step >= 3) {
       try {
@@ -162,7 +192,14 @@ export function BookingForm() {
       return;
     }
     try {
-      const id = await dispatch('book', { ...form, patientName, phone });
+      const id = await dispatch('book', {
+        ...form,
+        recipientType,
+        patientName,
+        phone,
+        patientBirthDate,
+        patientAddress,
+      });
       setResult(id);
       sessionStorage.removeItem(DRAFT);
     } catch (e) {
@@ -426,18 +463,70 @@ export function BookingForm() {
             {step === 3 && (
               <>
                 <h2>Thông tin người khám</h2>
+                <fieldset className="mb-5">
+                  <legend className="mb-3 font-bold text-brand-900">Bạn đặt lịch cho ai?</legend>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {[
+                      ['self', 'Bản thân', 'Tự động dùng thông tin trong hồ sơ của bạn'],
+                      ['relative', 'Người thân', 'Nhập thông tin của người trực tiếp đến khám'],
+                    ].map(([value, title, description]) => (
+                      <label
+                        key={value}
+                        className={`cursor-pointer rounded-xl border p-4 transition ${
+                          recipientType === value
+                            ? 'border-sky-500 bg-sky-50 ring-2 ring-sky-100'
+                            : 'border-slate-200 hover:border-sky-300'
+                        }`}
+                      >
+                        <span className="flex items-start gap-3">
+                          <input
+                            className="mt-1 size-4 accent-sky-600"
+                            type="radio"
+                            name="recipientType"
+                            value={value}
+                            checked={recipientType === value}
+                            onChange={() => selectRecipient(value)}
+                          />
+                          <span>
+                            <strong className="block text-brand-900">{title}</strong>
+                            <small className="mt-1 block font-normal text-slate-500">
+                              {description}
+                            </small>
+                          </span>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
                 <InsuranceFields
                   value={form.insurance}
                   onChange={(value) => change('insurance', value)}
                   supported={supportsInsurance}
                 />
-                <p className="text-slate-500">
-                  Phiên bản này đặt khám cho chính tài khoản bệnh nhân.
-                </p>
+                {ownProfile && (
+                  <p className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+                    Thông tin bên dưới được lấy từ hồ sơ cá nhân. Bạn có thể cập nhật tại{' '}
+                    <Link className="font-semibold underline" to="/tai-khoan">
+                      trang tài khoản
+                    </Link>
+                    .
+                  </p>
+                )}
                 <div className="grid gap-4 md:grid-cols-2">
+                  {recipientType === 'relative' && (
+                    <Field label="Mối quan hệ">
+                      <input
+                        value={form.relationship}
+                        placeholder="Ví dụ: Con, bố, mẹ, vợ/chồng"
+                        onChange={(e) => change('relationship', e.target.value)}
+                        required
+                      />
+                    </Field>
+                  )}
                   <Field label="Họ tên">
                     <input
                       value={patientName}
+                      readOnly={ownProfile}
                       onChange={(e) => change('patientName', e.target.value)}
                       required
                     />
@@ -446,9 +535,28 @@ export function BookingForm() {
                     <input
                       type="tel"
                       value={phone}
+                      readOnly={ownProfile}
                       pattern="0[0-9]{9}"
                       onChange={(e) => change('phone', e.target.value)}
                       required
+                    />
+                  </Field>
+                  <Field label="Ngày sinh">
+                    <input
+                      type="date"
+                      value={patientBirthDate}
+                      max={dateKey()}
+                      readOnly={ownProfile}
+                      onChange={(e) => change('patientBirthDate', e.target.value)}
+                      required={recipientType === 'relative'}
+                    />
+                  </Field>
+                  <Field label="Địa chỉ">
+                    <input
+                      value={patientAddress}
+                      readOnly={ownProfile}
+                      onChange={(e) => change('patientAddress', e.target.value)}
+                      required={recipientType === 'relative'}
                     />
                   </Field>
                 </div>
@@ -470,6 +578,24 @@ export function BookingForm() {
                   <dd>
                     {patientName} · {phone}
                   </dd>
+                  <dt>Đặt cho</dt>
+                  <dd>
+                    {recipientType === 'relative'
+                      ? `Người thân · ${form.relationship}`
+                      : 'Bản thân'}
+                  </dd>
+                  {patientBirthDate && (
+                    <>
+                      <dt>Ngày sinh</dt>
+                      <dd>{patientBirthDate}</dd>
+                    </>
+                  )}
+                  {patientAddress && (
+                    <>
+                      <dt>Địa chỉ</dt>
+                      <dd>{patientAddress}</dd>
+                    </>
+                  )}
                   <dt>Thời gian</dt>
                   <dd>
                     {form.date} · {form.time || 'Chờ nhân viên xác nhận giờ'}
