@@ -1,13 +1,13 @@
-package com.example.backend;
+package com.MedicalWebsite;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class HospitalBooker {
+public class MedicalWebsiteApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(HospitalBooker.class, args);
+		SpringApplication.run(MedicalWebsiteApplication.class, args);
 	}
 
 }
