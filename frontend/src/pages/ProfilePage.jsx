@@ -8,6 +8,7 @@ import { PageTitle } from '../components/PageTitle';
 
 export function ProfilePage() {
   const { user, dispatch } = useHospital();
+  const backendAccount = user.source === 'backend';
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   async function submit(e) {
@@ -30,21 +31,47 @@ export function ProfilePage() {
         key={user.id}
       >
         <div className="grid gap-4 md:grid-cols-2">
+          {backendAccount && (
+            <Field label="Email">
+              <input value={user.email || ''} disabled readOnly />
+            </Field>
+          )}
           <Field label="Họ tên">
-            <input name="name" defaultValue={user.name} required />
+            <input name="name" defaultValue={user.name} required disabled={backendAccount} />
           </Field>
           <Field label="Số điện thoại">
-            <input type="tel" name="phone" defaultValue={user.phone} pattern="0[0-9]{9}" required />
+            <input
+              type="tel"
+              name="phone"
+              defaultValue={user.phone}
+              pattern="0[0-9]{9}"
+              required
+              disabled={backendAccount}
+            />
           </Field>
           <Field label="Ngày sinh">
-            <input type="date" name="birthDate" defaultValue={user.birthDate} max={dateKey()} />
+            <input
+              type="date"
+              name="birthDate"
+              defaultValue={user.birthDate}
+              max={dateKey()}
+              disabled={backendAccount}
+            />
           </Field>
           <Field label="Địa chỉ">
-            <input name="address" defaultValue={user.address} />
+            <input name="address" defaultValue={user.address} disabled={backendAccount} />
           </Field>
         </div>
+        {backendAccount && (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            Backend chưa có API cập nhật hồ sơ, nên thông tin tài khoản hiện chỉ được xem.
+          </p>
+        )}
         <Alert error={error} success={success} />
-        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50">
+        <button
+          disabled={backendAccount}
+          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50"
+        >
           Lưu thay đổi
         </button>
         {user.role === 'patient' && (

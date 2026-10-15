@@ -1,0 +1,40 @@
+spring:
+  application:
+    name: auth-service
+  config:
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
+  datasource:
+    url: ${AUTH_DB_URL:jdbc:mysql://localhost:3306/antam_auth?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+  jpa:
+    hibernate.ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:replace-me}
+            client-secret: ${GOOGLE_CLIENT_SECRET:replace-me}
+            scope: openid,profile,email
+          facebook:
+            client-id: ${FACEBOOK_CLIENT_ID:replace-me}
+            client-secret: ${FACEBOOK_CLIENT_SECRET:replace-me}
+            scope: public_profile,email
+
+server:
+  port: ${AUTH_SERVICE_PORT:8081}
+  forward-headers-strategy: framework
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  jwt:
+    secret: ${JWT_SECRET:change-this-local-secret-at-least-32-bytes}
+    expiration: ${JWT_EXPIRATION:PT8H}
+    cookie-secure: ${JWT_COOKIE_SECURE:false}
+  notification:
+    url: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+    internal-key: ${INTERNAL_API_KEY:change-this-internal-key}

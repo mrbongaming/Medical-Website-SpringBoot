@@ -4,8 +4,8 @@
 
 SET NAMES utf8mb4;
 SET time_zone = '+07:00';
-CREATE DATABASE IF NOT EXISTS antam CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE antam;
+CREATE DATABASE IF NOT EXISTS antam_core CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE antam_core;
 
 create table branches (
     id varchar(64) primary key,

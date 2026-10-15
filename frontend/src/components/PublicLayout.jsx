@@ -8,7 +8,7 @@ import { roleProfilePath, roleWorkspacePath } from '../helpers/StaffHelpers';
 import { publicBranchCount } from '../helpers/BranchHelpers';
 
 export function PublicLayout() {
-  const { db, user, logout, storageError } = useHospital();
+  const { db, user, logout, storageError, apiError, apiState, refreshApi } = useHospital();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   return (
@@ -82,13 +82,26 @@ export function PublicLayout() {
               </button>
             </>
           ) : (
-            <Link to="/dang-nhap">Đăng nhập demo / Đăng ký</Link>
+            <Link to="/dang-nhap">Đăng nhập / Đăng ký</Link>
           )}
         </div>
       </header>
       {storageError && (
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 my-4 rounded-xl border p-4 text-sm font-medium border-red-200 bg-red-50 text-red-800">
           {storageError}
+        </div>
+      )}
+      {apiError && (
+        <div className="mx-auto my-4 flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">
+          <span>{apiError} Dữ liệu demo cục bộ chỉ được giữ làm phương án dự phòng.</span>
+          <button
+            type="button"
+            className="rounded-lg border border-amber-400 bg-white px-4 py-2 font-semibold hover:bg-amber-100 disabled:opacity-60"
+            onClick={refreshApi}
+            disabled={apiState === 'connecting'}
+          >
+            {apiState === 'connecting' ? 'Đang thử lại…' : 'Thử kết nối lại'}
+          </button>
         </div>
       )}
       {user?.role === 'patient' &&
@@ -139,7 +152,7 @@ export function PublicLayout() {
           </div>
         </div>
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 border-t border-slate-200 py-5 text-sm text-slate-500">
-          © An Tâm · Bản demo dùng dữ liệu giả định, không tiếp nhận lịch khám thực tế.
+          © An Tâm · Tài khoản bệnh nhân và danh mục công khai được kết nối qua backend.
         </div>
       </footer>
     </>

@@ -604,7 +604,9 @@ export function BookingForm() {
                   <dd>{form.notes || 'Không có ghi chú'}</dd>
                 </dl>
                 <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                  Đây là lịch hẹn demo, chỉ lưu trên trình duyệt này.
+                  {user?.source === 'backend'
+                    ? 'Backend chưa có API tạo lịch hẹn, nên nút xác nhận sẽ không ghi dữ liệu giả vào trình duyệt.'
+                    : 'Đây là lịch hẹn demo, chỉ lưu trên trình duyệt này.'}
                 </p>
                 {!user && (
                   <Link

@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: core-service
+  config:
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
+  datasource:
+    url: ${CORE_DB_URL:jdbc:mysql://localhost:3306/antam_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate.dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.MariaDBDialect}
+      hibernate.jdbc.time_zone: Asia/Ho_Chi_Minh
+  flyway:
+    enabled: true
+    validate-migration-naming: true
+    baseline-on-migrate: true
+    baseline-version: 1
+  jackson:
+    time-zone: Asia/Ho_Chi_Minh
+
+server:
+  port: ${CORE_SERVICE_PORT:8082}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-local-secret-at-least-32-bytes}

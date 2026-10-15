@@ -1,140 +1,225 @@
-# Backend Spring Boot
+# Backend microservice - Bệnh viện An Tâm
 
-Backend của hệ thống An Tâm dùng Java, Spring Boot, Spring Data JPA, Flyway, Spring Security và MySQL/MariaDB do XAMPP cung cấp. Phiên bản, host và cổng database do người chạy dự án cấu hình; Spring Boot không tự seed dữ liệu.
+Backend dùng Java 25, Spring Boot 4.1, Spring Cloud Gateway, Spring Security,
+Spring Data JPA, Flyway, Spring Email và MySQL/MariaDB của XAMPP.
 
-## Khởi tạo database một lần
+## Kiến trúc
 
-1. Mở XAMPP Control Panel và bật **MySQL**.
-2. Mở phpMyAdmin, chọn **Import** và nhập file [`database/antam_mysql.sql`](database/antam_mysql.sql).
-3. Chỉ import vào database local trống. File đã gồm `CREATE DATABASE antam`, toàn bộ bảng, khóa ngoại và dữ liệu mock schema v7.
+| Service | Cổng | Database | Trách nhiệm |
+| --- | ---: | --- | --- |
+| `api-gateway` | 8080 | Không | Điểm vào duy nhất, route API và xử lý CORS |
+| `auth-service` | 8081 | `antam_auth` | Đăng ký, đăng nhập, Google/Facebook OAuth2, phát JWT |
+| `core-service` | 8082 | `antam_core` | Cơ sở, chuyên khoa, bác sĩ, gói khám và lịch khám |
+| `notification-service` | 8083 | `antam_notification` | Gửi email bằng Spring Email và lưu trạng thái gửi |
 
-Nếu `mysql.exe` có trong PATH, có thể import bằng Command Prompt từ thư mục `backend`:
+Mỗi service nghiệp vụ sở hữu schema riêng trên cùng MySQL XAMPP. JWT được ký tại
+`auth-service` và xác minh tại `core-service`. Khi đăng ký, `auth-service` gọi API
+nội bộ của `notification-service` bằng khóa `X-Internal-Key` để gửi email chào mừng.
+
+## 1. Cấu hình `.env` cho XAMPP
+
+Bật **MySQL** trong XAMPP Control Panel. Tất cả câu lệnh trong tài liệu này được
+thực hiện bằng **Command Prompt (`cmd.exe`)**, không phải PowerShell. Mở Command
+Prompt rồi chuyển đến thư mục backend:
 
 ```bat
-mysql -u root -p < database\antam_mysql.sql
+cd /d C:\Users\Admin\Desktop\practic\springboot\backend
+copy .env.example .env
 ```
 
-Nếu tài khoản MySQL không có mật khẩu, bỏ tùy chọn `-p`. Không chạy lại file trên database đã phát sinh dữ liệu.
+Với XAMPP mặc định (`root`, không có mật khẩu, cổng 3306), phần database trong
+`.env` giữ nguyên như sau:
 
-File SQL được tạo từ `frontend/src/data/mockData.js`. Khi mock data hoặc schema thay đổi, maintainer chạy `npm run export:mysql-bootstrap` trong `frontend/` rồi review lại file SQL. Đây là lệnh build artifact, không kết nối MySQL và không import dữ liệu.
+```dotenv
+DB_USERNAME=root
+DB_PASSWORD=
+HIBERNATE_DIALECT=org.hibernate.dialect.MariaDBDialect
+CORE_DB_URL=jdbc:mysql://localhost:3306/antam_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+AUTH_DB_URL=jdbc:mysql://localhost:3306/antam_auth?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+NOTIFICATION_DB_URL=jdbc:mysql://localhost:3306/antam_notification?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+```
 
-## Chạy bằng Command Prompt
+XAMPP hiển thị nút **MySQL** nhưng các bản hiện nay thường chạy MariaDB. Vì vậy ví
+dụ đặt `HIBERNATE_DIALECT=org.hibernate.dialect.MariaDBDialect`; điều này cũng xử lý
+đúng các cột JSON mà MariaDB biểu diễn dưới dạng `LONGTEXT`. Nếu bạn tự cài MySQL 8
+thật, đổi thành `org.hibernate.dialect.MySQLDialect`.
 
-Mở **Command Prompt** (`cmd.exe`) tại thư mục gốc dự án rồi chạy:
+Ví dụ nếu MySQL dùng cổng `3307`, tài khoản `antam_user`, mật khẩu `123456`, hãy đổi:
+
+```dotenv
+DB_USERNAME=antam_user
+DB_PASSWORD=123456
+CORE_DB_URL=jdbc:mysql://localhost:3307/antam_core?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+AUTH_DB_URL=jdbc:mysql://localhost:3307/antam_auth?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+NOTIFICATION_DB_URL=jdbc:mysql://localhost:3307/antam_notification?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
+```
+
+Import [`database/create_microservice_databases.sql`](database/create_microservice_databases.sql)
+trong phpMyAdmin để tạo ba schema. Sau đó chọn một trong hai cách cho `antam_core`:
+
+- Chỉ cần cấu trúc bảng: chạy `core-service`, Flyway sẽ tự tạo bảng.
+- Cần dữ liệu demo: import [`database/antam_mysql.sql`](database/antam_mysql.sql)
+  vào schema `antam_core` đang trống **trước lần chạy `core-service` đầu tiên**.
+
+Không import file dữ liệu demo đè lên schema đã có bảng vì script bootstrap dùng các
+lệnh `CREATE TABLE` một lần. Flyway tự tạo bảng cho `auth-service` và
+`notification-service` khi hai service đó khởi động.
+
+File `.env` đã được `.gitignore`, không được commit credential thật.
+
+## 2. `.env` backend không cấu hình frontend
+
+Hai biến sau vẫn thuộc backend:
+
+```dotenv
+FRONTEND_URL=http://localhost:5173
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:8080
+```
+
+- `FRONTEND_URL` là nơi backend chuyển trình duyệt về sau khi OAuth thành công.
+- `CORS_ALLOWED_ORIGINS` là danh sách origin được backend cho phép gọi API.
+
+Chúng **không** đặt URL API cho mã frontend. Frontend phải gọi gateway tại
+`http://localhost:8080`. Nếu frontend dùng Vite và được viết để đọc biến môi
+trường, biến đó phải nằm trong file riêng của frontend, ví dụ:
+
+```dotenv
+VITE_API_BASE_URL=http://localhost:8080
+```
+
+Frontend đã đọc biến này từ `frontend/.env`; file `.env` của backend không truyền
+biến sang frontend. Tạo file bằng Command Prompt:
 
 ```bat
-cd /d C:\Users\Admin\Desktop\j2ee\website-Build-solo\backend
+cd /d C:\Users\Admin\Desktop\practic\springboot\frontend
+copy .env.example .env
+```
+
+## 3. Đăng nhập Google và Facebook
+
+### Client ID và Client Secret là gì, cần nhập gì?
+
+`Client ID` và `Client Secret` không phải tên đăng nhập hoặc mật khẩu Gmail/Facebook,
+và cũng không phải giá trị tự nghĩ ra. Đây là hai mã do Google hoặc Facebook cấp sau
+khi bạn đăng ký ứng dụng OAuth:
+
+- `Client ID`: mã nhận diện ứng dụng.
+- `Client Secret`: khóa bí mật của ứng dụng; chỉ lưu trong `backend/.env`, không đưa
+  vào frontend và không commit lên Git.
+
+#### Trường hợp 1: chỉ muốn chạy thử backend
+
+Nếu chưa tạo ứng dụng trên Google Cloud hoặc Meta for Developers, nhập tạm đúng như
+sau:
+
+```dotenv
+GOOGLE_CLIENT_ID=replace-me
+GOOGLE_CLIENT_SECRET=replace-me
+FACEBOOK_CLIENT_ID=replace-me
+FACEBOOK_CLIENT_SECRET=replace-me
+```
+
+Backend vẫn khởi động và đăng nhập bằng email/mật khẩu vẫn dùng được, nhưng nút đăng
+nhập Google/Facebook sẽ chưa hoạt động.
+
+#### Trường hợp 2: muốn đăng nhập Google/Facebook hoạt động
+
+Bạn phải tạo OAuth Application trên Google Cloud và/hoặc Meta for Developers. Sau
+đó sao chép nguyên văn các mã họ cấp vào `.env`. Ví dụ hình dạng của giá trị:
+
+```dotenv
+GOOGLE_CLIENT_ID=123456789-abcxyz.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-xxxxxxxxxxxxxxxx
+FACEBOOK_CLIENT_ID=123456789012345
+FACEBOOK_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+```
+
+Các chuỗi trên chỉ là ví dụ minh họa và không đăng nhập được. Không nhập địa chỉ
+Gmail, mật khẩu Gmail, tên Facebook hoặc mật khẩu Facebook vào bốn biến này.
+
+Callback URL cần khai báo ở trang quản trị của nhà cung cấp:
+
+- Google: `http://localhost:8080/login/oauth2/code/google`
+- Facebook: `http://localhost:8080/login/oauth2/code/facebook`
+
+Frontend bắt đầu đăng nhập bằng một trong hai URL:
+
+- `http://localhost:8080/oauth2/authorization/google`
+- `http://localhost:8080/oauth2/authorization/facebook`
+
+Đăng nhập thành công sẽ đặt cookie JWT `ANTAM_TOKEN` dạng `HttpOnly` và chuyển về
+`http://localhost:5173/oauth/callback`. Khi triển khai bằng HTTPS, đặt
+`JWT_COOKIE_SECURE=true`.
+
+## 4. Gửi email Gmail
+
+Bật xác minh hai bước cho tài khoản Google và tạo **App Password**. Sau đó thay ví
+dụ trong `.env` bằng tài khoản thật; không dùng mật khẩu đăng nhập Gmail thông thường:
+
+```dotenv
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-account@gmail.com
+MAIL_PASSWORD=your-16-character-app-password
+MAIL_FROM=your-account@gmail.com
+```
+
+Mỗi lần gửi được ghi vào bảng `email_deliveries` với trạng thái `PENDING`, `SENT`
+hoặc `FAILED`.
+
+## 5. Build, test và chạy
+
+Mở **Command Prompt** tại thư mục `backend`, chạy test toàn bộ reactor:
+
+```bat
 mvnw.cmd test
-set "DB_URL=jdbc:mysql://localhost:3306/antam?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh"
-set "DB_USERNAME=root"
-set "DB_PASSWORD="
-set "SERVER_PORT=8080"
-set "CORS_ALLOWED_ORIGINS=http://localhost:5173"
-mvnw.cmd spring-boot:run
 ```
 
-Thay host, cổng, username và password bằng cấu hình XAMPP trên máy. Các lệnh `set` chỉ có hiệu lực trong cửa sổ Command Prompt hiện tại.
-
-Biến môi trường hỗ trợ:
-
-| Biến                   | Bắt buộc | Ý nghĩa                                    |
-| ---------------------- | -------- | ------------------------------------------ |
-| `DB_URL`               | Có       | JDBC URL tới MySQL/MariaDB của XAMPP       |
-| `DB_USERNAME`          | Có       | Tài khoản database                         |
-| `DB_PASSWORD`          | Tùy máy  | Mật khẩu database                          |
-| `SERVER_PORT`          | Không    | Cổng HTTP của Spring Boot; mặc định `8080` |
-| `CORS_ALLOWED_ORIGINS` | Không    | Danh sách origin, phân cách bằng dấu phẩy  |
-
-Điền host, cổng và tài khoản theo cấu hình XAMPP trên máy của bạn. Dự án không cố định phiên bản hoặc cổng MySQL trong README.
-
-## Đổi cổng
-
-### Đổi cổng Spring Boot
-
-Đặt `SERVER_PORT` trước khi chạy ứng dụng. Ví dụ chuyển backend sang cổng `8081`:
+Mở bốn cửa sổ **Command Prompt**, chạy lệnh sau trong từng cửa sổ. Nếu cửa sổ mới
+chưa ở đúng thư mục thì chạy `cd /d C:\Users\Admin\Desktop\practic\springboot\backend`
+trước:
 
 ```bat
-set "SERVER_PORT=8081"
-mvnw.cmd spring-boot:run
+mvnw.cmd -pl notification-service spring-boot:run
+mvnw.cmd -pl auth-service spring-boot:run
+mvnw.cmd -pl core-service spring-boot:run
+mvnw.cmd -pl api-gateway spring-boot:run
 ```
 
-Backend sau đó chạy tại `http://localhost:8081`. Có thể đổi giá trị mặc định trong `src/main/resources/application.properties` tại dòng:
+Không chạy `mvnw.cmd spring-boot:run` trực tiếp trên POM gốc vì POM gốc chỉ là
+reactor (`packaging=pom`), không có class `main`. Frontend chỉ gọi gateway cổng 8080.
 
-```properties
-server.port=${SERVER_PORT:8080}
+## API chính
+
+### Xác thực
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `GET /oauth2/authorization/google`
+- `GET /oauth2/authorization/facebook`
+
+Body đăng nhập mẫu:
+
+```json
+{ "email": "patient@example.com", "password": "password123" }
 ```
 
-### Đổi cổng MySQL/XAMPP
-
-1. Trong XAMPP Control Panel, dừng MySQL.
-2. Chọn **Config** của MySQL và mở `my.ini`.
-3. Đổi giá trị `port` trong phần `[mysqld]`; nếu `[client]` có khai báo `port`, đổi sang cùng giá trị.
-4. Lưu file và khởi động lại MySQL.
-5. Cập nhật cổng tương ứng trong `DB_URL`.
-
-Ví dụ MySQL dùng cổng `3307`:
-
-```bat
-set "DB_URL=jdbc:mysql://localhost:3307/antam?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh"
-set "DB_USERNAME=root"
-set "DB_PASSWORD="
-mvnw.cmd spring-boot:run
-```
-
-Cổng MySQL nằm sau hostname trong JDBC URL (`localhost:3307`). Cổng Spring Boot được điều khiển riêng bằng `SERVER_PORT`; hai cổng không cần giống nhau.
-
-Flyway quản lý schema cho database mới. `baseline-on-migrate=true` cho phép Spring Boot nhận database đã được tạo bằng file bootstrap mà không chạy lại migration V1. Hibernate chỉ dùng `ddl-auto=validate`.
-
-Cột `password_hash` của tài khoản mock để `NULL`; file SQL không chứa mật khẩu dùng chung. Cần gán BCrypt hash bằng quy trình quản trị riêng trước khi dùng đăng nhập server.
-
-## Cấu trúc source
-
-Code được chia theo module nghiệp vụ. Mỗi module dùng các lớp con phù hợp:
-
-```text
-com.example.backend
-├── appointment/{controller,dto,entity,repository,service}
-├── auth/{controller,dto,model,service}
-├── branch/{controller,dto,entity,repository,service}
-├── doctor/{controller,dto,entity,repository,service}
-├── specialty/{controller,dto,entity,repository,service}
-├── exampackage/{controller,dto,entity,repository,service}
-├── department/entity
-├── medicalservice/entity
-├── user/{entity,repository}
-├── medicine/{entity,repository}
-├── inventory/entity
-├── schedule/entity
-└── config
-```
-
-Mỗi aggregate có package riêng để có thể tìm controller, DTO, service, entity và repository theo đúng tên nghiệp vụ. Ví dụ, `BranchResponse` nằm trong `branch/dto`, còn `DoctorResponse` nằm trong `doctor/dto`; không dùng một package `facility` để gom các loại dữ liệu khác nhau.
-
-- `controller`: nhận request, lấy principal và trả response.
-- `dto`: request/response model của API, tách khỏi entity persistence.
-- `service`: use case, nghiệp vụ và ranh giới transaction.
-- `entity`: JPA entity ánh xạ database.
-- `repository`: Spring Data repository.
-- `model`: model xác thực hoặc model nội bộ không phải JPA entity.
-
-## API hiện có
+### Nghiệp vụ
 
 - `GET /api/public/branches`
 - `GET /api/public/specialties`
 - `GET /api/public/doctors`
 - `GET /api/public/packages`
-- `GET /api/auth/csrf`
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-- `GET /api/appointments`
+- `GET /api/appointments` - yêu cầu JWT
 
-Những endpoint ngoài `/api/public/**`, `/api/auth/csrf` và `/api/auth/login` yêu cầu session hợp lệ. API lịch hẹn lấy ID tài khoản từ principal phía server, không nhận `userId` từ query.
+Client ngoài trình duyệt có thể gửi JWT qua `Authorization: Bearer <token>`. Trình
+duyệt dùng cookie `HttpOnly` và cần đặt `credentials: "include"` khi gọi khác origin.
 
-## Kiểm thử
+## Lưu ý bảo mật
 
-```bat
-mvnw.cmd test
-```
-
-Lệnh test biên dịch backend, khởi động HTTP server trên cổng ngẫu nhiên, kiểm tra API public, quyền truy cập, CSRF và tính đồng bộ giữa migration với file bootstrap. Test không kết nối hoặc ghi dữ liệu vào MySQL/XAMPP.
+- Đổi `JWT_SECRET` thành chuỗi ngẫu nhiên ít nhất 32 byte khi triển khai thật và giữ
+  cùng giá trị giữa `auth-service` và `core-service`.
+- Đổi `INTERNAL_API_KEY`; không công khai cổng `notification-service` ra Internet.
+- Không đưa `.env`, OAuth secret hay Gmail App Password vào Git.

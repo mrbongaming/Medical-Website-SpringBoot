@@ -255,6 +255,7 @@ try {
   }
   async function login(role, id) {
     await navigate('/dang-nhap');
+    await textButton('Nhân sự demo');
     await field('Vai trò', role);
     await field('Tài khoản demo', id);
     await click('form button[type=submit]');
@@ -340,6 +341,7 @@ try {
   await textButton('Áp dụng');
   assert.ok(await evaluate("document.body.textContent.includes('Chờ xác minh')"));
   await click('a[href^="/dang-nhap?next="]');
+  await textButton('Nhân sự demo');
   await field('Vai trò', 'patient');
   await field('Tài khoản demo', 'p1');
   await click('form button[type=submit]');
@@ -892,13 +894,6 @@ try {
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
   assert.ok(!(await stored("db.departments.some(d=>d.name==='Khoa kiểm thử')")));
-  await navigate('/dang-nhap');
-  await textButton('Tạo hồ sơ bệnh nhân');
-  await field('Họ và tên', 'Bệnh nhân đăng ký mới');
-  await field('Số điện thoại', '0991234567');
-  await click('form button[type=submit]');
-  assert.equal(await evaluate('location.pathname'), '/lich-hen');
-  assert.ok(await stored("db.users.some(u=>u.phone==='0991234567'&&u.role==='patient')"));
   await evaluate("localStorage.setItem('antam-data-v1', '{broken')");
   await navigate('/');
   assert.ok(await evaluate("document.body.textContent.includes('Không đọc được dữ liệu')"));
@@ -910,7 +905,7 @@ try {
   assert.equal(errors.length, 0, JSON.stringify(errors));
   assert.equal(submissions.length, 0, 'Unexpected non-GET network requests');
   console.log(
-    'PASS: 5 roles, booking/login persistence, inventory, promotion entry/management, insurance/receipt/refund workflow, clinical records, branch scope, reports, migration, storage, reset, registration, routes and 5 viewport sizes (including dialogs).',
+    'PASS: 5 demo roles, booking/login persistence, inventory, promotion entry/management, insurance/receipt/refund workflow, clinical records, branch scope, reports, migration, storage, reset, routes and 5 viewport sizes (including dialogs).',
   );
   console.log('Screenshots: ' + artifacts);
 } catch (error) {

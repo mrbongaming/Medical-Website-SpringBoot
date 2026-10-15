@@ -2,8 +2,14 @@ import { Link, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useHospital } from '../state/context';
 
 export function RequireRole({ roles: allowed }) {
-  const { user } = useHospital();
+  const { user, authReady } = useHospital();
   const location = useLocation();
+  if (!authReady)
+    return (
+      <div className="mx-auto min-h-[55vh] w-full max-w-7xl px-4 py-16 text-center text-slate-600">
+        Đang kiểm tra phiên đăng nhập…
+      </div>
+    );
   if (!user)
     return (
       <Navigate

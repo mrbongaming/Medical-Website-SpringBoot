@@ -19,6 +19,7 @@ import { DetailPage } from './pages/DetailPage';
 import { InformationPage } from './pages/InformationPage';
 import { NotFound } from './pages/NotFound';
 import { AuthPage } from './pages/AuthPage';
+import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { BookingPage } from './pages/BookingPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { AppointmentsPage } from './pages/AppointmentsPage';
@@ -56,6 +57,7 @@ const router = createBrowserRouter(
         />
         <Route path="dat-lich" element={<BookingPage />} />
         <Route path="dang-nhap" element={<AuthPage />} />
+        <Route path="oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="dang-ky" element={<Navigate to="/dang-nhap" replace />} />
         <Route path="gioi-thieu" element={<InformationPage mode="about" />} />
         <Route path="huong-dan" element={<InformationPage mode="guide" />} />

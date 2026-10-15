@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: api-gateway
+  config:
+    import: optional:file:.env[.properties],optional:file:../.env[.properties]
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: auth-api
+              uri: ${AUTH_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/auth/**,/oauth2/**,/login/oauth2/**
+            - id: core-api
+              uri: ${CORE_SERVICE_URL:http://localhost:8082}
+              predicates:
+                - Path=/api/**
+
+server:
+  port: ${GATEWAY_PORT:8080}
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway
+
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://127.0.0.1:5173}
