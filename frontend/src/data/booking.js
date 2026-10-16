@@ -1,4 +1,5 @@
 import { availableSlots, future } from './domain.js';
+import { isFacilityAssignedPackage } from './packageRules.js';
 
 export function initialBooking(db, params, saved = {}) {
   const selectionKeys = ['branchId', 'doctorId', 'specialtyId', 'packageId', 'date'];
@@ -40,7 +41,8 @@ export function initialBooking(db, params, saved = {}) {
     doctor?.branchId === branch.id &&
     doctor?.specialtyId === specialty.id &&
     db.departments.some((d) => d.id === doctor.departmentId && d.active);
-  const bookingMode = source.bookingMode === 'facility' ? 'facility' : 'doctor';
+  const facilityAssigned = isFacilityAssignedPackage(pack);
+  const bookingMode = facilityAssigned || source.bookingMode === 'facility' ? 'facility' : 'doctor';
   const date =
     bookingMode === 'facility'
       ? future(source.date)
@@ -52,14 +54,15 @@ export function initialBooking(db, params, saved = {}) {
   return {
     branchId: branch?.id || '',
     specialtyId: specialty?.id || '',
-    bookingMode: validDoctor ? 'doctor' : bookingMode,
-    doctorId: validDoctor ? doctor.id : '',
+    bookingMode: facilityAssigned ? 'facility' : validDoctor ? 'doctor' : bookingMode,
+    doctorId: !facilityAssigned && validDoctor ? doctor.id : '',
     packageId:
       pack && specialty?.id === pack.specialtyId && (!branch || pack.branchIds.includes(branch.id))
         ? pack.id
         : '',
     date,
     time:
+      !facilityAssigned &&
       validDoctor &&
       date &&
       availableSlots(db, doctor.id, date).some((s) => s.time === source.time && s.available)

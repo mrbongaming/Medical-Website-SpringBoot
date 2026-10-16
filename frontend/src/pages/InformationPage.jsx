@@ -37,7 +37,8 @@ export function InformationPage({ mode }) {
             <h3>Tiếp cận dịch vụ</h3>
             <p>
               Bạn có thể chọn bác sĩ và giờ khám, hoặc chỉ chọn cơ sở, chuyên khoa và ngày để nhân
-              viên sắp xếp giờ tiếp nhận. Quyền lợi BHYT được kiểm tra theo từng dịch vụ và thuốc.
+              viên sắp xếp giờ tiếp nhận. Quyền lợi BHYT được kiểm tra theo từng dịch vụ; thuốc kê
+              đơn không tham gia tính BHYT trong phạm vi đồ án.
             </p>
             <p>
               Thương hiệu, ảnh, hồ sơ, địa chỉ và thông tin y tế trong bản demo đều mang tính minh

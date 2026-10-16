@@ -1,5 +1,5 @@
 import { addBillingData, addInventoryData, createSeed } from './mockData.js';
-import { addV5Data, addV6Data, addV7Data } from './migrations.js';
+import { addV5Data, addV6Data, addV7Data, addV8Data, addV9Data, addV10Data } from './migrations.js';
 
 // Keep the existing key so open tabs and existing demo users migrate in place.
 export const DATA_KEY = 'antam-data-v1';
@@ -19,14 +19,14 @@ export const collections = [
 export function migrateData(value) {
   if (
     !value ||
-    ![1, 2, 3, 4, 5, 6, 7].includes(value.version) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].includes(value.version) ||
     collections.some(
       (key) =>
         !Array.isArray(value[key]) || value[key].some((row) => !row || typeof row.id !== 'string'),
     )
   )
     throw new Error('Dữ liệu demo không hợp lệ.');
-  if ([3, 4, 5, 6, 7].includes(value.version)) {
+  if ([3, 4, 5, 6, 7, 8, 9, 10].includes(value.version)) {
     const extra = [
       'promotions',
       'serviceCatalog',
@@ -43,7 +43,10 @@ export function migrateData(value) {
       )
     )
       throw new Error('Dữ liệu tài chính không hợp lệ.');
-    if (value.version === 3) return addV7Data(addV6Data(addV5Data(addInventoryData(value))));
+    if (value.version === 3)
+      return addV10Data(
+        addV9Data(addV8Data(addV7Data(addV6Data(addV5Data(addInventoryData(value)))))),
+      );
     const inventoryKeys = [
       'medicines',
       'inventorySettings',
@@ -53,16 +56,26 @@ export function migrateData(value) {
     ];
     if (inventoryKeys.some((key) => !Array.isArray(value[key])) || !value.stockSchedule)
       throw new Error('Dữ liệu kho thuốc không hợp lệ.');
-    if (value.version === 4) return addV7Data(addV6Data(addV5Data(value)));
+    if (value.version === 4)
+      return addV10Data(addV9Data(addV8Data(addV7Data(addV6Data(addV5Data(value))))));
     if (!Array.isArray(value.insuranceRules)) throw new Error('Dữ liệu BHYT không hợp lệ.');
-    if (value.version === 5) return addV7Data(addV6Data(value));
+    if (value.version === 5) return addV10Data(addV9Data(addV8Data(addV7Data(addV6Data(value)))));
     if (!Array.isArray(value.campaigns) || !Array.isArray(value.healthFacts))
       throw new Error('Dữ liệu nội dung không hợp lệ.');
-    if (value.version === 6) return addV7Data(value);
+    if (value.version === 6) return addV10Data(addV9Data(addV8Data(addV7Data(value))));
+    if (value.version === 7) return addV10Data(addV9Data(addV8Data(value)));
+    if (value.version === 8) return addV10Data(addV9Data(value));
+    if (value.version === 9) return addV10Data(value);
+    if (!Array.isArray(value.scheduleExceptions))
+      throw new Error('Dữ liệu ngoại lệ lịch làm việc không hợp lệ.');
     return value;
   }
   if (value.version === 2)
-    return addV7Data(addV6Data(addV5Data(addInventoryData(addBillingData(value)))));
+    return addV10Data(
+      addV9Data(
+        addV8Data(addV7Data(addV6Data(addV5Data(addInventoryData(addBillingData(value)))))),
+      ),
+    );
   const next = {
     version: 2,
     seededAt: value.seededAt || '',
@@ -77,7 +90,9 @@ export function migrateData(value) {
     contactPhone: next.branches.find((b) => b.id === d.branchId)?.phone || '',
     ...d,
   }));
-  return addV7Data(addV6Data(addV5Data(addInventoryData(addBillingData(next)))));
+  return addV10Data(
+    addV9Data(addV8Data(addV7Data(addV6Data(addV5Data(addInventoryData(addBillingData(next))))))),
+  );
 }
 
 export function readData(storage) {

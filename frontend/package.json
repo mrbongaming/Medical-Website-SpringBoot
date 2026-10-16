@@ -13,8 +13,7 @@
     "check:domain": "node scripts/check-domain.mjs",
     "check:billing": "node scripts/check-billing.mjs",
     "check:inventory": "node scripts/check-inventory.mjs",
-    "check:browser": "node scripts/check-browser.mjs",
-    "export:mysql-bootstrap": "node scripts/export-mysql-bootstrap.mjs"
+    "check:browser": "node scripts/check-browser.mjs"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

@@ -193,6 +193,23 @@ export function inventoryAction(db, user, type, payload) {
     Object.assign(row, { salePrice, active: p.active === true });
     return row.id;
   }
+  if (type === 'medicine-purchase-complete') {
+    const appointment = db.appointments.find((a) => a.id === p.id);
+    const record = db.records.find((r) => r.appointmentId === p.id);
+    check(
+      appointment &&
+        record?.prescription?.length &&
+        record.purchaseChoice === 'hospital' &&
+        record.dispenseStatus === 'not_managed' &&
+        branchAllowed(user, appointment.branchId) &&
+        (branchOperator(user) || user.role === 'superAdmin'),
+      'Không có đơn mua tại bệnh viện cần ghi nhận.',
+    );
+    record.dispenseStatus = 'hospital_purchase_recorded';
+    record.dispensedBy = user.id;
+    record.dispensedAt = now();
+    return record.id;
+  }
   if (type === 'medicine-dispense' || type === 'medicine-cancel') {
     const appointment = db.appointments.find((a) => a.id === p.id);
     const record = db.records.find((r) => r.appointmentId === p.id);
@@ -249,16 +266,15 @@ export function inventoryAction(db, user, type, payload) {
   return null;
 }
 
-export function validateAndReservePrescription(db, appointment, payload) {
+export function validatePrescription(db, appointment, payload) {
   const prescription = payload.prescription === undefined ? [] : payload.prescription;
   check(Array.isArray(prescription) && prescription.length <= 20, 'Đơn thuốc không hợp lệ.');
   const seen = new Set();
   const snapshot = prescription.map((line, index) => {
     const medicine = db.medicines.find((m) => m.id === line.medicineId && m.active);
-    const stock = inventoryRow(db, appointment.branchId, line.medicineId);
     const quantity = Number(line.quantity);
     check(
-      medicine && stock && !seen.has(medicine.id),
+      medicine && !seen.has(medicine.id),
       `Dòng thuốc ${index + 1} không hợp lệ hoặc bị trùng.`,
     );
     check(
@@ -269,7 +285,6 @@ export function validateAndReservePrescription(db, appointment, payload) {
       [line.dosage, line.route, line.frequency, line.duration].every((v) => String(v || '').trim()),
       `Dòng thuốc ${index + 1} chưa đủ hướng dẫn sử dụng.`,
     );
-    check(availableStock(stock) >= quantity, `${medicine.name} không đủ tồn khả dụng.`);
     seen.add(medicine.id);
     return {
       medicineId: medicine.id,
@@ -288,10 +303,11 @@ export function validateAndReservePrescription(db, appointment, payload) {
       unitPrice: medicine.salePrice,
     };
   });
-  for (const item of snapshot)
-    inventoryRow(db, appointment.branchId, item.medicineId).reserved += item.quantity;
   return snapshot;
 }
+
+// Giữ alias để dữ liệu/mã gọi cũ không vỡ; hàm không còn giữ hoặc kiểm tra tồn.
+export const validateAndReservePrescription = validatePrescription;
 
 export function inventorySummary(db, branchId = '') {
   const stocks = db.inventory.filter((r) => !branchId || r.branchId === branchId);

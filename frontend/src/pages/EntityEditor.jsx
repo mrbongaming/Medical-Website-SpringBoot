@@ -11,7 +11,14 @@ export function EntityEditor({ entity, initial, close, saved }) {
   const { db, user, dispatch } = useHospital();
   const [row, setRow] = useState({
     ...initial,
-    timesText: initial.times?.join(', ') || '08:00, 09:00, 10:00, 13:30, 14:30, 15:30',
+    ...(entity === 'schedules'
+      ? {
+          weekdays: initial.weekdays || [1, 2, 3, 4, 5],
+          startTime: initial.startTime || '07:30',
+          endTime: initial.endTime || '11:30',
+          slotMinutes: initial.slotMinutes || 30,
+        }
+      : {}),
     consultationLanguagesText: initial.consultationLanguages?.join(', ') || '',
     patientGroupsText: initial.patientGroups?.join(', ') || '',
     focusAreasText: initial.focusAreas?.join(', ') || '',
@@ -36,7 +43,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
       [key]: value,
       ...(key === 'branchId' ? { doctorId: '', departmentId: '' } : {}),
     }));
-  function input(key, label, type = 'text', required = true) {
+  function input(key, label, type = 'text', required = true, disabled = false) {
     return (
       <Field key={key} label={label} required={required} optional={!required}>
         <input
@@ -44,6 +51,7 @@ export function EntityEditor({ entity, initial, close, saved }) {
           value={row[key] ?? ''}
           onChange={(e) => change(key, e.target.value)}
           required={required}
+          disabled={disabled}
           min={type === 'number' ? 0 : undefined}
           placeholder={placeholders[key] || `Nhập ${label.toLowerCase()}`}
         />
@@ -53,7 +61,6 @@ export function EntityEditor({ entity, initial, close, saved }) {
   async function submit(e) {
     e.preventDefault();
     const values = { ...row };
-    delete values.timesText;
     delete values.consultationLanguagesText;
     delete values.patientGroupsText;
     delete values.focusAreasText;
@@ -71,11 +78,6 @@ export function EntityEditor({ entity, initial, close, saved }) {
       values.certifications = list(row.certificationsText);
       values.memberships = list(row.membershipsText);
     }
-    if (entity === 'schedules')
-      values.times = row.timesText
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
     try {
       await dispatch('save', { entity, id: initial.id, values });
       saved();
@@ -120,7 +122,13 @@ export function EntityEditor({ entity, initial, close, saved }) {
                 options={db.departments.filter((d) => d.active && d.branchId === row.branchId)}
                 required
               />
-              {input('price', 'Phí khám (VND)', 'number')}
+              {input(
+                'price',
+                'Phí khám tham khảo (VND)',
+                'number',
+                true,
+                user.role !== 'superAdmin',
+              )}
               {input('experience', 'Năm kinh nghiệm', 'number', false)}
               {input('qualification', 'Học vị / chức danh', 'text', false)}
               {input('currentPosition', 'Chức vụ hiện tại', 'text', false)}
@@ -202,15 +210,48 @@ export function EntityEditor({ entity, initial, close, saved }) {
                 options={db.doctors.filter((d) => d.active && d.branchId === row.branchId)}
                 required
               />
-              {input('date', 'Ngày', 'date')}
-              <Field label="Khung giờ cách nhau bằng dấu phẩy" wide>
-                <input
-                  value={row.timesText}
-                  onChange={(e) => change('timesText', e.target.value)}
-                  required
-                  placeholder="08:00, 09:00, 14:00"
-                />
+              <Field label="Các thứ áp dụng" wide required>
+                <div className="flex flex-wrap gap-3">
+                  {['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'].map(
+                    (label, index) => {
+                      const day = index + 1;
+                      return (
+                        <label className="flex items-center gap-2" key={day}>
+                          <input
+                            type="checkbox"
+                            checked={row.weekdays.includes(day)}
+                            onChange={(event) =>
+                              change(
+                                'weekdays',
+                                event.target.checked
+                                  ? [...row.weekdays, day]
+                                  : row.weekdays.filter((value) => value !== day),
+                              )
+                            }
+                          />
+                          {label}
+                        </label>
+                      );
+                    },
+                  )}
+                </div>
               </Field>
+              {input('startTime', 'Giờ bắt đầu', 'time')}
+              {input('endTime', 'Giờ kết thúc', 'time')}
+              <Field label="Thời lượng mỗi lượt" required>
+                <select
+                  value={row.slotMinutes}
+                  onChange={(event) => change('slotMinutes', Number(event.target.value))}
+                >
+                  {[15, 20, 30, 45, 60].map((minutes) => (
+                    <option key={minutes} value={minutes}>
+                      {minutes} phút
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              {input('effectiveFrom', 'Áp dụng từ ngày', 'date', false)}
+              {input('effectiveTo', 'Kết thúc vào ngày', 'date', false)}
             </>
           )}
           {entity === 'packages' && (
@@ -247,16 +288,14 @@ export function EntityEditor({ entity, initial, close, saved }) {
               </fieldset>
             </>
           )}
-          {entity !== 'schedules' && (
-            <label className="flex items-start gap-3 text-sm text-slate-700 md:col-span-2">
-              <input
-                type="checkbox"
-                checked={row.active !== false}
-                onChange={(e) => change('active', e.target.checked)}
-              />
-              Đang hoạt động
-            </label>
-          )}
+          <label className="flex items-start gap-3 text-sm text-slate-700 md:col-span-2">
+            <input
+              type="checkbox"
+              checked={row.active !== false}
+              onChange={(e) => change('active', e.target.checked)}
+            />
+            Đang hoạt động
+          </label>
         </div>
         <Alert error={error} />
         <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:items-center">

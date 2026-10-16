@@ -49,7 +49,11 @@ function catalogData(db, catalogs) {
     ],
     active: true,
   }));
-  return { ...db, branches, specialties, doctors, packages };
+  const schedulePreviews = (catalogs.schedules || []).map((item) => ({
+    ...item,
+    times: item.times.map((time) => String(time).slice(0, 5)),
+  }));
+  return { ...db, branches, specialties, doctors, packages, schedulePreviews };
 }
 
 function backendAppointment(item, user, db) {
@@ -71,6 +75,8 @@ function backendAppointment(item, user, db) {
     status: String(item.status || 'pending').toLowerCase(),
     serviceName: item.serviceName,
     price,
+    paymentStatus: String(item.paymentStatus || 'legacy_unpaid'),
+    prepaymentAmount: Number(item.prepaymentAmount || 0),
     duration: 30,
     reason: '',
     createdAt: item.date,

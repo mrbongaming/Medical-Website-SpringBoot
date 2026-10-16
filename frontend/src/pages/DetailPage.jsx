@@ -10,8 +10,8 @@ import {
   FiPhone,
 } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money, hospital, dateKey } from '../data/mockData';
-import { availableSlots } from '../data/domain';
+import { money, hospital } from '../data/mockData';
+import { availableSlots, upcomingSchedules } from '../data/domain';
 import { DoctorCard } from '../components/DoctorCard';
 import { Photo } from '../components/Photo';
 import { Rating } from '../components/Rating';
@@ -43,17 +43,7 @@ export function DetailPage({ kind }) {
   const facility = doctor ? db.branches.find((b) => b.id === row.branchId) : row;
   const bookingUrl =
     '/dat-lich?' + (branch ? 'branchId=' : doctor ? 'doctorId=' : 'packageId=') + row.id;
-  const schedules = doctor
-    ? db.schedules
-        .filter(
-          (s) =>
-            s.doctorId === row.id &&
-            s.date >= dateKey() &&
-            availableSlots(db, row.id, s.date).some((t) => t.available),
-        )
-        .sort((a, b) => a.date.localeCompare(b.date))
-        .slice(0, 5)
-    : [];
+  const schedules = doctor ? upcomingSchedules(db, row.id, 5) : [];
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 min-h-[55vh] py-10 sm:py-14">
       <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-slate-500 [&_a]:text-sky-700">

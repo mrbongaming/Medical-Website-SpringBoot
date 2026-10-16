@@ -9,7 +9,6 @@ import org.springframework.boot.test.context.SpringBootTest;
         "spring.datasource.username=sa",
         "spring.datasource.password=",
         "spring.jpa.hibernate.ddl-auto=create-drop",
-        "spring.flyway.enabled=false",
         "app.mail.from=test@example.com"
 })
 class NotificationServiceApplicationTests {

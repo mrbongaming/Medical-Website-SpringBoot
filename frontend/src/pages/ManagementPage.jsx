@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { inBranch, normalize } from '../data/domain';
-import { dateKey, money } from '../data/mockData';
+import { money } from '../data/mockData';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';
@@ -19,7 +19,6 @@ export function ManagementPage({ entity }) {
   const [query, setQuery] = useState('');
   const [branchId, setBranchId] = useState(() => params.get('branchId') || '');
   const [activeState, setActiveState] = useState('');
-  const [from, setFrom] = useState(dateKey());
   const [editing, setEditing] = useState(null);
   const [deleting, setDeleting] = useState(null);
   const [error, setError] = useState('');
@@ -39,7 +38,6 @@ export function ManagementPage({ entity }) {
           (entity === 'branches'
             ? r.id === branchId
             : r.branchId === branchId || r.branchIds?.includes(branchId))) &&
-        (entity !== 'schedules' || r.date >= from) &&
         (!activeState || (activeState === 'active' ? r.active !== false : r.active === false)) &&
         normalize(
           (r.name || db.doctors.find((d) => d.id === r.doctorId)?.name || '') +
@@ -47,7 +45,7 @@ export function ManagementPage({ entity }) {
             (r.code || ''),
         ).includes(normalize(query)),
     )
-    .sort((a, b) => (a.date || a.name || '').localeCompare(b.date || b.name || ''));
+    .sort((a, b) => (a.name || a.id).localeCompare(b.name || b.id));
   async function remove() {
     try {
       await dispatch('remove', { entity, id: deleting.id });
@@ -107,24 +105,17 @@ export function ManagementPage({ entity }) {
             placeholder="Tất cả cơ sở"
           />
         )}
-        {entity === 'schedules' && (
-          <Field label="Từ ngày">
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-          </Field>
-        )}
-        {entity !== 'schedules' && (
-          <Select
-            label="Trạng thái"
-            value={activeState}
-            onChange={setActiveState}
-            options={[
-              { id: 'active', name: 'Đang hoạt động' },
-              { id: 'inactive', name: 'Ngừng hoạt động' },
-            ]}
-            placeholder="Tất cả trạng thái"
-          />
-        )}
-        {(query || branchId || activeState || (entity === 'schedules' && from !== dateKey())) && (
+        <Select
+          label="Trạng thái"
+          value={activeState}
+          onChange={setActiveState}
+          options={[
+            { id: 'active', name: 'Đang hoạt động' },
+            { id: 'inactive', name: 'Ngừng hoạt động' },
+          ]}
+          placeholder="Tất cả trạng thái"
+        />
+        {(query || branchId || activeState) && (
           <button
             type="button"
             className="min-h-11 rounded-xl border border-slate-300 bg-white px-4 font-semibold text-slate-700 hover:border-sky-400 hover:text-sky-700"
@@ -132,7 +123,6 @@ export function ManagementPage({ entity }) {
               setQuery('');
               setBranchId('');
               setActiveState('');
-              setFrom(dateKey());
             }}
           >
             Xóa bộ lọc
@@ -164,7 +154,7 @@ export function ManagementPage({ entity }) {
       <Table
         headers={['Thông tin', 'Chi tiết', 'Trạng thái', 'Thao tác']}
         empty={!rows.length}
-        paginationKey={`${query}|${branchId}|${activeState}|${from}`}
+        paginationKey={`${query}|${branchId}|${activeState}`}
       >
         {rows.map((row) => (
           <tr key={row.id}>
@@ -172,7 +162,7 @@ export function ManagementPage({ entity }) {
               <strong className="block text-slate-950">
                 {row.name || db.doctors.find((d) => d.id === row.doctorId)?.name}
               </strong>
-              <small className="mt-1 block text-slate-500">{row.code || row.date || row.id}</small>
+              <small className="mt-1 block text-slate-500">{row.code || row.id}</small>
             </td>
             <td className="min-w-72">
               {row.branchId && (
@@ -194,12 +184,11 @@ export function ManagementPage({ entity }) {
                 </>
               )}
               {row.price && <small className="mt-1 block text-slate-500">{money(row.price)}</small>}
-              {row.times && (
-                <div className="flex flex-wrap gap-2 [&>span]:rounded-full [&>span]:bg-slate-100 [&>span]:px-3 [&>span]:py-1 [&>span]:text-sm [&>span]:text-slate-700">
-                  {row.times.map((t) => (
-                    <span key={t}>{t}</span>
-                  ))}
-                </div>
+              {entity === 'schedules' && (
+                <small className="mt-1 block text-slate-500">
+                  {row.weekdays.map((day) => (day === 7 ? 'CN' : `T${day + 1}`)).join(', ')} ·{' '}
+                  {row.startTime}–{row.endTime} · {row.slotMinutes} phút/lượt
+                </small>
               )}
               {entity === 'users' && (
                 <small className="mt-1 block text-slate-500">{row.phone}</small>
@@ -264,8 +253,8 @@ export function ManagementPage({ entity }) {
       {deleting && (
         <Modal title="Xóa dữ liệu" close={() => setDeleting(null)}>
           <p>
-            Xóa {deleting.name || deleting.date}? Dữ liệu đã có liên kết sẽ không được xóa; hãy
-            ngừng hoạt động trong biểu mẫu sửa.
+            Xóa {deleting.name || deleting.id}? Dữ liệu đã có liên kết sẽ không được xóa; hãy ngừng
+            hoạt động trong biểu mẫu sửa.
           </p>
           <Alert error={error} />
           <button

@@ -229,16 +229,6 @@ export function BillingPanel({ appointmentId }) {
                         />
                         Đủ điều kiện miễn đồng chi trả 5 năm liên tục
                       </label>
-                      {!!b.medicineItems?.some((item) => item.insuranceCondition) && (
-                        <label className="flex items-start gap-3 text-sm text-slate-700">
-                          <input
-                            name="medicineConditionsConfirmed"
-                            type="checkbox"
-                            defaultChecked={b.insurance.medicineConditionsConfirmed}
-                          />
-                          Đã đối chiếu điều kiện thanh toán của từng thuốc
-                        </label>
-                      )}
                     </div>
                     <Field label="Căn cứ kiểm tra / thông tin cần bổ sung">
                       <textarea

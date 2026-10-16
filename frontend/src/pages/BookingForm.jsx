@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { dateKey } from '../data/mockData';
-import { availableSlots, future } from '../data/domain';
+import { availableDates, availableSlots, future } from '../data/domain';
 import { bookingStartStep, initialBooking } from '../data/booking';
 import { Photo } from '../components/Photo';
 import { Alert } from '../components/Alert';
@@ -15,6 +15,7 @@ import { Field } from '../components/Field';
 import { PageTitle } from '../components/PageTitle';
 import { Select } from '../components/Select';
 import { DRAFT } from '../helpers/PatientHelpers';
+import { isFacilityAssignedPackage } from '../data/packageRules';
 
 export function BookingForm() {
   const { db, user, dispatch } = useHospital();
@@ -42,6 +43,7 @@ export function BookingForm() {
   }, [form, result]);
   const branch = db.branches.find((b) => b.id === form.branchId && b.active);
   const pack = db.packages.find((p) => p.id === form.packageId && p.active);
+  const facilityAssignedPackage = isFacilityAssignedPackage(pack);
   const doctors = db.doctors.filter(
     (d) =>
       d.active &&
@@ -50,6 +52,7 @@ export function BookingForm() {
       db.departments.some((dep) => dep.id === d.departmentId && dep.active),
   );
   const doctor = doctors.find((d) => d.id === form.doctorId);
+  const doctorDates = doctor ? availableDates(db, doctor.id, 14) : [];
   const specialties = db.specialties.filter(
     (s) =>
       s.active &&
@@ -90,13 +93,16 @@ export function BookingForm() {
     }
     if (field === 'specialtyId')
       Object.assign(next, { packageId: '', doctorId: '', date: '', time: '' });
-    if (field === 'packageId')
+    if (field === 'packageId') {
+      const selectedPackage = db.packages.find((p) => p.id === value);
       Object.assign(next, {
-        specialtyId: db.packages.find((p) => p.id === value)?.specialtyId || '',
+        specialtyId: selectedPackage?.specialtyId || '',
+        bookingMode: isFacilityAssignedPackage(selectedPackage) ? 'facility' : 'doctor',
         doctorId: '',
         date: '',
         time: '',
       });
+    }
     if (field === 'doctorId') Object.assign(next, { date: '', time: '' });
     if (field === 'bookingMode')
       Object.assign(next, {
@@ -213,10 +219,10 @@ export function BookingForm() {
           data-testid="booking-confirmation"
           className="rounded-2xl border border-emerald-200 bg-emerald-50 p-6 text-center shadow-sm"
         >
-          <span className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-emerald-600 text-3xl text-white">
-            ✓
+          <span className="mx-auto mb-4 grid size-16 place-items-center rounded-full bg-amber-500 text-3xl text-white">
+            !
           </span>
-          <h1>Đã tạo lịch hẹn demo</h1>
+          <h1>Đã giữ lịch, cần thanh toán</h1>
           <p>
             Mã lịch: <strong>{result}</strong>
           </p>
@@ -224,8 +230,12 @@ export function BookingForm() {
             {branch.name} · {doctor?.name || 'Nhân viên cơ sở sắp xếp'}
           </p>
           <p>
-            {form.date} {form.time ? `lúc ${form.time}` : '· Chờ xác nhận giờ'} · Đang chờ nhân viên
-            xác nhận
+            {form.date} {form.time ? `lúc ${form.time}` : '· Chờ xác nhận giờ'} · Chưa chuyển sang
+            chờ nhân viên xác nhận
+          </p>
+          <p className="mx-auto my-4 max-w-2xl rounded-xl border border-amber-200 bg-white p-4 text-amber-900">
+            VNPay chưa được cấu hình. Khung tích hợp đã được chuẩn bị; lịch chỉ được xử lý sau khi
+            backend nhận IPN hợp lệ và xác nhận đã thanh toán.
           </p>
           <Link
             className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50"
@@ -367,7 +377,12 @@ export function BookingForm() {
                     Chưa có bác sĩ nhận khám. Vui lòng đổi chuyên khoa hoặc cơ sở.
                   </p>
                 )}
-                {!doctorLocked && (
+                {facilityAssignedPackage ? (
+                  <p className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-900">
+                    Gói Khám tổng quát do bệnh viện điều phối bác sĩ theo từng hạng mục. Bạn chỉ cần
+                    chọn ngày; cơ sở sẽ xác nhận bác sĩ và giờ tiếp nhận phù hợp.
+                  </p>
+                ) : !doctorLocked ? (
                   <Select
                     label="Hình thức đặt lịch"
                     value={form.bookingMode}
@@ -378,23 +393,33 @@ export function BookingForm() {
                     ]}
                     required
                   />
-                )}
-                {doctorLocked ? (
-                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <small className="block text-slate-500">Bác sĩ đã chọn</small>
-                    <strong>{doctor?.name}</strong>
-                  </div>
-                ) : (
-                  form.bookingMode === 'doctor' && (
-                    <Select
-                      label="Bác sĩ"
-                      value={form.doctorId}
-                      onChange={(v) => change('doctorId', v)}
-                      options={doctors}
-                      required
-                    />
-                  )
-                )}
+                ) : null}
+                {!facilityAssignedPackage &&
+                  (doctorLocked
+                    ? doctor && <DoctorChoice doctor={doctor} selected />
+                    : form.bookingMode === 'doctor' && (
+                        <fieldset>
+                          <legend className="mb-3 font-bold text-brand-900">
+                            Chọn bác sĩ {pack ? `cho gói ${pack.name}` : ''}
+                          </legend>
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {doctors.map((item) => (
+                              <label key={item.id} className="cursor-pointer">
+                                <input
+                                  className="sr-only"
+                                  type="radio"
+                                  name="doctorId"
+                                  value={item.id}
+                                  checked={form.doctorId === item.id}
+                                  onChange={() => change('doctorId', item.id)}
+                                  required
+                                />
+                                <DoctorChoice doctor={item} selected={form.doctorId === item.id} />
+                              </label>
+                            ))}
+                          </div>
+                        </fieldset>
+                      ))}
               </>
             )}
             {step === 2 && (
@@ -402,24 +427,57 @@ export function BookingForm() {
                 <h2>
                   {form.bookingMode === 'doctor' ? 'Chọn khung giờ của bạn' : 'Chọn ngày khám'}
                 </h2>
-                <Field label="Ngày khám">
-                  <input
-                    type="date"
-                    min={dateKey()}
-                    value={form.date}
-                    onChange={(e) => change('date', e.target.value)}
-                    required
-                  />
-                </Field>
+                {form.bookingMode === 'doctor' ? (
+                  <fieldset>
+                    <legend className="mb-3 font-bold text-brand-900">
+                      Ngày bác sĩ còn lịch trống
+                    </legend>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                      {doctorDates.map((date) => (
+                        <button
+                          type="button"
+                          key={date}
+                          data-date={date}
+                          onClick={() => change('date', date)}
+                          className={`rounded-xl border p-3 text-left transition ${
+                            form.date === date
+                              ? 'border-sky-600 bg-sky-600 text-white'
+                              : 'border-slate-200 bg-white text-brand-900 hover:border-sky-400 hover:bg-sky-50'
+                          }`}
+                        >
+                          <strong className="block">{formatBookingDate(date)}</strong>
+                          <small>
+                            {
+                              availableSlots(db, form.doctorId, date).filter(
+                                (slot) => slot.available,
+                              ).length
+                            }{' '}
+                            giờ trống
+                          </small>
+                        </button>
+                      ))}
+                    </div>
+                    {!doctorDates.length && (
+                      <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+                        Bác sĩ chưa có ngày làm việc còn chỗ trống. Vui lòng quay lại chọn bác sĩ
+                        khác.
+                      </p>
+                    )}
+                  </fieldset>
+                ) : (
+                  <Field label="Ngày khám">
+                    <input
+                      type="date"
+                      min={dateKey()}
+                      value={form.date}
+                      onChange={(e) => change('date', e.target.value)}
+                      required
+                    />
+                  </Field>
+                )}
                 {form.bookingMode === 'doctor' && (
                   <p className="text-slate-500">
-                    Lịch đang mở đến{' '}
-                    {db.schedules
-                      .filter((s) => s.doctorId === form.doctorId)
-                      .map((s) => s.date)
-                      .sort()
-                      .at(-1) || 'chưa xác định'}
-                    .
+                    Khung giờ được tính trực tiếp từ quy tắc làm việc và các ngày nghỉ của bác sĩ.
                   </p>
                 )}
                 {form.bookingMode === 'facility' && (
@@ -451,13 +509,6 @@ export function BookingForm() {
                     ))}
                   </div>
                 )}
-                {form.bookingMode === 'doctor' &&
-                  form.date &&
-                  !availableSlots(db, form.doctorId, form.date).length && (
-                    <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-                      Bác sĩ chưa mở lịch ngày này. Vui lòng chọn ngày khác.
-                    </p>
-                  )}
               </>
             )}
             {step === 3 && (
@@ -642,7 +693,7 @@ export function BookingForm() {
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50"
                 disabled={step === 4 && user?.role !== 'patient'}
               >
-                {step === 4 ? 'Xác nhận đặt lịch' : 'Tiếp tục →'}
+                {step === 4 ? 'Tạo lịch và thanh toán VNPay' : 'Tiếp tục →'}
               </button>
             </div>
           </form>
@@ -672,12 +723,43 @@ export function BookingForm() {
                 (form.date && form.bookingMode === 'facility' ? '· Chờ xác nhận giờ' : '')}
             </dd>
           </dl>
-          <PriceBreakdown price={quote.price} />
+          <PriceBreakdown price={quote.prepaymentPrice} />
           <small>
-            Dự toán sẽ được đối chiếu với dịch vụ thực hiện sau khám. Không thanh toán trực tuyến.
+            Khoản trên phải thanh toán khi đặt lịch. Phụ phí chọn bác sĩ được hiển thị thành dòng
+            riêng; khoản phát sinh sau khám được quyết toán riêng.
           </small>
         </aside>
       </div>
     </div>
+  );
+}
+
+function formatBookingDate(value) {
+  return new Intl.DateTimeFormat('vi-VN', {
+    weekday: 'short',
+    day: '2-digit',
+    month: '2-digit',
+  }).format(new Date(`${value}T12:00:00`));
+}
+
+function DoctorChoice({ doctor, selected = false }) {
+  return (
+    <span
+      className={`flex h-full gap-4 rounded-2xl border bg-white p-4 transition ${
+        selected ? 'border-sky-500 ring-2 ring-sky-100' : 'border-slate-200 hover:border-sky-300'
+      }`}
+    >
+      <Photo
+        src={doctor.image}
+        alt={'Ảnh ' + doctor.name}
+        className="h-24 w-20 shrink-0 rounded-xl object-cover"
+      />
+      <span className="min-w-0 text-sm">
+        <strong className="block text-base text-brand-900">{doctor.name}</strong>
+        <span className="mt-1 block font-medium text-sky-700">{doctor.qualification}</span>
+        <span className="mt-1 block text-slate-600">{doctor.experience} năm kinh nghiệm</span>
+        <span className="mt-1 block text-slate-600">{doctor.expertise || doctor.bio}</span>
+      </span>
+    </span>
   );
 }

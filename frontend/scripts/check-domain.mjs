@@ -1,15 +1,27 @@
 import assert from 'node:assert/strict';
 import { createSeed, dateKey, relativeDate } from '../src/data/mockData.js';
-import { act, availableSlots, accessibleRecords, scopedAppointments } from '../src/data/domain.js';
+import {
+  act,
+  availableSlots,
+  accessibleRecords,
+  scheduledSlots,
+  scopedAppointments,
+} from '../src/data/domain.js';
 import { report } from '../src/data/reports.js';
 import { migrateData } from '../src/data/storage.js';
 import { bookingStartStep, initialBooking } from '../src/data/booking.js';
 
 let db = createSeed();
+db.pricingSettings.doctorSelectionFee = 0;
 let checks = 0;
 function run(actor, type, payload) {
   const next = act(db, actor, type, payload);
   db = next.db;
+  if (type === 'book') {
+    const appointment = db.appointments.find((row) => row.id === next.result);
+    appointment.status = 'pending';
+    appointment.paymentStatus = 'paid';
+  }
   checks++;
   return next.result;
 }
@@ -22,19 +34,35 @@ function deny(actor, type, payload, pattern) {
 const user = (id) => db.users.find((u) => u.id === id);
 assert.equal(db.branches.length, 4);
 assert.equal(db.specialties.length, 6);
-assert.equal(db.doctors.length, 12);
+assert.equal(db.doctors.length, 24);
 assert.equal(db.packages.length, 4);
+assert.equal(db.schedules.length, db.doctors.length * 2);
+assert.ok(
+  db.schedules.every(
+    (rule) =>
+      rule.weekdays.length === 7 &&
+      rule.startTime < rule.endTime &&
+      rule.slotMinutes === 30 &&
+      !('date' in rule) &&
+      !('times' in rule),
+  ),
+);
+for (let day = 1; day <= 5; day += 1) {
+  const date = relativeDate(day);
+  assert.ok(
+    db.doctors.every((doctor) =>
+      availableSlots(db, doctor.id, date).some((slot) => slot.available),
+    ),
+    `Every doctor must have an available slot on ${date}`,
+  );
+}
 for (const a of db.appointments) {
   const doctor = db.doctors.find((d) => d.id === a.doctorId);
   assert.equal(doctor.branchId, a.branchId);
   assert.ok(db.users.some((u) => u.id === a.patientId && u.role === 'patient'));
-  assert.ok(
-    db.schedules.some(
-      (s) => s.doctorId === a.doctorId && s.date === a.date && s.times.includes(a.time),
-    ),
-  );
+  assert.ok(scheduledSlots(db, a.doctorId, a.date).includes(a.time));
 }
-assert.equal(new Set(db.schedules.map((s) => s.doctorId + s.date)).size, db.schedules.length);
+assert.equal(new Set(db.schedules.map((s) => s.id)).size, db.schedules.length);
 assert.equal(
   new Set(
     db.appointments
@@ -54,9 +82,50 @@ const form = {
   patientName: 'Bệnh nhân thử',
   phone: '0987654321',
 };
+{
+  const paymentSource = createSeed();
+  const pricedForm = { ...form, date: relativeDate(14), time: '15:30' };
+  const created = act(paymentSource, 'p1', 'book', pricedForm);
+  const waiting = created.db.appointments.find((row) => row.id === created.result);
+  assert.equal(waiting.status, 'awaiting_payment');
+  assert.equal(waiting.paymentStatus, 'pending');
+  assert.equal(created.db.paymentAttempts.at(-1).configurationStatus, 'not_configured');
+  assert.ok(
+    waiting.billing.items.some((item) => item.serviceId.startsWith('doctor-selection:')),
+    'Choosing a doctor must add a separate surcharge line',
+  );
+  assert.throws(
+    () => act(created.db, 'staff-b1', 'appointment', { id: waiting.id, status: 'confirmed' }),
+    /đang chờ/,
+  );
+  const paid = act(created.db, 'root', 'vnpay-ipn-demo', { id: waiting.id });
+  assert.equal(paid.db.appointments.find((row) => row.id === waiting.id).status, 'pending');
+  assert.equal(paid.db.payments.at(-1).purpose, 'booking_prepayment');
+  assert.throws(
+    () =>
+      act(paid.db, 'admin1', 'pricing-settings-save', {
+        doctorSelectionFee: 120000,
+        reason: 'Không đủ quyền',
+      }),
+    /admin tổng/,
+  );
+}
 deny('root', 'book', form, /bệnh nhân/);
 deny('p1', 'book', { ...form, branchId: 'b2' }, /Cơ sở/);
 deny('p1', 'book', { ...form, packageId: 'pkg2' }, /Gói khám/);
+{
+  const general = act(createSeed(), 'p1', 'book', {
+    ...form,
+    packageId: 'pkg1',
+    bookingMode: 'doctor',
+    date: relativeDate(20),
+    time: '08:00',
+  });
+  const appointment = general.db.appointments.find((row) => row.id === general.result);
+  assert.equal(appointment.bookingMode, 'facility');
+  assert.equal(appointment.doctorId, '');
+  assert.equal(appointment.time, '');
+}
 deny('p1', 'book', { ...form, date: relativeDate(-1) }, /Khung giờ/);
 deny('p1', 'book', { ...form, phone: '123' }, /Thông tin/);
 const booking = run('p1', 'book', form);
@@ -193,28 +262,55 @@ deny('root', 'save', { entity: 'branches', id: 'b1', values: { active: false } }
 deny('admin1', 'save', { entity: 'departments', id: 'dep1', values: { active: false } }, /bác sĩ/);
 deny('root', 'remove', { entity: 'branches', id: 'b1' }, /liên kết/);
 const openId = run('p2', 'book', { ...form, time: '09:00' });
-const schedule = db.schedules.find((s) => s.doctorId === 'dr1' && s.date === form.date);
-deny(
-  'admin1',
-  'save',
-  { entity: 'schedules', id: schedule.id, values: { times: ['10:00'] } },
-  /khung giờ/,
-);
-deny('admin1', 'remove', { entity: 'schedules', id: schedule.id }, /lịch hẹn/);
+const schedule = db.schedules.find((rule) => rule.doctorId === 'dr1' && rule.startTime === '07:30');
 deny(
   'admin1',
   'save',
   {
     entity: 'schedules',
-    values: { branchId: 'b1', doctorId: 'dr1', date: relativeDate(30), times: ['08:00', '08:15'] },
+    values: {
+      branchId: 'b1',
+      doctorId: 'dr1',
+      weekdays: [1],
+      startTime: '08:00',
+      endTime: '09:00',
+      slotMinutes: 30,
+      active: true,
+    },
   },
-  /30 phút/,
+  /bị trùng/,
+);
+deny(
+  'admin1',
+  'save',
+  {
+    entity: 'schedules',
+    values: {
+      branchId: 'b1',
+      doctorId: 'dr1',
+      weekdays: [1],
+      startTime: '17:00',
+      endTime: '18:00',
+      slotMinutes: 17,
+      active: true,
+    },
+  },
+  /thời lượng khám/,
 );
 const sId = run('admin1', 'save', {
   entity: 'schedules',
-  values: { branchId: 'b1', doctorId: 'dr1', date: relativeDate(30), times: ['08:00', '08:30'] },
+  values: {
+    branchId: 'b1',
+    doctorId: 'dr1',
+    weekdays: [1],
+    startTime: '17:00',
+    endTime: '18:00',
+    slotMinutes: 30,
+    active: true,
+  },
 });
 run('admin1', 'remove', { entity: 'schedules', id: sId });
+assert.ok(db.appointments.some((appointment) => appointment.id === openId));
 const newBranch = run('root', 'save', {
   entity: 'branches',
   values: {
@@ -284,7 +380,9 @@ const legacy = {
 legacy.branches[0].description = 'Nội dung đã chỉnh sửa';
 delete legacy.doctors[0].image;
 const upgraded = migrateData(legacy);
-assert.equal(upgraded.version, 7);
+assert.equal(upgraded.version, 10);
+assert.ok(upgraded.schedules.every((rule) => Array.isArray(rule.weekdays)));
+assert.deepEqual(upgraded.scheduleExceptions, []);
 assert.ok(upgraded.branches.every((branch) => Array.isArray(branch.equipment)));
 assert.ok(upgraded.doctors.every((doctor) => Array.isArray(doctor.consultationLanguages)));
 assert.equal(upgraded.branches[0].description, legacy.branches[0].description);
@@ -383,5 +481,5 @@ assert.ok(
   seed.doctors.some((d) => !seed.appointments.some((a) => a.doctorId === d.id && a.rating)),
 );
 console.log(
-  'PASS: v1-v6 to v7 migration, draft/deep-link normalization, linked histories and rating integrity.',
+  'PASS: v1-v9 to v10 migration, rule-based availability, draft/deep-link normalization, linked histories and rating integrity.',
 );

@@ -5,7 +5,8 @@ import {
   billingAction,
 } from './billing.js';
 import { dateKey } from './mockData.js';
-import { inventoryAction, validateAndReservePrescription } from './inventory.js';
+import { inventoryAction, validatePrescription } from './inventory.js';
+import { isFacilityAssignedPackage } from './packageRules.js';
 
 export const isAdmin = (u) => ['superAdmin', 'branchAdmin'].includes(u?.role);
 export const inBranch = (u, id) => u?.role === 'superAdmin' || (!!id && u?.branchId === id);
@@ -13,7 +14,10 @@ export const requireThat = (ok, message) => {
   if (!ok) throw new Error(message);
 };
 export const uid = (prefix) => `${prefix}-${crypto.randomUUID()}`;
-const live = (a) => ['pending', 'confirmed'].includes(a.status);
+const live = (a) =>
+  ['pending', 'confirmed'].includes(a.status) ||
+  (a.status === 'awaiting_payment' &&
+    (!a.paymentExpiresAt || new Date(a.paymentExpiresAt).getTime() > Date.now()));
 export const future = (date, time = '23:59') =>
   new Date(`${date}T${time || '23:59'}:00+07:00`).getTime() > Date.now();
 export const normalize = (text) =>
@@ -22,23 +26,88 @@ export const normalize = (text) =>
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/đ/g, 'd');
+const timeMinutes = (value) => +value.slice(0, 2) * 60 + +value.slice(3);
+const minutesTime = (value) =>
+  `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+const weekday = (date) => {
+  const day = new Date(`${date}T12:00:00+07:00`).getUTCDay();
+  return day || 7;
+};
+const nextDate = (offset) => {
+  const value = new Date();
+  value.setDate(value.getDate() + offset);
+  return dateKey(value);
+};
+export const scheduledSlots = (db, doctorId, date) => {
+  const preview = (db.schedulePreviews || []).find(
+    (row) => row.doctorId === doctorId && row.date === date,
+  );
+  if (preview) return [...new Set(preview.times || [])].sort();
+
+  const exceptions = (db.scheduleExceptions || []).filter(
+    (row) => row.doctorId === doctorId && row.date === date,
+  );
+  if (exceptions.some((row) => row.kind === 'unavailable')) return [];
+  const custom = exceptions.filter((row) => row.kind === 'custom');
+  const intervals = custom.length
+    ? custom
+    : db.schedules.filter(
+        (rule) =>
+          rule.active !== false &&
+          rule.doctorId === doctorId &&
+          rule.weekdays?.includes(weekday(date)) &&
+          (!rule.effectiveFrom || rule.effectiveFrom <= date) &&
+          (!rule.effectiveTo || rule.effectiveTo >= date),
+      );
+  return [
+    ...new Set(
+      intervals.flatMap((rule) => {
+        const start = timeMinutes(rule.startTime);
+        const end = timeMinutes(rule.endTime);
+        const step = Number(rule.slotMinutes || 30);
+        const result = [];
+        for (let cursor = start; cursor + step <= end; cursor += step)
+          result.push(minutesTime(cursor));
+        return result;
+      }),
+    ),
+  ].sort();
+};
 export const availableSlots = (db, doctorId, date) =>
-  db.schedules
-    .filter((s) => s.doctorId === doctorId && s.date === date)
-    .flatMap((s) => s.times)
+  scheduledSlots(db, doctorId, date).map((time) => ({
+    time,
+    available:
+      future(date, time) &&
+      !db.appointments.some(
+        (a) =>
+          a.doctorId === doctorId &&
+          a.date === date &&
+          a.time === time &&
+          (live(a) || a.status === 'completed'),
+      ),
+  }));
+export const availableDates = (db, doctorId, limit = 8) => {
+  const previewDates = (db.schedulePreviews || [])
+    .filter((row) => row.doctorId === doctorId)
+    .map((row) => row.date);
+  const candidates = previewDates.length
+    ? [...new Set(previewDates)]
+    : Array.from({ length: 120 }, (_, offset) => nextDate(offset));
+  return candidates
+    .filter(
+      (date) => future(date) && availableSlots(db, doctorId, date).some((slot) => slot.available),
+    )
     .sort()
-    .map((time) => ({
-      time,
-      available:
-        future(date, time) &&
-        !db.appointments.some(
-          (a) =>
-            a.doctorId === doctorId &&
-            a.date === date &&
-            a.time === time &&
-            (live(a) || a.status === 'completed'),
-        ),
-    }));
+    .slice(0, limit);
+};
+export const upcomingSchedules = (db, doctorId, limit = 8) =>
+  availableDates(db, doctorId, limit).map((date) => ({
+    id: `preview-${doctorId}-${date}`,
+    doctorId,
+    branchId: db.doctors.find((doctor) => doctor.id === doctorId)?.branchId || '',
+    date,
+    times: scheduledSlots(db, doctorId, date),
+  }));
 export function accessibleRecords(db, user) {
   if (user?.role === 'patient')
     return db.records.filter((r) => r.patientId === user.id && r.finalized);
@@ -57,7 +126,9 @@ export function scopedAppointments(db, user) {
     user?.role === 'patient'
       ? a.patientId === user.id
       : user?.role === 'doctor'
-        ? a.doctorId === user.doctorId && a.branchId === user.branchId && a.status !== 'pending'
+        ? a.doctorId === user.doctorId &&
+          a.branchId === user.branchId &&
+          !['awaiting_payment', 'pending'].includes(a.status)
         : user?.role === 'staff'
           ? a.branchId === user.branchId
           : isAdmin(user) && inBranch(user, a.branchId),
@@ -162,7 +233,66 @@ export function act(source, actorId, type, payload = {}) {
     result = billingAction(db, user, type, p, today);
     return { db, result };
   }
-  if (type === 'profile') {
+  if (type === 'pricing-settings-save') {
+    requireThat(user.role === 'superAdmin', 'Chỉ admin tổng được quản lý giá đặt khám.');
+    const doctorSelectionFee = Number(p.doctorSelectionFee);
+    requireThat(
+      Number.isSafeInteger(doctorSelectionFee) && doctorSelectionFee > 0,
+      'Phụ phí chọn bác sĩ phải là số nguyên dương.',
+    );
+    const doctorOverrides = Object.fromEntries(
+      Object.entries(p.doctorOverrides || {})
+        .map(([doctorId, amount]) => [doctorId, Number(amount)])
+        .filter(
+          ([doctorId, amount]) =>
+            db.doctors.some((doctor) => doctor.id === doctorId) &&
+            Number.isSafeInteger(amount) &&
+            amount > 0,
+        ),
+    );
+    requireThat(String(p.reason || '').trim(), 'Nhập lý do thay đổi giá.');
+    db.pricingSettings = {
+      doctorSelectionFee,
+      doctorOverrides,
+      updatedBy: user.id,
+      updatedAt: new Date().toISOString(),
+      reason: String(p.reason).trim(),
+    };
+    result = true;
+  } else if (type === 'vnpay-ipn-demo') {
+    requireThat(
+      user.role === 'superAdmin',
+      'Chỉ bộ giả lập callback quản trị được dùng thao tác này.',
+    );
+    const appointment = db.appointments.find((row) => row.id === p.id);
+    requireThat(
+      appointment?.status === 'awaiting_payment' && appointment.paymentStatus === 'pending',
+      'Lịch không ở trạng thái chờ thanh toán.',
+    );
+    const attempt = db.paymentAttempts.find(
+      (row) => row.appointmentId === appointment.id && row.status === 'pending',
+    );
+    requireThat(attempt, 'Không tìm thấy yêu cầu thanh toán.');
+    attempt.status = 'paid';
+    attempt.providerTransactionId = String(p.providerTransactionId || uid('VNP'));
+    attempt.updatedAt = new Date().toISOString();
+    appointment.paymentStatus = 'paid';
+    appointment.status = 'pending';
+    appointment.billing.prepaidAmount = appointment.prepaymentAmount;
+    db.payments.push({
+      id: uid('pay-booking'),
+      appointmentId: appointment.id,
+      branchId: appointment.branchId,
+      amount: appointment.prepaymentAmount,
+      date: today,
+      createdAt: new Date().toISOString(),
+      createdBy: 'vnpay-ipn',
+      method: 'vnpay',
+      purpose: 'booking_prepayment',
+      reference: attempt.providerTransactionId,
+    });
+    result = appointment.id;
+  } else if (type === 'profile') {
     requireThat(p.name?.trim() && phoneValid(p.phone), 'Họ tên và số điện thoại chưa hợp lệ.');
     requireThat(
       !db.users.some((u) => u.id !== user.id && u.phone === p.phone),
@@ -185,7 +315,6 @@ export function act(source, actorId, type, payload = {}) {
   } else if (type === 'book') {
     requireThat(user.role === 'patient', 'Chỉ tài khoản bệnh nhân được đặt lịch.');
     const branch = db.branches.find((b) => b.id === p.branchId && b.active);
-    const bookingMode = p.bookingMode === 'facility' ? 'facility' : 'doctor';
     const specialty = db.specialties.find((s) => s.id === p.specialtyId && s.active);
     const department = db.departments.find(
       (d) => d.branchId === branch?.id && d.specialtyId === specialty?.id && d.active,
@@ -197,6 +326,18 @@ export function act(source, actorId, type, payload = {}) {
         d.branchId === branch?.id &&
         d.specialtyId === p.specialtyId,
     );
+    const pack = p.packageId
+      ? db.packages.find(
+          (k) =>
+            k.id === p.packageId &&
+            k.active &&
+            k.branchIds.includes(branch?.id) &&
+            k.specialtyId === specialty?.id,
+        )
+      : null;
+    requireThat(!p.packageId || pack, 'Gói khám không áp dụng cho lựa chọn này.');
+    const bookingMode =
+      isFacilityAssignedPackage(pack) || p.bookingMode === 'facility' ? 'facility' : 'doctor';
     requireThat(
       branch &&
         specialty &&
@@ -205,16 +346,6 @@ export function act(source, actorId, type, payload = {}) {
           (doctor && db.departments.some((d) => d.id === doctor.departmentId && d.active))),
       'Cơ sở, chuyên khoa hoặc bác sĩ không còn nhận khám.',
     );
-    const pack = p.packageId
-      ? db.packages.find(
-          (k) =>
-            k.id === p.packageId &&
-            k.active &&
-            k.branchIds.includes(branch.id) &&
-            k.specialtyId === specialty.id,
-        )
-      : null;
-    requireThat(!p.packageId || pack, 'Gói khám không áp dụng cho lựa chọn này.');
     if (bookingMode === 'doctor')
       requireThat(
         availableSlots(db, doctor.id, p.date).some((s) => s.time === p.time && s.available),
@@ -222,7 +353,8 @@ export function act(source, actorId, type, payload = {}) {
       );
     else requireThat(validDate(p.date) && future(p.date), 'Ngày khám không hợp lệ hoặc đã qua.');
     requireThat(
-      !p.time ||
+      bookingMode === 'facility' ||
+        !p.time ||
         !db.appointments.some(
           (a) =>
             a.patientId === user.id &&
@@ -260,11 +392,7 @@ export function act(source, actorId, type, payload = {}) {
       specialtyId: specialty.id,
       packageId: pack?.id || '',
       serviceName: pack?.name || 'Khám ' + specialty.name,
-      price:
-        pack?.price ||
-        (bookingMode === 'doctor'
-          ? doctor.price
-          : db.serviceCatalog.find((s) => s.id === 'consultation')?.price || 0),
+      price: 0,
       duration: 30,
       date: p.date,
       time: bookingMode === 'doctor' ? p.time : '',
@@ -275,11 +403,26 @@ export function act(source, actorId, type, payload = {}) {
       patientBirthDate,
       patientAddress,
       notes: p.notes || '',
-      status: 'pending',
+      status: 'awaiting_payment',
+      paymentStatus: 'pending',
       reason: '',
       createdAt: new Date().toISOString(),
     };
     attachBookingBilling(db, user, row, p);
+    row.price = row.billing.estimate.subtotal;
+    row.prepaymentAmount = row.billing.prepaidAmount;
+    row.paymentExpiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString();
+    db.paymentAttempts.push({
+      id: uid('vnpay'),
+      appointmentId: row.id,
+      provider: 'vnpay',
+      amount: row.prepaymentAmount,
+      status: 'pending',
+      paymentUrl: '',
+      createdAt: new Date().toISOString(),
+      expiresAt: row.paymentExpiresAt,
+      configurationStatus: 'not_configured',
+    });
     db.appointments.push(row);
     result = row.id;
   } else if (type === 'appointment') {
@@ -289,7 +432,8 @@ export function act(source, actorId, type, payload = {}) {
       requireThat(
         ((user.role === 'staff' && user.branchId === a.branchId) ||
           (isAdmin(user) && inBranch(user, a.branchId))) &&
-          a.status === 'pending',
+          a.status === 'pending' &&
+          a.paymentStatus === 'paid',
         'Chỉ nhân viên hoặc quản trị đúng cơ sở được duyệt hồ sơ đang chờ.',
       );
       requireThat(p.status !== 'rejected' || p.reason?.trim(), 'Vui lòng nhập lý do từ chối.');
@@ -381,7 +525,7 @@ export function act(source, actorId, type, payload = {}) {
     const old = db.records.find((r) => r.appointmentId === a.id);
     requireThat(!old?.finalized, 'Hồ sơ hoàn tất không thể chỉnh sửa.');
     const prescription = p.finalized
-      ? validateAndReservePrescription(db, a, p)
+      ? validatePrescription(db, a, p)
       : Array.isArray(p.prescription)
         ? structuredClone(p.prescription)
         : old?.prescription || [];
@@ -398,24 +542,12 @@ export function act(source, actorId, type, payload = {}) {
       followUp: p.followUp || '',
       finalized: !!p.finalized,
       prescription,
-      dispenseStatus:
-        p.finalized && prescription.length ? 'reserved' : old?.dispenseStatus || 'none',
+      purchaseChoice: ['hospital', 'outside'].includes(p.purchaseChoice)
+        ? p.purchaseChoice
+        : old?.purchaseChoice || 'undecided',
+      dispenseStatus: prescription.length ? 'not_managed' : 'none',
     };
     recordServices(db, user, a, p);
-    if (p.finalized)
-      a.billing.medicineItems = prescription.map((item) => ({
-        serviceId: `medicine:${item.medicineId}`,
-        medicineId: item.medicineId,
-        name: `${item.name} · ${item.unit}`,
-        unitPrice: item.unitPrice,
-        quantity: item.quantity,
-        discountable: false,
-        insuranceTariff: db.medicines.find((m) => m.id === item.medicineId)?.insurance?.tariff || 0,
-        insuranceRate:
-          db.medicines.find((m) => m.id === item.medicineId)?.insurance?.paymentRate || 0,
-        insuranceCondition:
-          db.medicines.find((m) => m.id === item.medicineId)?.insurance?.condition || '',
-      }));
     if (old) Object.assign(old, row);
     else db.records.push(row);
     if (p.finalized) a.status = 'completed';
@@ -502,18 +634,7 @@ export function act(source, actorId, type, payload = {}) {
     }
     if (type === 'remove') {
       requireThat(old, 'Không tìm thấy dữ liệu.');
-      if (entity === 'schedules')
-        requireThat(
-          !db.appointments.some(
-            (a) =>
-              a.doctorId === old.doctorId &&
-              a.date === old.date &&
-              a.time &&
-              (live(a) || a.status === 'completed'),
-          ),
-          'Lịch làm việc đã có lịch hẹn, không thể xóa.',
-        );
-      else
+      if (entity !== 'schedules')
         requireThat(
           !references(db, entity, old.id),
           'Dữ liệu đã có liên kết. Hãy ngừng hoạt động thay vì xóa.',
@@ -597,7 +718,13 @@ export function act(source, actorId, type, payload = {}) {
           'Bác sĩ đã có lịch sử khám phải giữ khoa/phòng để bảo toàn thống kê.',
         );
         row.specialtyId = dep.specialtyId;
-        row.price = Number(row.price);
+        row.price =
+          user.role === 'superAdmin'
+            ? Number(row.price)
+            : Number(
+                old?.price ||
+                  db.serviceCatalog.find((service) => service.id === 'consultation')?.price,
+              );
         requireThat(positive(row.price), 'Phí khám phải là số nguyên dương.');
         row.experience = Number(row.experience || 0);
         requireThat(
@@ -646,42 +773,37 @@ export function act(source, actorId, type, payload = {}) {
         const doctor = db.doctors.find(
           (d) => d.id === row.doctorId && d.branchId === row.branchId && d.active,
         );
+        row.weekdays = [...new Set((row.weekdays || []).map(Number))].sort();
+        row.slotMinutes = Number(row.slotMinutes || 30);
         requireThat(
-          doctor && validDate(row.date) && row.date >= today && row.times?.length,
-          'Chọn bác sĩ, ngày và khung giờ hợp lệ.',
+          doctor &&
+            row.weekdays.length &&
+            row.weekdays.every((day) => day >= 1 && day <= 7) &&
+            /^([01]\d|2[0-3]):[0-5]\d$/.test(row.startTime || '') &&
+            /^([01]\d|2[0-3]):[0-5]\d$/.test(row.endTime || '') &&
+            timeMinutes(row.startTime) < timeMinutes(row.endTime) &&
+            [15, 20, 30, 45, 60].includes(row.slotMinutes),
+          'Chọn bác sĩ, thứ làm việc, giờ bắt đầu/kết thúc và thời lượng khám hợp lệ.',
         );
-        row.times = [...new Set(row.times)].sort();
         requireThat(
-          row.times.every((t) => /^([01]\d|2[0-3]):[0-5]\d$/.test(t) && future(row.date, t)) &&
-            row.times.every(
-              (t, i) =>
-                !i ||
-                +t.slice(0, 2) * 60 +
-                  +t.slice(3) -
-                  (+row.times[i - 1].slice(0, 2) * 60 + +row.times[i - 1].slice(3)) >=
-                  30,
-            ),
-          'Khung giờ phải ở tương lai và cách nhau ít nhất 30 phút.',
+          !row.effectiveFrom || !row.effectiveTo || row.effectiveFrom <= row.effectiveTo,
+          'Khoảng ngày áp dụng không hợp lệ.',
         );
         requireThat(
           !db.schedules.some(
-            (s) => s.id !== row.id && s.doctorId === row.doctorId && s.date === row.date,
+            (rule) =>
+              rule.id !== row.id &&
+              rule.doctorId === row.doctorId &&
+              rule.active !== false &&
+              row.active !== false &&
+              rule.weekdays?.some((day) => row.weekdays.includes(day)) &&
+              timeMinutes(rule.startTime) < timeMinutes(row.endTime) &&
+              timeMinutes(row.startTime) < timeMinutes(rule.endTime) &&
+              (!rule.effectiveTo || !row.effectiveFrom || rule.effectiveTo >= row.effectiveFrom) &&
+              (!row.effectiveTo || !rule.effectiveFrom || row.effectiveTo >= rule.effectiveFrom),
           ),
-          'Bác sĩ đã có lịch làm việc ngày này. Hãy sửa lịch đó.',
+          'Quy tắc lịch làm việc bị trùng thứ, thời gian và giai đoạn áp dụng.',
         );
-        if (old)
-          requireThat(
-            !db.appointments.some(
-              (a) =>
-                a.doctorId === old.doctorId &&
-                a.date === old.date &&
-                (live(a) || a.status === 'completed') &&
-                (row.doctorId !== old.doctorId ||
-                  row.date !== old.date ||
-                  !row.times.includes(a.time)),
-            ),
-            'Không thể thay đổi khung giờ đã có lịch hẹn.',
-          );
       }
       if (old) Object.assign(old, row);
       else db[entity].push(row);

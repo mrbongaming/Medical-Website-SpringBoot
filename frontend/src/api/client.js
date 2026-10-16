@@ -54,16 +54,25 @@ export const authApi = {
 
 export const publicApi = {
   loadCatalogs: async () => {
-    const [branches, specialties, doctors, packages] = await Promise.all([
+    const [branches, specialties, doctors, packages, schedules] = await Promise.all([
       request('/api/public/branches'),
       request('/api/public/specialties'),
       request('/api/public/doctors'),
       request('/api/public/packages'),
+      request('/api/public/schedules'),
     ]);
-    return { branches, specialties, doctors, packages };
+    return { branches, specialties, doctors, packages, schedules };
   },
 };
 
 export const appointmentApi = {
   currentUser: () => request('/api/appointments'),
+};
+
+export const paymentApi = {
+  createVnpay: (appointmentId) =>
+    request('/api/payments/vnpay/create', {
+      method: 'POST',
+      body: JSON.stringify({ appointmentId }),
+    }),
 };

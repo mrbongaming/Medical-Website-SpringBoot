@@ -59,6 +59,7 @@ export function attachBookingBilling(db, user, appointment, form) {
     settledAt: '',
     settlementId: '',
     legacy: false,
+    prepaidAmount: quote.prepaymentPrice.patientDue,
   };
   if (quote.promotion)
     db.promotionUses.push({
@@ -362,7 +363,9 @@ export function billingAction(db, user, type, p, today) {
     recordServices(db, user, a, p);
   } else if (type === 'promotion-apply') {
     check(!b.finalized && !b.settledAt, 'Bảng phí đã chốt, không thể đổi ưu đãi.');
-    const items = [...b.items, ...(b.medicineItems || [])];
+    // Prescription medicines are outside the visit bill and BHYT calculation.
+    // Ignore legacy medicineItems as well so old browser data cannot affect totals.
+    const items = [...b.items];
     const subtotal = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
     const selected = selectPromotion(
       db,
@@ -441,11 +444,7 @@ export function billingAction(db, user, type, p, today) {
       a.status === 'completed' && !b.finalized && !b.settledAt,
       'Chỉ chốt một lần sau khi hoàn tất khám.',
     );
-    const price = calculatePrice(
-      [...b.items, ...(b.medicineItems || [])],
-      b.insurance,
-      b.promotion,
-    );
+    const price = calculatePrice(b.items, b.insurance, b.promotion);
     check(!price.unresolved, 'BHYT chưa được xác minh hoặc cần bổ sung.');
     check(String(p.reason || '').trim(), 'Nhập ghi chú đối chiếu chi phí với khách.');
     b.finalized = { price, by: user.id, at: now(), reason: String(p.reason).trim() };
@@ -456,15 +455,19 @@ export function billingAction(db, user, type, p, today) {
       'Lịch phải hoàn tất, đã chốt phí và chưa được thu tiền.',
     );
     const price = appointmentPrice(a);
-    check(price.patientDue !== null && integer(price.patientDue), 'Số tiền cần thu không hợp lệ.');
+    const balance = financialBalance(db, a);
+    check(
+      balance.patientDue !== null && integer(balance.patientDue),
+      'Số tiền cần thu không hợp lệ.',
+    );
     check(['cash', 'transfer'].includes(p.method || 'cash'), 'Phương thức thu không hợp lệ.');
-    const receiptId = id(price.patientDue ? 'pay' : 'settlement');
-    if (price.patientDue > 0)
+    const receiptId = id(balance.patientDue ? 'pay' : 'settlement');
+    if (balance.patientDue > 0)
       db.payments.push({
         id: receiptId,
         appointmentId: a.id,
         branchId: a.branchId,
-        amount: price.patientDue,
+        amount: balance.patientDue,
         date: today,
         createdAt: now(),
         createdBy: user.id,
@@ -485,8 +488,10 @@ export function billingAction(db, user, type, p, today) {
       type,
       a.id,
       a.branchId,
-      price.patientDue ? 'Ghi nhận thu tiền mô phỏng.' : 'Hoàn tất nghĩa vụ thanh toán 0đ.',
-      { amount: price.patientDue, receiptId },
+      balance.patientDue
+        ? 'Ghi nhận khoản phát sinh sau khám.'
+        : 'Hoàn tất nghĩa vụ thanh toán 0đ.',
+      { amount: balance.patientDue, receiptId },
     );
   } else if (type === 'bill-adjust') {
     const balance = financialBalance(db, a);

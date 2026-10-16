@@ -35,6 +35,9 @@ public class Appointment {
     private String status;
     @Column(name = "service_name") private String serviceName;
     @Column(name = "quoted_price") private BigDecimal quotedPrice;
+    @Column(name = "payment_status") private String paymentStatus;
+    @Column(name = "prepayment_amount") private BigDecimal prepaymentAmount;
+    @Column(name = "slot_hold_expires_at") private OffsetDateTime slotHoldExpiresAt;
     @Column(name = "duration_minutes") private int durationMinutes;
     @Column(columnDefinition = "text") private String reason;
     @Column(columnDefinition = "text") private String notes;
@@ -59,9 +62,17 @@ public class Appointment {
     public String getStatus() { return status; }
     public String getServiceName() { return serviceName; }
     public BigDecimal getQuotedPrice() { return quotedPrice; }
+    public String getPaymentStatus() { return paymentStatus; }
+    public BigDecimal getPrepaymentAmount() { return prepaymentAmount; }
+    public OffsetDateTime getSlotHoldExpiresAt() { return slotHoldExpiresAt; }
     public int getDurationMinutes() { return durationMinutes; }
     public String getReason() { return reason; }
     public String getNotes() { return notes; }
     public Integer getRating() { return rating; }
     public OffsetDateTime getCreatedAt() { return createdAt; }
+
+    public void confirmBookingPayment() {
+        this.paymentStatus = "paid";
+        this.status = "pending";
+    }
 }

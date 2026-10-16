@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { FiCalendar } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { inBranch } from '../data/domain';
+import { inBranch, upcomingSchedules } from '../data/domain';
 import { dateKey } from '../data/mockData';
 import { Empty } from '../components/Empty';
 import { Field } from '../components/Field';
@@ -13,9 +13,9 @@ import { formatDate, name } from '../helpers/ClinicalHelpers';
 export function DoctorSchedulePage() {
   const { db, user } = useHospital();
   const [from, setFrom] = useState(dateKey());
-  const rows = db.schedules
-    .filter((s) => s.doctorId === user.doctorId && inBranch(user, s.branchId) && s.date >= from)
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const rows = upcomingSchedules(db, user.doctorId, 120).filter(
+    (schedule) => inBranch(user, schedule.branchId) && schedule.date >= from,
+  );
   const pages = usePagination(rows, 10);
   return (
     <>

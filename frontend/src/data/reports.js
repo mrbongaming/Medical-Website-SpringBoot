@@ -1,5 +1,5 @@
 import { appointmentPrice, financialBalance } from '../helpers/PricingHelpers.js';
-import { isAdmin, inBranch } from './domain.js';
+import { isAdmin, inBranch, scheduledSlots } from './domain.js';
 
 export function report(db, user, filters) {
   if (!isAdmin(user)) throw new Error('Không có quyền xem thống kê.');
@@ -57,6 +57,13 @@ export function report(db, user, filters) {
       appointments.filter((a) => a.status === s).length,
     ]),
   );
+  const dates = [];
+  for (
+    let cursor = new Date(`${from}T12:00:00+07:00`);
+    cursor <= new Date(`${to}T12:00:00+07:00`) && dates.length < 370;
+    cursor.setUTCDate(cursor.getUTCDate() + 1)
+  )
+    dates.push(cursor.toISOString().slice(0, 10));
   const staff = db.doctors
     .filter(
       (d) =>
@@ -66,9 +73,7 @@ export function report(db, user, filters) {
     )
     .map((d) => {
       const rows = appointments.filter((a) => a.doctorId === d.id);
-      const open = db.schedules
-        .filter((s) => s.doctorId === d.id && period(s.date))
-        .reduce((n, s) => n + s.times.length, 0);
+      const open = dates.reduce((total, date) => total + scheduledSlots(db, d.id, date).length, 0);
       const used = rows.filter((a) =>
         ['pending', 'confirmed', 'completed', 'absent'].includes(a.status),
       ).length;

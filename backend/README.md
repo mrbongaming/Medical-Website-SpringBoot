@@ -1,7 +1,7 @@
 # Backend microservice - Bệnh viện An Tâm
 
 Backend dùng Java 25, Spring Boot 4.1, Spring Cloud Gateway, Spring Security,
-Spring Data JPA, Flyway, Spring Email và MySQL/MariaDB của XAMPP.
+Spring Data JPA, Spring Email và MySQL/MariaDB của XAMPP.
 
 ## Kiến trúc
 
@@ -54,16 +54,21 @@ AUTH_DB_URL=jdbc:mysql://localhost:3307/antam_auth?createDatabaseIfNotExist=true
 NOTIFICATION_DB_URL=jdbc:mysql://localhost:3307/antam_notification?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
 ```
 
-Import [`database/create_microservice_databases.sql`](database/create_microservice_databases.sql)
-trong phpMyAdmin để tạo ba schema. Sau đó chọn một trong hai cách cho `antam_core`:
+Import duy nhất [`database/antam_mysql.sql`](database/antam_mysql.sql) trong
+phpMyAdmin **trước lần chạy các service đầu tiên**. File này tạo cả ba schema
+`antam_core`, `antam_auth`, `antam_notification`, toàn bộ bảng, dữ liệu demo,
+bác sĩ và quy tắc lịch làm việc.
 
-- Chỉ cần cấu trúc bảng: chạy `core-service`, Flyway sẽ tự tạo bảng.
-- Cần dữ liệu demo: import [`database/antam_mysql.sql`](database/antam_mysql.sql)
-  vào schema `antam_core` đang trống **trước lần chạy `core-service` đầu tiên**.
+Lịch bác sĩ không được seed thành từng ngày hoặc từng ô giờ trống. Bảng
+`doctor_availability_rules` lưu ca làm định kỳ theo thứ, khoảng giờ, thời lượng
+mỗi lượt và giai đoạn áp dụng. Bảng `doctor_schedule_exceptions` chỉ lưu ngày
+nghỉ hoặc ca đặc biệt. API tính các khung giờ có thể đặt từ hai bảng này và trừ
+các lịch hẹn đang giữ chỗ; một bản ghi `appointments` chỉ được tạo khi có người
+thực sự đặt khám.
 
-Không import file dữ liệu demo đè lên schema đã có bảng vì script bootstrap dùng các
-lệnh `CREATE TABLE` một lần. Flyway tự tạo bảng cho `auth-service` và
-`notification-service` khi hai service đó khởi động.
+Không import lại đè lên database đã có bảng vì script bootstrap dùng các lệnh
+`CREATE TABLE` một lần. Khi cần tạo lại dữ liệu, hãy xóa ba schema cũ rồi import
+lại file duy nhất này.
 
 File `.env` đã được `.gitignore`, không được commit credential thật.
 

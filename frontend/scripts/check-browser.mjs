@@ -231,6 +231,20 @@ try {
       await click('input[name="branchId"][value="' + value + '"]');
       return;
     }
+    if (
+      label === 'Bác sĩ' &&
+      (await evaluate("!!document.querySelector('input[name=doctorId]')"))
+    ) {
+      await click('input[name="doctorId"][value="' + value + '"]');
+      return;
+    }
+    if (
+      label === 'Ngày khám' &&
+      (await evaluate("!!document.querySelector('button[data-date]')"))
+    ) {
+      await click('button[data-date="' + value + '"]');
+      return;
+    }
     const index = await evaluate(
       `Array.from((document.querySelector('dialog') || document).querySelectorAll('label')).findIndex(el => el.querySelector(':scope > span')?.childNodes[0]?.textContent?.trim() === ${JSON.stringify(label)})`,
     );
@@ -305,7 +319,8 @@ try {
       "document.querySelector('[data-testid=locked-package]').textContent.includes('Khám tổng quát')",
     ),
   );
-  await field('Bác sĩ', 'dr1');
+  assert.equal(await evaluate("document.querySelector('input[name=doctorId]')"), null);
+  assert.ok(await evaluate("document.body.innerText.includes('bệnh viện điều phối bác sĩ')"));
   await field('Cơ sở', 'b2');
   assert.ok(
     await evaluate(
@@ -339,7 +354,7 @@ try {
   await click('form button[type=submit]');
   await field('Mã khuyến mãi', 'ANTAM50');
   await textButton('Áp dụng');
-  assert.ok(await evaluate("document.body.textContent.includes('Chờ xác minh')"));
+  assert.ok(await evaluate("document.body.textContent.includes('phải thanh toán khi đặt lịch')"));
   await click('a[href^="/dang-nhap?next="]');
   await textButton('Nhân sự demo');
   await field('Vai trò', 'patient');
@@ -352,7 +367,7 @@ try {
   await click('form button[type=submit]');
   await waitFor(
     () => evaluate("!!document.querySelector('[data-testid=booking-confirmation]')"),
-    'booking success',
+    'booking payment hold',
   );
   const appointment = await stored('db.appointments.at(-1).id');
   assert.equal(await stored('db.appointments.at(-1).patientId'), 'p1');
@@ -372,6 +387,11 @@ try {
   );
   await navigate('/quan-tri');
   assert.ok(await evaluate("document.body.textContent.includes('không có quyền')"));
+
+  // Simulate a verified VNPay IPN so the paid appointment can enter staff review.
+  await evaluate(
+    `(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); const a=d.appointments.find(a=>a.id===${JSON.stringify(appointment)}); a.status='pending'; a.paymentStatus='paid'; localStorage.setItem('antam-data-v1', JSON.stringify(d)); })()`,
+  );
 
   await login('staff', 'staff-b1');
   await navigate('/');
@@ -805,7 +825,7 @@ try {
   );
   // Make the sample appointment's time independent of the hour this test is run.
   await evaluate(
-    "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); const a=d.appointments.find(a=>a.id==='AT-TODAY'); a.time='00:00'; d.schedules.find(s=>s.doctorId===a.doctorId&&s.date===a.date).times.push('00:00'); localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
+    "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); const a=d.appointments.find(a=>a.id==='AT-TODAY'); a.time='00:00'; localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
   );
   await login('branchAdmin', 'admin1');
   await navigate('/quan-tri/lich-hen');
@@ -880,7 +900,7 @@ try {
     "(() => { const d=JSON.parse(localStorage.getItem('antam-data-v1')); d.version=1; d.medicines=[]; d.lots=[]; d.transactions=[]; d.restocks=[]; d.users.find(u=>u.id==='p1').address='Migration kept'; localStorage.setItem('antam-data-v1',JSON.stringify(d)); })()",
   );
   await navigate('/');
-  assert.equal(await stored('db.version'), 7);
+  assert.equal(await stored('db.version'), 10);
   assert.equal(await stored("db.users.find(u=>u.id==='p1').address"), 'Migration kept');
   assert.ok(
     await stored("db.medicines.length===61 && db.inventory.length>0 && !('restocks' in db)"),
@@ -901,7 +921,7 @@ try {
   await navigate('/quan-tri/he-thong');
   await textButton('Khôi phục dữ liệu');
   await textButton('Xác nhận khôi phục');
-  assert.equal(await stored('db.version'), 7);
+  assert.equal(await stored('db.version'), 10);
   assert.equal(errors.length, 0, JSON.stringify(errors));
   assert.equal(submissions.length, 0, 'Unexpected non-GET network requests');
   console.log(

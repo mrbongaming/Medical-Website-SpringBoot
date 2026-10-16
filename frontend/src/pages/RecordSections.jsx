@@ -36,12 +36,13 @@ export function RecordSections({ record }) {
               </div>
             ))}
             <p className="text-sm text-slate-500">
-              Trạng thái:{' '}
-              {record.dispenseStatus === 'dispensed'
-                ? 'Đã cấp thuốc'
-                : record.dispenseStatus === 'cancelled'
-                  ? 'Đã hủy cấp thuốc'
-                  : 'Đang chờ cấp'}
+              Nơi mua:{' '}
+              {record.purchaseChoice === 'hospital'
+                ? 'Tại bệnh viện'
+                : record.purchaseChoice === 'outside'
+                  ? 'Bên ngoài'
+                  : 'Chưa chọn'}
+              . Đơn thuốc không tự động giữ hoặc trừ tồn kho.
             </p>
           </div>
         ) : (

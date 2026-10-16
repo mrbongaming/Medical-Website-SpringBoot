@@ -110,7 +110,22 @@ export function bookingItem(db, form) {
 
 export function bookingItems(db, form) {
   const pack = db.packages.find((p) => p.id === form.packageId);
-  return pack?.components?.length ? structuredClone(pack.components) : [bookingItem(db, form)];
+  const items = pack?.components?.length
+    ? structuredClone(pack.components)
+    : [bookingItem(db, form)];
+  if (form.bookingMode !== 'facility' && form.doctorId) {
+    const configured = db.pricingSettings?.doctorOverrides?.[form.doctorId];
+    const unitPrice = Number(configured ?? db.pricingSettings?.doctorSelectionFee ?? 0);
+    if (unitPrice > 0)
+      items.push({
+        serviceId: `doctor-selection:${form.doctorId}`,
+        name: 'Phụ phí chọn bác sĩ',
+        unitPrice,
+        quantity: 1,
+        discountable: false,
+      });
+  }
+  return items;
 }
 
 export function bookingQuote(db, form, patientId) {
@@ -122,7 +137,12 @@ export function bookingQuote(db, form, patientId) {
     { ...form, patientId, items: base.items, subtotal: base.subtotal },
     form.promotionCode || '',
   );
-  return { ...selected, price: calculatePrice(items, insurance, selected.promotion), items };
+  return {
+    ...selected,
+    price: calculatePrice(items, insurance, selected.promotion),
+    prepaymentPrice: calculatePrice(items, { status: 'none' }, selected.promotion),
+    items,
+  };
 }
 
 export function appointmentPrice(appointment) {
@@ -139,7 +159,6 @@ export function appointmentPrice(appointment) {
             discountable: true,
           },
         ]),
-        ...(appointment.billing?.medicineItems || []),
       ],
       appointment.billing?.insurance,
       appointment.billing?.promotion,
@@ -158,14 +177,23 @@ export function financialBalance(db, appointment) {
     db.payments
       .filter((p) => p.appointmentId === appointment.id)
       .reduce((n, p) => n + p.amount, 0) + delta;
+  const collected = db.payments
+    .filter((payment) => payment.appointmentId === appointment.id)
+    .reduce((sum, payment) => sum + payment.amount, 0);
+  const patientDue =
+    price.patientDue === null
+      ? null
+      : appointment.billing?.settledAt
+        ? 0
+        : Math.max(0, price.patientDue - collected);
   return {
     price,
     adjustments,
     delta,
     paid,
-    patientDue: price.patientDue === null ? null : price.patientDue + delta,
+    patientDue,
     settled:
       !!appointment.billing?.settledAt ||
-      db.payments.some((p) => p.appointmentId === appointment.id),
+      (price.patientDue !== null && paid > 0 && patientDue === 0),
   };
 }

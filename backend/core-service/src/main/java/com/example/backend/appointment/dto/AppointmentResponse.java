@@ -15,7 +15,9 @@ public record AppointmentResponse(
         LocalTime time,
         String status,
         String serviceName,
-        BigDecimal quotedPrice) {
+        BigDecimal quotedPrice,
+        String paymentStatus,
+        BigDecimal prepaymentAmount) {
 
     public static AppointmentResponse from(Appointment appointment) {
         return new AppointmentResponse(
@@ -28,6 +30,8 @@ public record AppointmentResponse(
                 appointment.getAppointmentTime(),
                 appointment.getStatus(),
                 appointment.getServiceName(),
-                appointment.getQuotedPrice());
+                appointment.getQuotedPrice(),
+                appointment.getPaymentStatus(),
+                appointment.getPrepaymentAmount());
     }
 }

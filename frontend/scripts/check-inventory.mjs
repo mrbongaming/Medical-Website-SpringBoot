@@ -5,7 +5,7 @@ import { availableStock, inventoryRow } from '../src/data/inventory.js';
 import { migrateData } from '../src/data/storage.js';
 
 let db = createSeed();
-assert.equal(db.version, 7);
+assert.equal(db.version, 10);
 assert.equal(db.medicines.length, 61);
 assert.equal(db.inventory.length, db.branches.length * db.medicines.length);
 assert.equal(db.users.filter((u) => u.role === 'staff').length, db.branches.length);
@@ -68,6 +68,7 @@ deny('root', 'stock-request-review', { id: urgentId, status: 'approved' }, /khô
 
 const appointment = db.appointments.find((a) => a.id === 'AT-TODAY');
 appointment.status = 'pending';
+appointment.paymentStatus = 'paid';
 appointment.date = dateKey();
 appointment.billing.receivedAt = '';
 appointment.billing.insurance = { status: 'none' };
@@ -75,6 +76,8 @@ run('staff-b1', 'appointment', { id: appointment.id, status: 'confirmed' });
 assert.equal(db.appointments.find((a) => a.id === appointment.id).reviewedBy, 'staff-b1');
 run('staff-b1', 'receive', { id: appointment.id });
 const stockBeforeReserve = availableStock(inventoryRow(db, 'b1', 'med002'));
+inventoryRow(db, 'b1', 'med002').quantity = 0;
+inventoryRow(db, 'b1', 'med002').reserved = 0;
 run('u-dr1', 'record', {
   appointmentId: appointment.id,
   symptoms: 'Đau đầu nhẹ',
@@ -82,6 +85,7 @@ run('u-dr1', 'record', {
   notes: 'Theo dõi diễn biến.',
   followUp: '',
   finalized: true,
+  purchaseChoice: 'hospital',
   services: [],
   serviceReason: 'Giữ nguyên dịch vụ khám.',
   prescription: [
@@ -97,19 +101,47 @@ run('u-dr1', 'record', {
   ],
 });
 const record = db.records.find((r) => r.appointmentId === appointment.id);
-assert.equal(record.dispenseStatus, 'reserved');
-assert.equal(availableStock(inventoryRow(db, 'b1', 'med002')), stockBeforeReserve - 4);
+assert.equal(record.dispenseStatus, 'not_managed');
+assert.equal(availableStock(inventoryRow(db, 'b1', 'med002')), 0);
+assert.ok(stockBeforeReserve > 0);
+assert.equal(
+  appointment.billing.items.some(
+    (item) => item.medicineId || item.serviceId.startsWith('medicine:'),
+  ),
+  false,
+  'Prescription medicine must not enter the hospital bill or insurance calculation',
+);
+assert.equal(appointment.billing.medicineItems, undefined);
+appointment.billing.medicineItems = [
+  {
+    serviceId: 'medicine:legacy',
+    medicineId: 'med002',
+    name: 'Dòng thuốc từ dữ liệu cũ',
+    quantity: 4,
+    unitPrice: 1800,
+    insuranceTariff: 1800,
+    insuranceRate: 100,
+  },
+];
+const quotedServiceTotal = appointment.billing.items.reduce(
+  (sum, item) => sum + item.unitPrice * item.quantity,
+  0,
+);
+run('admin1', 'promotion-apply', { id: appointment.id, code: '' });
 run('admin1', 'bill-finalize', { id: appointment.id, reason: 'Đã đối chiếu chi phí.' });
+assert.equal(
+  db.appointments.find((row) => row.id === appointment.id).billing.finalized.price.subtotal,
+  quotedServiceTotal,
+  'Legacy medicineItems must never affect the bill or BHYT totals',
+);
 run('admin1', 'pay', { id: appointment.id, method: 'cash' });
 const physicalBefore = inventoryRow(db, 'b1', 'med002').quantity;
-run('staff-b1', 'medicine-dispense', { id: appointment.id });
-assert.equal(inventoryRow(db, 'b1', 'med002').quantity, physicalBefore - 4);
+run('staff-b1', 'medicine-purchase-complete', { id: appointment.id });
 assert.equal(
-  db.records.find((r) => r.appointmentId === appointment.id).dispenseStatus,
-  'dispensed',
+  db.records.find((row) => row.id === record.id).dispenseStatus,
+  'hospital_purchase_recorded',
 );
-deny('staff-b1', 'medicine-dispense', { id: appointment.id }, /không còn/);
-deny('staff-b2', 'medicine-dispense', { id: appointment.id }, /quyền/);
+assert.equal(inventoryRow(db, 'b1', 'med002').quantity, physicalBefore);
 
 const old = structuredClone(createSeed());
 old.version = 3;
@@ -120,9 +152,9 @@ delete old.stockRequests;
 delete old.inventoryTransactions;
 delete old.stockSchedule;
 const migrated = migrateData(old);
-assert.equal(migrated.version, 7);
+assert.equal(migrated.version, 10);
 assert.equal(migrateData(migrated).medicines.length, 61);
 
 console.log(
-  'PASS: inventory schema, branch scope, restock approval, appointment review, prescription reservation, payment and dispensing.',
+  'PASS: inventory schema, branch scope, restock approval, and prescription without stock reservation or deduction.',
 );

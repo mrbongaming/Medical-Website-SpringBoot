@@ -29,6 +29,8 @@ import { RecordDetailPage } from './pages/RecordDetailPage';
 import { ExaminationPage } from './pages/ExaminationPage';
 import { ManagementPage } from './pages/ManagementPage';
 import { SystemPage } from './pages/SystemPage';
+import { PricingSettingsPage } from './pages/PricingSettingsPage';
+import { PaymentResultPage } from './pages/PaymentResultPage';
 import { InventoryPage } from './pages/InventoryPage';
 import { DispensingPage } from './pages/DispensingPage';
 import { AuditPage } from './pages/AuditPage';
@@ -58,6 +60,7 @@ const router = createBrowserRouter(
         <Route path="dat-lich" element={<BookingPage />} />
         <Route path="dang-nhap" element={<AuthPage />} />
         <Route path="oauth/callback" element={<OAuthCallbackPage />} />
+        <Route path="thanh-toan/vnpay/ket-qua" element={<PaymentResultPage />} />
         <Route path="dang-ky" element={<Navigate to="/dang-nhap" replace />} />
         <Route path="gioi-thieu" element={<InformationPage mode="about" />} />
         <Route path="huong-dan" element={<InformationPage mode="guide" />} />
@@ -116,6 +119,7 @@ const router = createBrowserRouter(
               />
             ))}
             <Route path="he-thong" element={<SystemPage />} />
+            <Route path="cau-hinh-gia" element={<PricingSettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Route>

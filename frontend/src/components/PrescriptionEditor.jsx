@@ -36,7 +36,7 @@ export function PrescriptionEditor({ db, branchId, value, onChange }) {
         <div>
           <h2 className="text-xl font-bold text-brand-900">Đơn thuốc</h2>
           <p className="text-sm text-slate-500">
-            Tồn hiển thị là tồn khả dụng tại cơ sở đang khám. Bác sĩ tự nhập hướng dẫn sử dụng.
+            Tồn kho chỉ để tham khảo. Có thể kê thuốc khi tồn bằng 0; kê đơn không giữ hoặc trừ kho.
           </p>
         </div>
         <button
@@ -134,7 +134,7 @@ export function PrescriptionEditor({ db, branchId, value, onChange }) {
               <div className="flex items-end justify-between gap-3 md:col-span-2 xl:col-span-2">
                 <p className="text-sm text-slate-600">
                   {medicine
-                    ? `Khả dụng ${availableStock(stock)} ${medicine.unit} · ${money(medicine.salePrice)}/${medicine.unit}`
+                    ? `Tham khảo tại cơ sở: ${availableStock(stock)} ${medicine.unit} · ${money(medicine.salePrice)}/${medicine.unit}`
                     : 'Chưa chọn thuốc'}
                 </p>
                 <button

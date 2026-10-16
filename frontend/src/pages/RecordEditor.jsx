@@ -34,6 +34,7 @@ export function RecordEditor({ appointment }) {
       instructions: item.instructions || '',
     })),
   );
+  const [purchaseChoice, setPurchaseChoice] = useState(record?.purchaseChoice || 'undecided');
   const [dirty, setDirty] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -70,6 +71,7 @@ export function RecordEditor({ appointment }) {
         services,
         serviceReason,
         prescription,
+        purchaseChoice,
       });
       setDirty(false);
       setError('');
@@ -151,6 +153,21 @@ export function RecordEditor({ appointment }) {
                 setSuccess('');
               }}
             />
+            {!!prescription.length && (
+              <Field label="Nơi dự kiến mua thuốc">
+                <select
+                  value={purchaseChoice}
+                  onChange={(event) => {
+                    setPurchaseChoice(event.target.value);
+                    setDirty(true);
+                  }}
+                >
+                  <option value="undecided">Bệnh nhân quyết định sau</option>
+                  <option value="hospital">Mua tại bệnh viện</option>
+                  <option value="outside">Mua bên ngoài</option>
+                </select>
+              </Field>
+            )}
             <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
               Hoàn tất sẽ chuyển kết quả sang chỉ đọc và hiển thị cho bệnh nhân.
             </p>

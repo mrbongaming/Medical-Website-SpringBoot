@@ -1,5 +1,5 @@
 import { calculatePrice } from '../helpers/PricingHelpers.js';
-import { addV5Data, addV6Data, addV7Data } from './migrations.js';
+import { addV5Data, addV6Data, addV7Data, addV8Data, addV9Data, addV10Data } from './migrations.js';
 export const roles = {
   patient: 'Bệnh nhân',
   doctor: 'Bác sĩ',
@@ -8,6 +8,7 @@ export const roles = {
   superAdmin: 'Admin tổng',
 };
 export const statuses = {
+  awaiting_payment: 'Chờ thanh toán',
   pending: 'Chờ duyệt',
   confirmed: 'Đã xác nhận',
   completed: 'Hoàn tất',
@@ -507,6 +508,47 @@ export function createSeed() {
     price: 200000 + (i % 3) * 50000,
     active: true,
   }));
+  const additionalNames = [
+    'Đỗ Minh Quân',
+    'Nguyễn Ngọc Hân',
+    'Trần Gia Bảo',
+    'Lê Phương Thảo',
+    'Phạm Tuấn Kiệt',
+    'Võ Thanh Trúc',
+    'Bùi Hoàng Long',
+    'Đặng Mỹ Linh',
+    'Ngô Đức Thành',
+    'Phan Khánh Vy',
+    'Hồ Nhật Minh',
+    'Vũ Thu Hương',
+  ];
+  doctors.push(
+    ...departments.map((d, i) => ({
+      id: `dr${i + 13}`,
+      slug: `bac-si-${i + 13}`,
+      name: `BS. ${additionalNames[i]}`,
+      branchId: d.branchId,
+      departmentId: d.id,
+      specialtyId: d.specialtyId,
+      experience: 6 + (i % 9),
+      qualification: i % 2 ? 'Bác sĩ chuyên khoa I' : 'Thạc sĩ Y khoa',
+      expertise: [
+        'Khám nội tổng quát và quản lý bệnh mạn tính',
+        'Tư vấn tim mạch và kiểm soát yếu tố nguy cơ',
+        'Khám nhi và tư vấn dinh dưỡng trẻ em',
+        'Điều trị bệnh da thường gặp',
+        'Khám tai mũi họng cho người lớn và trẻ em',
+        'Khám cơ xương khớp và phục hồi vận động',
+      ][i % 6],
+      contactPhone: branches.find((b) => b.id === d.branchId).phone,
+      image: '/images/doctor-' + (i % 2 ? 'female' : 'male') + '.jpg',
+      bio: `${additionalNames[i]} có ${6 + (i % 9)} năm kinh nghiệm, đang công tác tại ${
+        branches.find((b) => b.id === d.branchId).name
+      }.`,
+      price: 200000 + (i % 3) * 50000,
+      active: true,
+    })),
+  );
   const users = [
     {
       id: 'root',
@@ -583,15 +625,32 @@ export function createSeed() {
     active: true,
   }));
   const slots = ['08:00', '09:00', '10:00', '13:30', '14:30', '15:30'];
-  const schedules = doctors.flatMap((d) =>
-    Array.from({ length: 105 }, (_, n) => ({
-      id: `sch-${d.id}-${n}`,
-      branchId: d.branchId,
-      doctorId: d.id,
-      date: relativeDate(n - 89),
-      times: slots,
-    })),
-  );
+  const schedules = doctors.flatMap((doctor) => [
+    {
+      id: `rule-${doctor.id}-morning`,
+      branchId: doctor.branchId,
+      doctorId: doctor.id,
+      weekdays: [1, 2, 3, 4, 5, 6, 7],
+      startTime: '07:30',
+      endTime: '11:30',
+      slotMinutes: 30,
+      effectiveFrom: '2020-01-01',
+      effectiveTo: '',
+      active: true,
+    },
+    {
+      id: `rule-${doctor.id}-afternoon`,
+      branchId: doctor.branchId,
+      doctorId: doctor.id,
+      weekdays: [1, 2, 3, 4, 5, 6, 7],
+      startTime: '13:00',
+      endTime: '17:00',
+      slotMinutes: 30,
+      effectiveFrom: '2020-01-01',
+      effectiveTo: '',
+      active: true,
+    },
+  ]);
   const appointments = [];
   function appointment(id, patientIndex, doctorIndex, offset, time, status, packageId = '') {
     const doctor = doctors[doctorIndex];
@@ -737,28 +796,34 @@ export function createSeed() {
       date: a.date,
       createdBy: 'root',
     }));
-  return addV7Data(
-    addV6Data(
-      addV5Data(
-        addInventoryData(
-          addBillingData(
-            {
-              version: 2,
-              seededAt: dateKey(),
-              branches,
-              specialties,
-              departments,
-              doctors,
-              users,
-              packages,
-              schedules,
-              appointments,
-              records,
-              payments,
-            },
-            true,
+  return addV10Data(
+    addV9Data(
+      addV8Data(
+        addV7Data(
+          addV6Data(
+            addV5Data(
+              addInventoryData(
+                addBillingData(
+                  {
+                    version: 2,
+                    seededAt: dateKey(),
+                    branches,
+                    specialties,
+                    departments,
+                    doctors,
+                    users,
+                    packages,
+                    schedules,
+                    appointments,
+                    records,
+                    payments,
+                  },
+                  true,
+                ),
+                true,
+              ),
+            ),
           ),
-          true,
         ),
       ),
     ),

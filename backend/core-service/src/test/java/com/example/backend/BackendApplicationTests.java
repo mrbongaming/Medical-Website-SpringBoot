@@ -5,6 +5,9 @@ import com.example.backend.branch.repository.BranchRepository;
 import com.example.backend.doctor.repository.DoctorRepository;
 import com.example.backend.exampackage.repository.ExamPackageRepository;
 import com.example.backend.medicine.repository.MedicineRepository;
+import com.example.backend.payment.PaymentAttemptRepository;
+import com.example.backend.schedule.DoctorAvailabilityRuleRepository;
+import com.example.backend.schedule.DoctorScheduleExceptionRepository;
 import com.example.backend.specialty.repository.SpecialtyRepository;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -21,7 +24,7 @@ import static org.assertj.core.api.Assertions.assertThat;
         webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
         properties = {
             "spring.data.jpa.repositories.enabled=false",
-            "spring.autoconfigure.exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration,org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration"
+            "spring.autoconfigure.exclude=org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration,org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration"
         })
 class BackendApplicationTests {
     @LocalServerPort private int port;
@@ -32,11 +35,22 @@ class BackendApplicationTests {
     @MockitoBean ExamPackageRepository examPackageRepository;
     @MockitoBean AppointmentRepository appointmentRepository;
     @MockitoBean MedicineRepository medicineRepository;
+    @MockitoBean PaymentAttemptRepository paymentAttemptRepository;
+    @MockitoBean DoctorAvailabilityRuleRepository doctorAvailabilityRuleRepository;
+    @MockitoBean DoctorScheduleExceptionRepository doctorScheduleExceptionRepository;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Test
     void publicBranchEndpointIsAvailable() throws Exception {
         var response = get("/api/public/branches");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).isEqualTo("[]");
+    }
+
+    @Test
+    void publicScheduleEndpointComputesAnEmptyPreviewWithoutRules() throws Exception {
+        var response = get("/api/public/schedules");
 
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body()).isEqualTo("[]");

@@ -20,6 +20,7 @@ import { Pagination } from '../components/Pagination';
 import { usePagination } from '../hooks/usePagination';
 import { formatDate, name, recordBase } from '../helpers/ClinicalHelpers';
 import { getFilteredAppointments } from '../helpers/AppointmentHelpers';
+import { paymentApi } from '../api/client';
 
 export function AppointmentsPage() {
   const { db, user, dispatch } = useHospital();
@@ -35,12 +36,32 @@ export function AppointmentsPage() {
   const [success, setSuccess] = useState('');
   const [action, setAction] = useState(null);
   const [billingId, setBillingId] = useState('');
+  const [payingId, setPayingId] = useState('');
   const rows = getFilteredAppointments(db, user, { period, status, date, branchId, query });
   const cards = usePagination(rows, 8);
   function open(row, type) {
     setAction({ row, type });
     setError('');
     setSuccess('');
+  }
+  async function startVnpay(row) {
+    setPayingId(row.id);
+    setError('');
+    setSuccess('');
+    try {
+      if (row.source !== 'backend') {
+        throw new Error(
+          'Lịch này đang dùng dữ liệu demo trên trình duyệt. Hãy đăng nhập tài khoản backend để thanh toán VNPay thật.',
+        );
+      }
+      const result = await paymentApi.createVnpay(row.id);
+      if (!result?.paymentUrl)
+        throw new Error(result?.message || 'VNPay chưa trả về liên kết thanh toán.');
+      window.location.assign(result.paymentUrl);
+    } catch (e) {
+      setError(e.message);
+      setPayingId('');
+    }
   }
   async function submit(e) {
     e.preventDefault();
@@ -63,6 +84,15 @@ export function AppointmentsPage() {
     const record = db.records.find((r) => r.appointmentId === a.id && r.finalized);
     return (
       <div className="flex flex-wrap gap-2 [&>a]:text-sm [&>a]:font-semibold [&>a]:text-sky-700 [&>button]:border-0 [&>button]:bg-transparent [&>button]:p-0 [&>button]:text-sm [&>button]:font-semibold [&>button]:text-sky-700">
+        {patient && a.status === 'awaiting_payment' && a.paymentStatus === 'pending' && (
+          <button
+            className="rounded-lg bg-emerald-600! px-3! py-2! text-white! disabled:cursor-wait disabled:opacity-60"
+            disabled={payingId === a.id}
+            onClick={() => startVnpay(a)}
+          >
+            {payingId === a.id ? 'Đang mở VNPay…' : 'Thanh toán VNPay'}
+          </button>
+        )}
         {receptionist && a.status === 'pending' && (
           <>
             <button onClick={() => open(a, 'confirmed')}>Chấp nhận</button>
@@ -88,7 +118,7 @@ export function AppointmentsPage() {
             Khám · chờ tiếp nhận
           </span>
         )}
-        {['pending', 'confirmed'].includes(a.status) &&
+        {['awaiting_payment', 'pending', 'confirmed'].includes(a.status) &&
           !a.billing.receivedAt &&
           (isAdmin(user) || (patient && future(a.date, a.time))) && (
             <button className="text-red-600!" onClick={() => open(a, 'cancelled')}>

@@ -15,8 +15,10 @@ export function getFilteredAppointments(db, user, { period, status, date, branch
         ) &&
         (!patient ||
           (period === 'upcoming'
-            ? future(a.date, a.time) && ['pending', 'confirmed'].includes(a.status)
-            : !future(a.date, a.time) || !['pending', 'confirmed'].includes(a.status))),
+            ? future(a.date, a.time) &&
+              ['awaiting_payment', 'pending', 'confirmed'].includes(a.status)
+            : !future(a.date, a.time) ||
+              !['awaiting_payment', 'pending', 'confirmed'].includes(a.status))),
     )
     .sort((a, b) =>
       (patient && period === 'upcoming') || doctor

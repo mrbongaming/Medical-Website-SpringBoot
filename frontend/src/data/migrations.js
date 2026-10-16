@@ -316,3 +316,129 @@ export function addV7Data(source) {
   });
   return db;
 }
+
+export function addV8Data(source) {
+  const db = structuredClone(source);
+  db.version = 8;
+  db.pricingSettings ||= {
+    doctorSelectionFee: 100000,
+    doctorOverrides: {},
+    updatedBy: 'migration',
+    updatedAt: new Date().toISOString(),
+    reason: 'Khởi tạo phụ phí chọn bác sĩ cho dữ liệu demo.',
+  };
+  db.paymentAttempts ||= [];
+  for (const appointment of db.appointments) {
+    const paid = db.payments.some((payment) => payment.appointmentId === appointment.id);
+    appointment.paymentStatus ||= paid || appointment.billing?.settledAt ? 'paid' : 'legacy_unpaid';
+    appointment.prepaymentAmount ??= paid
+      ? db.payments
+          .filter((payment) => payment.appointmentId === appointment.id)
+          .reduce((sum, payment) => sum + Number(payment.amount || 0), 0)
+      : 0;
+  }
+  for (const record of db.records) {
+    record.purchaseChoice ||= 'undecided';
+    if (record.dispenseStatus === 'reserved') record.dispenseStatus = 'not_managed';
+  }
+  return db;
+}
+
+const ADDITIONAL_DOCTOR_NAMES = [
+  'Đỗ Minh Quân',
+  'Nguyễn Ngọc Hân',
+  'Trần Gia Bảo',
+  'Lê Phương Thảo',
+  'Phạm Tuấn Kiệt',
+  'Võ Thanh Trúc',
+  'Bùi Hoàng Long',
+  'Đặng Mỹ Linh',
+  'Ngô Đức Thành',
+  'Phan Khánh Vy',
+  'Hồ Nhật Minh',
+  'Vũ Thu Hương',
+];
+
+export function addV9Data(source) {
+  const db = structuredClone(source);
+  db.version = 9;
+
+  db.departments.forEach((department, index) => {
+    const doctorId = `dr${index + 13}`;
+    if (db.doctors.some((doctor) => doctor.id === doctorId)) return;
+    const branch = db.branches.find((item) => item.id === department.branchId);
+    const name = ADDITIONAL_DOCTOR_NAMES[index] || `Bác sĩ ${index + 13}`;
+    const specialty = db.specialties.find((item) => item.id === department.specialtyId);
+    db.doctors.push({
+      id: doctorId,
+      slug: `bac-si-${index + 13}`,
+      name: `BS. ${name}`,
+      branchId: department.branchId,
+      departmentId: department.id,
+      specialtyId: department.specialtyId,
+      experience: 6 + (index % 9),
+      qualification: index % 2 ? 'Bác sĩ chuyên khoa I' : 'Thạc sĩ Y khoa',
+      expertise: `Khám và tư vấn ${String(specialty?.name || 'chuyên khoa').toLowerCase()}`,
+      contactPhone: branch?.phone || '',
+      image: `/images/doctor-${index % 2 ? 'female' : 'male'}.jpg`,
+      bio: `${name} có ${6 + (index % 9)} năm kinh nghiệm, đang công tác tại ${branch?.name || 'Bệnh viện An Tâm'}.`,
+      price: 200000 + (index % 3) * 50000,
+      active: true,
+    });
+  });
+
+  db.doctors.forEach((doctor, index) => {
+    if (db.users.some((user) => user.doctorId === doctor.id)) return;
+    db.users.push({
+      id: `u-${doctor.id}`,
+      name: doctor.name,
+      role: 'doctor',
+      doctorId: doctor.id,
+      branchId: doctor.branchId,
+      phone: `09110000${String(index).padStart(2, '0')}`,
+      address: 'TP.HCM',
+      active: true,
+    });
+  });
+
+  return db;
+}
+
+export function addV10Data(source) {
+  const db = structuredClone(source);
+  db.version = 10;
+  db.scheduleExceptions ||= [];
+  const alreadyRuleBased =
+    db.schedules.length > 0 && db.schedules.every((rule) => Array.isArray(rule.weekdays));
+  if (!alreadyRuleBased) {
+    db.schedules = db.doctors
+      .filter((doctor) => doctor.active)
+      .flatMap((doctor) => [
+        {
+          id: `rule-${doctor.id}-morning`,
+          branchId: doctor.branchId,
+          doctorId: doctor.id,
+          weekdays: [1, 2, 3, 4, 5, 6, 7],
+          startTime: '07:30',
+          endTime: '11:30',
+          slotMinutes: 30,
+          effectiveFrom: '2020-01-01',
+          effectiveTo: '',
+          active: true,
+        },
+        {
+          id: `rule-${doctor.id}-afternoon`,
+          branchId: doctor.branchId,
+          doctorId: doctor.id,
+          weekdays: [1, 2, 3, 4, 5, 6, 7],
+          startTime: '13:00',
+          endTime: '17:00',
+          slotMinutes: 30,
+          effectiveFrom: '2020-01-01',
+          effectiveTo: '',
+          active: true,
+        },
+      ]);
+  }
+  return db;
+}

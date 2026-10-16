@@ -9,11 +9,17 @@ let db;
 let count = 0;
 const reset = () => {
   db = createSeed();
+  db.pricingSettings.doctorSelectionFee = 0;
   db.promotionUses = [];
 };
 const run = (actor, action, payload) => {
   const result = act(db, actor, action, payload);
   db = result.db;
+  if (action === 'book') {
+    const row = db.appointments.find((item) => item.id === result.result);
+    row.status = 'pending';
+    row.paymentStatus = 'paid';
+  }
   count++;
   return result.result;
 };
@@ -490,7 +496,7 @@ for (const key of [
 ])
   delete legacy[key];
 const migrated = migrateData(legacy);
-assert.equal(migrated.version, 7);
+assert.equal(migrated.version, 10);
 assert.deepEqual(migrated.payments, legacy.payments);
 assert.equal(migrated.records.length, legacy.records.length);
 assert.ok(migrated.records.every((record) => Array.isArray(record.prescription)));
