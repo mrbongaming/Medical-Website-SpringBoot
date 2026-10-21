@@ -37,6 +37,10 @@ npm run dev
 
 Mở địa chỉ Vite in trên màn hình, thông thường là `http://localhost:5173`.
 
+Khi triển khai lên Vercel, đặt **Root Directory** là `frontend` và triển khai lại
+sau khi cập nhật mã. File `frontend/vercel.json` chuyển các đường dẫn ứng dụng như
+`/lich-hen` và `/tai-khoan` về `index.html` để React Router xử lý khi tải lại trang.
+
 `npm ci` cài đúng phiên bản thư viện trong `package-lock.json`. Chỉ cần chạy lần
 đầu, sau khi tải mã mới, hoặc khi `package-lock.json` thay đổi. Những lần chạy hằng
 ngày, nếu thư mục `node_modules` đã có, chỉ cần:
