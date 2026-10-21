@@ -205,7 +205,6 @@ export default function HospitalProvider({ children }) {
         account = { ...account, ...profile, email: userView.email };
       } catch (error) {
         setApiError(error.message);
-        throw error;
       }
       setBackendUser(account);
       try {
@@ -271,13 +270,7 @@ export default function HospitalProvider({ children }) {
   }
 
   async function bookAppointment(payload) {
-    let result;
-    try {
-      result = await appointmentApi.create(payload);
-    } catch (error) {
-      if (error.status === 401) setBackendUser(null);
-      throw error;
-    }
+    const result = await appointmentApi.create(payload);
     try {
       const profile = await profileApi.get();
       const account = { ...backendUser, ...profile };
@@ -292,8 +285,8 @@ export default function HospitalProvider({ children }) {
   async function login({ email, password }) {
     const response = await authApi.login(email, password);
     setAccessToken(response.accessToken);
-    const account = await activateBackendAccount(response.user);
     setApiError('');
+    const account = await activateBackendAccount(response.user);
     notify('success', 'Đăng nhập thành công.');
     return account;
   }
@@ -301,8 +294,8 @@ export default function HospitalProvider({ children }) {
   async function register({ fullName, email, password }) {
     const response = await authApi.register(fullName, email, password);
     setAccessToken(response.accessToken);
-    const account = await activateBackendAccount(response.user);
     setApiError('');
+    const account = await activateBackendAccount(response.user);
     notify('success', 'Đăng ký thành công.');
     return account;
   }

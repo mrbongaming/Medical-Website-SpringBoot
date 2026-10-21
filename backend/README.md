@@ -123,6 +123,11 @@ trường, biến đó phải nằm trong file riêng của frontend, ví dụ:
 VITE_API_BASE_URL=http://localhost:8080
 ```
 
+Phiên đăng nhập dùng JWT có thời hạn mặc định 7 ngày (`JWT_EXPIRATION=PT168H`).
+Frontend lưu token trong bộ nhớ trình duyệt để giữ phiên khi tải lại trang hoặc mở
+lại trình duyệt; đăng xuất sẽ xóa token đó. Sau khi đổi `JWT_EXPIRATION`, cần khởi
+động lại `auth-service` và đăng nhập lại để nhận token với thời hạn mới.
+
 Frontend đã đọc biến này từ `frontend/.env`; file `.env` của backend không truyền
 biến sang frontend. Tạo file bằng Command Prompt:
 

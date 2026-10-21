@@ -5,15 +5,39 @@ export const API_BASE_URL = configuredBaseUrl.replace(/\/$/, '');
 const TOKEN_KEY = 'antam_access_token';
 let accessToken = null;
 try {
-  accessToken = sessionStorage.getItem(TOKEN_KEY);
+  accessToken = localStorage.getItem(TOKEN_KEY);
 } catch {
-  // The browser may block storage; the token still works for this page load.
+  // The browser may block local storage.
+}
+try {
+  const previousToken = sessionStorage.getItem(TOKEN_KEY);
+  if (!accessToken && previousToken) {
+    accessToken = previousToken;
+    try {
+      localStorage.setItem(TOKEN_KEY, previousToken);
+      sessionStorage.removeItem(TOKEN_KEY);
+    } catch {
+      // Keep the previous session token if local storage is unavailable.
+    }
+  } else {
+    sessionStorage.removeItem(TOKEN_KEY);
+  }
+} catch {
+  // The browser may also block session storage.
 }
 
 export function setAccessToken(token) {
   accessToken = token || null;
+  let storedLocally = false;
   try {
-    if (accessToken) sessionStorage.setItem(TOKEN_KEY, accessToken);
+    if (accessToken) localStorage.setItem(TOKEN_KEY, accessToken);
+    else localStorage.removeItem(TOKEN_KEY);
+    storedLocally = true;
+  } catch {
+    // Fall back to session storage when local storage is unavailable.
+  }
+  try {
+    if (!storedLocally && accessToken) sessionStorage.setItem(TOKEN_KEY, accessToken);
     else sessionStorage.removeItem(TOKEN_KEY);
   } catch {
     // Continue with the in-memory token when storage is unavailable.
@@ -42,7 +66,9 @@ async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    if (response.status === 401 && accessToken) setAccessToken(null);
+    if (response.status === 401 && path === '/api/auth/me' && accessToken) {
+      setAccessToken(null);
+    }
     let message = '';
     try {
       const body = await response.json();
@@ -75,7 +101,16 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ fullName, email, password }),
     }),
-  me: () => request('/api/auth/me'),
+  me: async () => {
+    const hadToken = Boolean(accessToken);
+    try {
+      return await request('/api/auth/me');
+    } catch (error) {
+      // A stale saved token may mask a valid HttpOnly cookie after OAuth login.
+      if (error.status === 401 && hadToken && !accessToken) return request('/api/auth/me');
+      throw error;
+    }
+  },
   logout: () => request('/api/auth/logout', { method: 'POST', skipAuth: true }),
   oauthUrl: (provider) => `${API_BASE_URL}/oauth2/authorization/${provider}`,
 };
