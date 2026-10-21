@@ -23,7 +23,7 @@ async function request(path, options = {}) {
     let message = '';
     try {
       const body = await response.json();
-      message = body.message || body.error || '';
+      message = body.message || body.detail || body.error || '';
     } catch {
       // The gateway can return an empty error response when a service is unavailable.
     }
@@ -67,6 +67,20 @@ export const publicApi = {
 
 export const appointmentApi = {
   currentUser: () => request('/api/appointments'),
+  create: (payload) =>
+    request('/api/appointments', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+};
+
+export const profileApi = {
+  get: () => request('/api/profile'),
+  update: (profile) =>
+    request('/api/profile', {
+      method: 'PUT',
+      body: JSON.stringify(profile),
+    }),
 };
 
 export const paymentApi = {

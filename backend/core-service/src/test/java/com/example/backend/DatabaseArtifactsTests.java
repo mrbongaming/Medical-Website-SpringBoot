@@ -22,7 +22,7 @@ class DatabaseArtifactsTests {
                 "create table doctor_schedule_exceptions",
                 "insert into doctor_availability_rules",
                 "create table payment_attempts",
-                "CREATE TABLE auth_users",
+                "CREATE TABLE IF NOT EXISTS auth_users",
                 "CREATE TABLE IF NOT EXISTS email_deliveries");
         assertThat(bootstrap).doesNotContain(
                 "doctor_schedules",

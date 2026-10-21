@@ -14,7 +14,8 @@ export function ProfilePage() {
   async function submit(e) {
     e.preventDefault();
     try {
-      await dispatch('profile', Object.fromEntries(new FormData(e.currentTarget)));
+      const fields = Object.fromEntries(new FormData(e.currentTarget));
+      await dispatch('profile', { ...fields, birthDate: fields.birthDate || null });
       setSuccess('Đã cập nhật hồ sơ.');
       setError('');
     } catch (e) {
@@ -40,38 +41,17 @@ export function ProfilePage() {
             <input name="name" defaultValue={user.name} required disabled={backendAccount} />
           </Field>
           <Field label="Số điện thoại">
-            <input
-              type="tel"
-              name="phone"
-              defaultValue={user.phone}
-              pattern="0[0-9]{9}"
-              required
-              disabled={backendAccount}
-            />
+            <input type="tel" name="phone" defaultValue={user.phone} pattern="0[0-9]{9}" required />
           </Field>
           <Field label="Ngày sinh">
-            <input
-              type="date"
-              name="birthDate"
-              defaultValue={user.birthDate}
-              max={dateKey()}
-              disabled={backendAccount}
-            />
+            <input type="date" name="birthDate" defaultValue={user.birthDate} max={dateKey()} />
           </Field>
           <Field label="Địa chỉ">
-            <input name="address" defaultValue={user.address} disabled={backendAccount} />
+            <input name="address" defaultValue={user.address} />
           </Field>
         </div>
-        {backendAccount && (
-          <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-            Backend chưa có API cập nhật hồ sơ, nên thông tin tài khoản hiện chỉ được xem.
-          </p>
-        )}
         <Alert error={error} success={success} />
-        <button
-          disabled={backendAccount}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50"
-        >
+        <button className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-sky-600 px-5 py-2.5 font-semibold text-white shadow-sm transition hover:bg-sky-700 disabled:pointer-events-none disabled:opacity-50">
           Lưu thay đổi
         </button>
         {user.role === 'patient' && (

@@ -14,6 +14,7 @@ export function AuthPage() {
   const [mode, setMode] = useState('login');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   function destination(account) {
     const target = params.get('next');
@@ -100,17 +101,28 @@ export function AuthPage() {
               <input name="fullName" autoComplete="name" required />
             </Field>
           )}
-          <Field label="Email" required>
+          <Field label="Email (tên đăng nhập)" required>
             <input name="email" type="email" autoComplete="email" required />
           </Field>
           <Field label="Mật khẩu" hint="Ít nhất 8 ký tự." required>
-            <input
-              name="password"
-              type="password"
-              minLength="8"
-              autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
-              required
-            />
+            <div className="flex items-center gap-2">
+              <input
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                minLength="8"
+                autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                required
+              />
+              <button
+                type="button"
+                aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                aria-pressed={showPassword}
+                onClick={() => setShowPassword((current) => !current)}
+                className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-sky-700"
+              >
+                {showPassword ? 'Ẩn' : 'Hiện'}
+              </button>
+            </div>
           </Field>
           <Alert error={error} />
           <Button className="w-full" type="submit" disabled={submitting}>

@@ -1,11 +1,56 @@
--- An Tam MySQL/XAMPP one-time bootstrap for all backend services.
--- Creates antam_core, antam_auth and antam_notification with the current schema and demo data.
--- Import this single file into an empty MySQL/MariaDB server before starting the services.
+-- An Tam MySQL/MariaDB installer for new and existing databases.
+-- Safe to rerun: complete schemas are preserved, and an import interrupted
+-- before branch_stocks or at the medical_records update can resume;
+-- existing accounts and passwords are preserved. Back up an existing database first.
 
 SET NAMES utf8mb4;
 SET time_zone = '+07:00';
 CREATE DATABASE IF NOT EXISTS antam_core CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE antam_core;
+
+-- Run the original schema and demo data only for a fresh installation.
+-- DELIMITER keeps the installer in one importable SQL file.
+DROP PROCEDURE IF EXISTS antam_install_core;
+DELIMITER $$
+CREATE PROCEDURE antam_install_core()
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'branches'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'user_accounts'
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT =
+            'antam_core is incomplete; restore backup or remove only the failed empty installation';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'user_accounts'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'medicines'
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT =
+            'antam_core is incomplete; restore backup or remove only the failed empty installation';
+    END IF;
+    IF EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'user_accounts'
+    ) AND EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'branch_stocks'
+    ) AND NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'payment_attempts'
+    ) THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT =
+            'antam_core is incomplete; restore backup or remove only the failed empty installation';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'user_accounts'
+    ) THEN
 
 create table branches (
     id varchar(64) primary key,
@@ -60,7 +105,7 @@ create table user_accounts (
     id varchar(64) primary key,
     name varchar(200) not null,
     role varchar(32) not null check (role in ('patient', 'doctor', 'staff', 'branchAdmin', 'superAdmin')),
-    phone varchar(20) not null unique,
+    phone varchar(20) unique,
     password_hash varchar(100),
     branch_id varchar(64),
     doctor_id varchar(64) unique,
@@ -350,13 +395,21 @@ create table medicines (
 
 alter table prescription_items add constraint fk_prescription_item_medicine foreign key (medicine_id) references medicines(id);
 
+    END IF;
+    -- Resume safely when an earlier import stopped while creating branch_stocks.
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.tables
+        WHERE table_schema = 'antam_core' AND table_name = 'branch_stocks'
+    ) THEN
+
 create table branch_stocks (
     id varchar(160) primary key,
     branch_id varchar(64) not null,
     medicine_id varchar(64) not null,
     quantity integer not null check (quantity >= 0),
-    reserved integer not null check (reserved >= 0 and reserved <= quantity),
+    reserved integer not null,
     version bigint not null default 0,
+    constraint chk_branch_stocks_reserved check (reserved >= 0 and reserved <= quantity),
     unique (branch_id, medicine_id)
 );
 
@@ -365,7 +418,8 @@ create table inventory_settings (
     branch_id varchar(64) not null,
     medicine_id varchar(64) not null,
     min_quantity integer not null check (min_quantity >= 0),
-    max_quantity integer not null check (max_quantity >= min_quantity),
+    max_quantity integer not null,
+    constraint chk_inventory_settings_quantity check (max_quantity >= min_quantity),
     unique (branch_id, medicine_id)
 );
 
@@ -1569,7 +1623,7 @@ alter table appointments
     add constraint chk_appointment_payment_status
         check (payment_status in ('legacy_unpaid', 'pending', 'paid', 'failed', 'expired', 'refund_pending', 'refunded'));
 
-alter table appointments add column reserved_slot_key varchar(320)
+alter table appointments add column reserved_slot_key varchar(128)
     generated always as (
         case when doctor_id is not null
                   and status in ('awaiting_payment', 'draft', 'pending', 'confirmed')
@@ -1607,9 +1661,30 @@ create table payment_attempts (
 alter table payments add column purpose varchar(32) not null default 'final_settlement';
 alter table medical_records add column purchase_choice varchar(16) not null default 'undecided';
 
+    END IF;
+    -- Resume an import stopped by Workbench Safe Updates at the data migration.
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'antam_core'
+          AND table_name = 'prescription_items'
+          AND column_name = 'medicine_name'
+    ) THEN
+
+-- Keep the user's Safe Updates setting and restore it even if the update fails.
+BEGIN
+    DECLARE previous_safe_updates TINYINT DEFAULT 0;
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        SET SESSION sql_safe_updates = previous_safe_updates;
+        RESIGNAL;
+    END;
+    SET previous_safe_updates = @@SESSION.sql_safe_updates;
+    SET SESSION sql_safe_updates = 0;
 update medical_records
 set dispense_status = 'not_managed'
 where dispense_status = 'reserved';
+    SET SESSION sql_safe_updates = previous_safe_updates;
+END;
 
 alter table prescription_items
     add column medicine_name varchar(200),
@@ -1708,11 +1783,21 @@ where doctor.active = true;
 drop temporary table seed_shifts;
 drop temporary table seed_weekdays;
 
+    END IF;
+END $$
+DELIMITER ;
+CALL antam_install_core();
+DROP PROCEDURE antam_install_core;
+
+-- Older installations required a phone number before a profile could be created.
+-- This modification is safe to repeat and preserves all existing values.
+ALTER TABLE antam_core.user_accounts MODIFY phone varchar(20) NULL;
+
 -- Authentication service schema.
 CREATE DATABASE IF NOT EXISTS antam_auth CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE antam_auth;
 
-CREATE TABLE auth_users (
+CREATE TABLE IF NOT EXISTS auth_users (
     id VARCHAR(36) PRIMARY KEY,
     email VARCHAR(190) NOT NULL UNIQUE,
     password_hash VARCHAR(100),
@@ -1726,6 +1811,30 @@ CREATE TABLE auth_users (
     updated_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
     UNIQUE KEY uk_auth_provider (provider, provider_id)
 );
+
+-- Demo accounts share their IDs with antam_core.user_accounts.
+-- Login: <user_accounts.id>@demo.antam.local ; password: Demo@123456
+-- Demo credentials are for local/test databases only.
+INSERT INTO auth_users (id, email, password_hash, full_name, provider, role, active)
+SELECT id, CONCAT(id, '@demo.antam.local'),
+       '$2a$10$3BRy6RU2I2/87I8OM0gH/.mPziuoxqYEauTpxR/ZDVqblvuICvKUq',
+       name, 'LOCAL',
+       CASE role WHEN 'superAdmin' THEN 'SUPER_ADMIN'
+                 WHEN 'branchAdmin' THEN 'BRANCH_ADMIN'
+                 WHEN 'doctor' THEN 'DOCTOR'
+                 WHEN 'staff' THEN 'STAFF'
+                 ELSE 'PATIENT' END,
+       active
+FROM antam_core.user_accounts AS demo
+WHERE demo.id IN ('root', 'admin1', 'admin2', 'admin3', 'admin4',
+                  'staff-b1', 'staff-b2', 'staff-b3', 'staff-b4',
+                  'u-dr1', 'u-dr2', 'u-dr3', 'u-dr4', 'u-dr5', 'u-dr6',
+                  'u-dr7', 'u-dr8', 'u-dr9', 'u-dr10', 'u-dr11', 'u-dr12',
+                  'p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8',
+                  'p9', 'p10', 'p11', 'p12', 'p13', 'p14', 'p15', 'p16')
+  AND NOT EXISTS (SELECT 1 FROM auth_users existing WHERE existing.id = demo.id)
+  AND NOT EXISTS (SELECT 1 FROM auth_users existing
+                  WHERE existing.email = CONCAT(demo.id, '@demo.antam.local'));
 
 -- Notification service schema.
 CREATE DATABASE IF NOT EXISTS antam_notification CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

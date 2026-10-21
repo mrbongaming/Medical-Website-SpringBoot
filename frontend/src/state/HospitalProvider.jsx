@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { appointmentApi, authApi, publicApi } from '../api/client';
+import { appointmentApi, authApi, profileApi, publicApi } from '../api/client';
 import { emptyData } from '../data/emptyData';
 import { ToastStack } from '../components/ToastStack';
 import { HospitalContext } from './context';
@@ -11,7 +11,13 @@ function frontendUser(user) {
     email: user.email,
     avatarUrl: user.avatarUrl || '',
     provider: user.provider || 'local',
-    role: String(user.role || 'PATIENT').toLowerCase(),
+    role: {
+      PATIENT: 'patient',
+      DOCTOR: 'doctor',
+      STAFF: 'staff',
+      BRANCH_ADMIN: 'branchAdmin',
+      SUPER_ADMIN: 'superAdmin',
+    }[String(user.role || 'PATIENT').toUpperCase()] || 'patient',
     phone: '',
     birthDate: '',
     address: '',
@@ -36,13 +42,7 @@ function catalogData(db, catalogs) {
   }));
   const packages = catalogs.packages.map((item) => ({
     ...item,
-    branchIds: [
-      ...new Set(
-        doctors
-          .filter((doctor) => doctor.specialtyId === item.specialtyId)
-          .map((doctor) => doctor.branchId),
-      ),
-    ],
+    branchIds: item.branchIds || [],
     active: true,
   }));
   const schedulePreviews = (catalogs.schedules || []).map((item) => ({
@@ -72,7 +72,7 @@ function backendAppointment(item, user, db) {
     doctorId: item.doctorId || '',
     departmentId: doctor?.departmentId || '',
     specialtyId: item.specialtyId,
-    packageId: '',
+    packageId: item.packageId || '',
     bookingMode: String(item.bookingMode || 'doctor').toLowerCase(),
     date: item.date,
     time: item.time ? String(item.time).slice(0, 5) : '',
@@ -199,7 +199,13 @@ export default function HospitalProvider({ children }) {
 
   const activateBackendAccount = useCallback(
     async (userView) => {
-      const account = frontendUser(userView);
+      let account = frontendUser(userView);
+      try {
+        const profile = await profileApi.get();
+        account = { ...account, ...profile, email: userView.email };
+      } catch (error) {
+        setApiError(error.message);
+      }
       setBackendUser(account);
       try {
         await loadBackendAppointments(account);
@@ -253,9 +259,27 @@ export default function HospitalProvider({ children }) {
   }, [activateBackendAccount, notify, updateDb]);
 
   async function dispatch(type, payload) {
+    if (type === 'profile') {
+      const profile = await profileApi.update(payload);
+      setBackendUser((current) => ({ ...current, ...profile }));
+      return profile;
+    }
     void type;
     void payload;
     throw new Error('Chức năng này chưa có API ghi dữ liệu ở backend.');
+  }
+
+  async function bookAppointment(payload) {
+    const result = await appointmentApi.create(payload);
+    try {
+      const profile = await profileApi.get();
+      const account = { ...backendUser, ...profile };
+      setBackendUser(account);
+      await loadBackendAppointments(account);
+    } catch (error) {
+      setApiError(error.message);
+    }
+    return result.id;
   }
 
   async function login({ email, password }) {
@@ -298,6 +322,7 @@ export default function HospitalProvider({ children }) {
         dispatch,
         login,
         register,
+        bookAppointment,
         logout,
         authReady,
         apiState,

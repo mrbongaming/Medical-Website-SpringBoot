@@ -14,6 +14,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
@@ -38,6 +39,7 @@ class BackendApplicationTests {
     @MockitoBean PaymentAttemptRepository paymentAttemptRepository;
     @MockitoBean DoctorAvailabilityRuleRepository doctorAvailabilityRuleRepository;
     @MockitoBean DoctorScheduleExceptionRepository doctorScheduleExceptionRepository;
+    @MockitoBean JdbcTemplate jdbcTemplate;
     private final HttpClient httpClient = HttpClient.newHttpClient();
 
     @Test
@@ -60,6 +62,17 @@ class BackendApplicationTests {
     void appointmentEndpointRequiresAuthentication() throws Exception {
         var response = get("/api/appointments");
 
+        assertThat(response.statusCode()).isEqualTo(401);
+    }
+
+    @Test
+    void bookingEndpointRequiresAuthentication() throws Exception {
+        var request = HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/api/appointments"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("{}"))
+                .build();
+
+        var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         assertThat(response.statusCode()).isEqualTo(401);
     }
 

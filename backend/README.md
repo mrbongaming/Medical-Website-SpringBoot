@@ -54,15 +54,31 @@ AUTH_DB_URL=jdbc:mysql://localhost:3307/antam_auth?createDatabaseIfNotExist=true
 NOTIFICATION_DB_URL=jdbc:mysql://localhost:3307/antam_notification?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Ho_Chi_Minh
 ```
 
-Import duy nhất [`database/antam_mysql.sql`](database/antam_mysql.sql) trong
-phpMyAdmin **trước lần chạy các service đầu tiên**. File này tạo cả ba schema
-`antam_core`, `antam_auth`, `antam_notification`, toàn bộ bảng, dữ liệu demo,
-bác sĩ và quy tắc lịch làm việc.
+Chạy duy nhất [`database/antam_mysql.sql`](database/antam_mysql.sql) trước khi
+khởi động các service. Với XAMPP mặc định, chạy trong Command Prompt tại thư mục
+`backend`:
 
-Nếu `notification-service` đã từng tạo `antam_notification.email_deliveries`
-bằng Flyway, file SQL sẽ giữ nguyên bảng có sẵn. Các bảng và dữ liệu còn lại trong
-file vẫn chỉ dành cho lần import đầu tiên; không import lại toàn bộ file vào schema
-đã có dữ liệu.
+```bat
+C:\xampp\mysql\bin\mysql.exe -u root < database\antam_mysql.sql
+```
+
+File tạo ba schema `antam_core`, `antam_auth`, `antam_notification`, dữ liệu demo,
+bác sĩ và quy tắc lịch làm việc nếu database còn trống.
+Với MySQL, cần phiên bản 5.7.8 trở lên vì schema sử dụng kiểu `JSON` và cột sinh;
+MySQL 8.0.16 trở lên thực thi các ràng buộc `CHECK`.
+
+Nếu database đã có dữ liệu, chạy lại chính file này để cập nhật cấu trúc hồ sơ và
+bổ sung đăng nhập mẫu còn thiếu. Phần khởi tạo dữ liệu demo sẽ được bỏ qua;
+tài khoản và mật khẩu hiện có được giữ nguyên. Nên sao lưu database trước khi nâng cấp.
+Nếu `notification-service` đã tạo `antam_notification.email_deliveries` bằng Flyway,
+bảng đó cũng được giữ nguyên.
+
+Nếu lần nhập trước dừng tại lỗi tạo `branch_stocks` hoặc lỗi Safe Updates 1175 ở
+`medical_records`, chạy lại toàn bộ file sau khi cập nhật sẽ tiếp tục từ chỗ đó.
+File chỉ tạm tắt Safe Updates cho lệnh chuyển đổi dữ liệu này rồi khôi phục thiết lập
+của phiên kết nối. Với các kiểu gián đoạn khác, file báo
+`antam_core is incomplete` thay vì bỏ qua các bảng còn thiếu. Khi đó, kiểm tra
+và sao lưu dữ liệu trước; chỉ xóa schema tạo dở khi chắc chắn không chứa dữ liệu cần giữ.
 
 Lịch bác sĩ không được seed thành từng ngày hoặc từng ô giờ trống. Bảng
 `doctor_availability_rules` lưu ca làm định kỳ theo thứ, khoảng giờ, thời lượng
@@ -71,11 +87,21 @@ nghỉ hoặc ca đặc biệt. API tính các khung giờ có thể đặt từ
 các lịch hẹn đang giữ chỗ; một bản ghi `appointments` chỉ được tạo khi có người
 thực sự đặt khám.
 
-Không import lại đè lên database đã có bảng vì script bootstrap dùng các lệnh
-`CREATE TABLE` một lần. Khi cần tạo lại dữ liệu, hãy xóa ba schema cũ rồi import
-lại file duy nhất này.
-
 File `.env` đã được `.gitignore`, không được commit credential thật.
+
+### Tài khoản mẫu và cập nhật database cũ
+
+File `database/antam_mysql.sql` tạo tài khoản đăng nhập cho mọi người dùng mẫu trong
+`antam_core.user_accounts`. Tên đăng nhập là email `<id>@demo.antam.local`, mật khẩu
+chung là `Demo@123456`. Ví dụ: `p1@demo.antam.local`, `u-dr1@demo.antam.local`,
+`staff-b1@demo.antam.local`, `admin1@demo.antam.local`, `root@demo.antam.local`.
+Thông tin đăng nhập và mã băm mật khẩu nằm ở `antam_auth.auth_users`;
+`antam_core.user_accounts` chỉ là hồ sơ nghiệp vụ có cùng `id`.
+Chỉ dùng các thông tin này trong môi trường thử nghiệm; đổi mật khẩu trước khi dùng dữ liệu mẫu ở nơi khác.
+
+Với database đã import từ trước, chạy lại `database/antam_mysql.sql` trước khi khởi
+động phiên bản mới. File cho phép hồ sơ mới chưa có số điện thoại và bổ sung
+đăng nhập cho các tài khoản mẫu còn thiếu.
 
 ## 2. `.env` backend không cấu hình frontend
 
@@ -213,7 +239,7 @@ reactor (`packaging=pom`), không có class `main`. Frontend chỉ gọi gateway
 Body đăng nhập mẫu:
 
 ```json
-{ "email": "patient@example.com", "password": "password123" }
+{ "email": "p1@demo.antam.local", "password": "Demo@123456" }
 ```
 
 ### Nghiệp vụ
@@ -223,6 +249,9 @@ Body đăng nhập mẫu:
 - `GET /api/public/doctors`
 - `GET /api/public/packages`
 - `GET /api/appointments` - yêu cầu JWT
+- `POST /api/appointments` - tạo lịch giữ chỗ cho bệnh nhân (bác sĩ hoặc gói khám)
+- `GET /api/profile` - tạo hồ sơ nghiệp vụ nếu tài khoản mới chưa có
+- `PUT /api/profile` - cập nhật số điện thoại, ngày sinh và địa chỉ
 
 Client ngoài trình duyệt có thể gửi JWT qua `Authorization: Bearer <token>`. Trình
 duyệt dùng cookie `HttpOnly` và cần đặt `credentials: "include"` khi gọi khác origin.
