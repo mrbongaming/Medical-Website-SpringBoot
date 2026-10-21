@@ -229,7 +229,7 @@ mvnw.cmd -pl api-gateway spring-boot:run
 
 Không chạy `mvnw.cmd spring-boot:run` trực tiếp trên POM gốc vì POM gốc chỉ là
 reactor (`packaging=pom`), không có class `main`. Frontend chỉ gọi gateway cổng 8080.
-
+d
 ## API chính
 
 ### Xác thực
@@ -244,6 +244,7 @@ reactor (`packaging=pom`), không có class `main`. Frontend chỉ gọi gateway
 Body đăng nhập mẫu:
 
 ```json
+
 { "email": "p1@demo.antam.local", "password": "Demo@123456" }
 ```
 
