@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { authApi } from '../api/client';
+import { authApi, setAccessToken } from '../api/client';
 import { useHospital } from '../state/context';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
@@ -130,10 +130,10 @@ export function AuthPage() {
           </Button>
         </form>
         <div className="mt-5 grid gap-3 border-t border-slate-200 pt-5 sm:grid-cols-2">
-          <Button as="a" variant="secondary" href={authApi.oauthUrl('google')} className="w-full">
+          <Button as="a" variant="secondary" href={authApi.oauthUrl('google')} onClick={() => setAccessToken(null)} className="w-full">
             Tiếp tục với Google
           </Button>
-          <Button as="a" variant="secondary" href={authApi.oauthUrl('facebook')} className="w-full">
+          <Button as="a" variant="secondary" href={authApi.oauthUrl('facebook')} onClick={() => setAccessToken(null)} className="w-full">
             Tiếp tục với Facebook
           </Button>
         </div>

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { appointmentApi, authApi, profileApi, publicApi } from '../api/client';
+import { appointmentApi, authApi, profileApi, publicApi, setAccessToken } from '../api/client';
 import { emptyData } from '../data/emptyData';
 import { ToastStack } from '../components/ToastStack';
 import { HospitalContext } from './context';
@@ -205,6 +205,7 @@ export default function HospitalProvider({ children }) {
         account = { ...account, ...profile, email: userView.email };
       } catch (error) {
         setApiError(error.message);
+        throw error;
       }
       setBackendUser(account);
       try {
@@ -270,7 +271,13 @@ export default function HospitalProvider({ children }) {
   }
 
   async function bookAppointment(payload) {
-    const result = await appointmentApi.create(payload);
+    let result;
+    try {
+      result = await appointmentApi.create(payload);
+    } catch (error) {
+      if (error.status === 401) setBackendUser(null);
+      throw error;
+    }
     try {
       const profile = await profileApi.get();
       const account = { ...backendUser, ...profile };
@@ -284,16 +291,20 @@ export default function HospitalProvider({ children }) {
 
   async function login({ email, password }) {
     const response = await authApi.login(email, password);
+    setAccessToken(response.accessToken);
+    const account = await activateBackendAccount(response.user);
     setApiError('');
     notify('success', 'Đăng nhập thành công.');
-    return activateBackendAccount(response.user);
+    return account;
   }
 
   async function register({ fullName, email, password }) {
     const response = await authApi.register(fullName, email, password);
+    setAccessToken(response.accessToken);
+    const account = await activateBackendAccount(response.user);
     setApiError('');
     notify('success', 'Đăng ký thành công.');
-    return activateBackendAccount(response.user);
+    return account;
   }
 
   async function logout() {
@@ -304,6 +315,7 @@ export default function HospitalProvider({ children }) {
         notify('error', `Không đăng xuất được khỏi backend: ${error.message}`);
         return;
       } finally {
+        setAccessToken(null);
         setBackendUser(null);
         updateDb((previous) => ({
           ...previous,
