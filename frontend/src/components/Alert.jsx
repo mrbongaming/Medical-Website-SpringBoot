@@ -1,22 +1,15 @@
+import { useEffect, useRef } from 'react';
+import { useHospital } from '../state/context';
+
 export function Alert({ error, success }) {
-  return (
-    <>
-      {error && (
-        <p
-          className="my-4 rounded-xl border p-4 text-sm font-medium border-red-200 bg-red-50 text-red-800"
-          role="alert"
-        >
-          {error}
-        </p>
-      )}
-      {success && (
-        <p
-          className="my-4 rounded-xl border p-4 text-sm font-medium border-emerald-200 bg-emerald-50 text-emerald-800"
-          role="status"
-        >
-          {success}
-        </p>
-      )}
-    </>
-  );
+  const { notify } = useHospital();
+  const last = useRef({ error: '', success: '' });
+
+  useEffect(() => {
+    if (error && error !== last.current.error) notify('error', error);
+    if (success && success !== last.current.success) notify('success', success);
+    last.current = { error, success };
+  }, [error, success, notify]);
+
+  return null;
 }

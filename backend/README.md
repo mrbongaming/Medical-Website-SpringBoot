@@ -59,6 +59,11 @@ phpMyAdmin **trước lần chạy các service đầu tiên**. File này tạo 
 `antam_core`, `antam_auth`, `antam_notification`, toàn bộ bảng, dữ liệu demo,
 bác sĩ và quy tắc lịch làm việc.
 
+Nếu `notification-service` đã từng tạo `antam_notification.email_deliveries`
+bằng Flyway, file SQL sẽ giữ nguyên bảng có sẵn. Các bảng và dữ liệu còn lại trong
+file vẫn chỉ dành cho lần import đầu tiên; không import lại toàn bộ file vào schema
+đã có dữ liệu.
+
 Lịch bác sĩ không được seed thành từng ngày hoặc từng ô giờ trống. Bảng
 `doctor_availability_rules` lưu ca làm định kỳ theo thứ, khoảng giờ, thời lượng
 mỗi lượt và giai đoạn áp dụng. Bảng `doctor_schedule_exceptions` chỉ lưu ngày

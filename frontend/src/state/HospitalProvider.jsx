@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { appointmentApi, authApi, publicApi } from '../api/client';
-import { createSeed } from '../data/mockData';
-import { act } from '../data/domain';
-import { DATA_KEY as KEY, readData } from '../data/storage';
+import { emptyData } from '../data/emptyData';
+import { ToastStack } from '../components/ToastStack';
 import { HospitalContext } from './context';
-
-const DEMO_SESSION = 'antam-session-v1';
-const read = () => readData(localStorage);
 
 function frontendUser(user) {
   return {
@@ -56,6 +52,14 @@ function catalogData(db, catalogs) {
   return { ...db, branches, specialties, doctors, packages, schedulePreviews };
 }
 
+function catalogState(catalogs) {
+  return ['branches', 'specialties', 'doctors', 'packages'].every(
+    (key) => catalogs[key].length === 0,
+  )
+    ? 'empty'
+    : 'connected';
+}
+
 function backendAppointment(item, user, db) {
   const doctor = db.doctors.find((row) => row.id === item.doctorId);
   const price = Number(item.quotedPrice || 0);
@@ -102,48 +106,60 @@ function backendAppointment(item, user, db) {
 }
 
 export default function HospitalProvider({ children }) {
-  const [initial] = useState(() => {
-    try {
-      return { db: read(), error: '' };
-    } catch {
-      return {
-        db: createSeed(),
-        error:
-          'Không đọc được dữ liệu đã lưu. Bạn đang xem dữ liệu mẫu tạm thời; hãy đăng nhập admin tổng để khôi phục.',
-      };
-    }
-  });
-  const [db, setDb] = useState(initial.db);
-  const [storageError, setStorageError] = useState(initial.error);
-  const [demoSession, setDemoSession] = useState(() => sessionStorage.getItem(DEMO_SESSION) || '');
+  const [db, setDb] = useState(emptyData);
   const [backendUser, setBackendUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [apiState, setApiState] = useState('connecting');
   const [apiError, setApiError] = useState('');
-  const current = useRef(db);
+  const [toasts, setToasts] = useState([]);
+  const toastId = useRef(0);
+  const lastToast = useRef({ type: '', message: '', at: 0 });
+  const toastTimers = useRef(new Map());
 
-  const demoUser =
-    db.users.find(
-      (item) =>
-        item.id === demoSession &&
-        item.active &&
-        (!item.branchId ||
-          db.branches.some((branch) => branch.id === item.branchId && branch.active)),
-    ) || null;
-  const user = backendUser || demoUser;
+  const dismissToast = useCallback((id) => {
+    clearTimeout(toastTimers.current.get(id));
+    toastTimers.current.delete(id);
+    setToasts((previous) => previous.filter((toast) => toast.id !== id));
+  }, []);
+
+  const notify = useCallback(
+    (type, message) => {
+      if (!message) return;
+      const now = Date.now();
+      if (
+        lastToast.current.type === type &&
+        lastToast.current.message === message &&
+        now - lastToast.current.at < 500
+      )
+        return;
+      lastToast.current = { type, message, at: now };
+      const id = ++toastId.current;
+      setToasts((previous) => [...previous.slice(-3), { id, type, message }]);
+      toastTimers.current.set(
+        id,
+        setTimeout(() => dismissToast(id), type === 'error' ? 7000 : 5000),
+      );
+    },
+    [dismissToast],
+  );
+
+  useEffect(() => {
+    const timers = toastTimers.current;
+    return () => {
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
+    };
+  }, []);
+
+  const user = backendUser;
   const visibleDb = useMemo(() => {
     if (!backendUser) return db;
-    return {
-      ...db,
-      users: [...db.users.filter((item) => item.id !== backendUser.id), backendUser],
-    };
+    return { ...db, users: [backendUser] };
   }, [db, backendUser]);
 
   const updateDb = useCallback((updater) => {
     setDb((previous) => {
-      const next = typeof updater === 'function' ? updater(previous) : updater;
-      current.current = next;
-      return next;
+      return typeof updater === 'function' ? updater(previous) : updater;
     });
   }, []);
 
@@ -152,25 +168,30 @@ export default function HospitalProvider({ children }) {
     try {
       const catalogs = await publicApi.loadCatalogs();
       updateDb((previous) => catalogData(previous, catalogs));
-      setApiState('connected');
+      const state = catalogState(catalogs);
+      setApiState(state);
       setApiError('');
-      return true;
+      notify(
+        state === 'empty' ? 'error' : 'success',
+        state === 'empty'
+          ? 'Kết nối thành công nhưng chưa có dữ liệu trong database.'
+          : 'Đã kết nối và tải dữ liệu từ backend thành công.',
+      );
+      return state === 'connected';
     } catch (error) {
       setApiState('unavailable');
       setApiError(error.message);
+      notify('error', 'Không kết nối được với backend hoặc database. Chưa có dữ liệu để hiển thị.');
       return false;
     }
-  }, [updateDb]);
+  }, [notify, updateDb]);
 
   const loadBackendAppointments = useCallback(
     async (account) => {
       const rows = await appointmentApi.currentUser();
       updateDb((previous) => ({
         ...previous,
-        appointments: [
-          ...previous.appointments.filter((item) => item.source !== 'backend'),
-          ...rows.map((item) => backendAppointment(item, account, previous)),
-        ],
+        appointments: rows.map((item) => backendAppointment(item, account, previous)),
       }));
     },
     [updateDb],
@@ -179,8 +200,6 @@ export default function HospitalProvider({ children }) {
   const activateBackendAccount = useCallback(
     async (userView) => {
       const account = frontendUser(userView);
-      sessionStorage.removeItem(DEMO_SESSION);
-      setDemoSession('');
       setBackendUser(account);
       try {
         await loadBackendAppointments(account);
@@ -194,26 +213,25 @@ export default function HospitalProvider({ children }) {
 
   useEffect(() => {
     let cancelled = false;
-    if (!initial.error) {
-      try {
-        localStorage.setItem(KEY, JSON.stringify(initial.db));
-      } catch {
-        /* Mutations will report unavailable storage. */
-      }
-    }
 
     publicApi
       .loadCatalogs()
       .then((catalogs) => {
         if (cancelled) return;
         updateDb((previous) => catalogData(previous, catalogs));
-        setApiState('connected');
+        const state = catalogState(catalogs);
+        setApiState(state);
         setApiError('');
+        if (state === 'empty') notify('error', 'Chưa có dữ liệu trong database.');
       })
       .catch((error) => {
         if (cancelled) return;
         setApiState('unavailable');
         setApiError(error.message);
+        notify(
+          'error',
+          'Không kết nối được với backend hoặc database. Chưa có dữ liệu để hiển thị.',
+        );
       });
 
     authApi
@@ -229,109 +247,47 @@ export default function HospitalProvider({ children }) {
         if (!cancelled) setAuthReady(true);
       });
 
-    function update(event) {
-      if (event.key === KEY || event.key === null) {
-        try {
-          const next = read();
-          current.current = next;
-          setDb(next);
-          setStorageError('');
-        } catch {
-          setStorageError(
-            'Dữ liệu lưu trữ không hợp lệ. Hãy khôi phục dữ liệu mẫu bằng admin tổng.',
-          );
-        }
-      }
-    }
-    window.addEventListener('storage', update);
     return () => {
       cancelled = true;
-      window.removeEventListener('storage', update);
     };
-  }, [activateBackendAccount, initial, updateDb]);
-
-  function persist(next) {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(next));
-    } catch {
-      throw new Error(
-        'Không thể lưu dữ liệu trên trình duyệt. Hãy kiểm tra dung lượng hoặc quyền lưu trữ.',
-      );
-    }
-    current.current = next;
-    setDb(next);
-  }
+  }, [activateBackendAccount, notify, updateDb]);
 
   async function dispatch(type, payload) {
-    if (backendUser) {
-      throw new Error(
-        'Chức năng này chưa có API ghi dữ liệu tương ứng ở backend. Dữ liệu sẽ không được lưu giả vào trình duyệt.',
-      );
-    }
-    const mutate = async () => {
-      if (storageError) throw new Error(storageError);
-      const latest = localStorage.getItem(KEY) ? read() : current.current;
-      const { db: next, result } = act(latest, user?.id, type, payload);
-      persist(next);
-      return result;
-    };
-    return navigator.locks?.request
-      ? navigator.locks.request('antam-data-write', mutate)
-      : mutate();
+    void type;
+    void payload;
+    throw new Error('Chức năng này chưa có API ghi dữ liệu ở backend.');
   }
 
   async function login({ email, password }) {
     const response = await authApi.login(email, password);
-    setApiState('connected');
     setApiError('');
+    notify('success', 'Đăng nhập thành công.');
     return activateBackendAccount(response.user);
   }
 
   async function register({ fullName, email, password }) {
     const response = await authApi.register(fullName, email, password);
-    setApiState('connected');
     setApiError('');
+    notify('success', 'Đăng ký thành công.');
     return activateBackendAccount(response.user);
   }
 
-  function loginDemo(id) {
-    const account = current.current.users.find((item) => item.id === id && item.active);
-    if (
-      !account ||
-      (account.branchId &&
-        !current.current.branches.some((branch) => branch.id === account.branchId && branch.active))
-    )
-      throw new Error('Tài khoản hoặc cơ sở đã ngừng hoạt động.');
-    setBackendUser(null);
-    sessionStorage.setItem(DEMO_SESSION, id);
-    setDemoSession(id);
-  }
-
   async function logout() {
-    sessionStorage.removeItem(DEMO_SESSION);
-    setDemoSession('');
     if (backendUser) {
       try {
         await authApi.logout();
+      } catch (error) {
+        notify('error', `Không đăng xuất được khỏi backend: ${error.message}`);
+        return;
       } finally {
         setBackendUser(null);
         updateDb((previous) => ({
           ...previous,
-          appointments: previous.appointments.filter((item) => item.source !== 'backend'),
+          appointments: [],
         }));
       }
     }
-  }
-
-  async function reset() {
-    if (user?.role !== 'superAdmin') throw new Error('Chỉ admin tổng được khôi phục dữ liệu.');
-    const restore = async () => {
-      persist(createSeed());
-      setStorageError('');
-    };
-    return navigator.locks?.request
-      ? navigator.locks.request('antam-data-write', restore)
-      : restore();
+    notify('success', 'Đã đăng xuất.');
   }
 
   return (
@@ -341,18 +297,17 @@ export default function HospitalProvider({ children }) {
         user,
         dispatch,
         login,
-        loginDemo,
         register,
         logout,
-        reset,
-        storageError,
         authReady,
         apiState,
         apiError,
         refreshApi,
+        notify,
       }}
     >
       {children}
+      <ToastStack toasts={toasts} dismiss={dismissToast} />
     </HospitalContext.Provider>
   );
 }

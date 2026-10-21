@@ -59,7 +59,6 @@ export function getStaffNavigation(role) {
                 ['/chuyen-khoa', 'Chuyên khoa', FiLayers],
                 ['/goi-kham', 'Gói khám', FiLayers],
                 ['/cau-hinh-gia', 'Cấu hình giá', FiActivity],
-                ['/he-thong', 'Dữ liệu demo', FiGrid],
               ]
             : []),
         ];

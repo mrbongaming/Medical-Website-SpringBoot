@@ -28,7 +28,7 @@ server:
   forward-headers-strategy: framework
 
 app:
-  frontend-url: ${FRONTEND_URL:https://medical-website-spring-boot.vercel.app/}
+  frontend-url: ${FRONTEND_URL:https://medical-website-spring-boot.vercel.app}
   jwt:
     secret: ${JWT_SECRET:change-this-local-secret-at-least-32-bytes}
     expiration: ${JWT_EXPIRATION:PT8H}

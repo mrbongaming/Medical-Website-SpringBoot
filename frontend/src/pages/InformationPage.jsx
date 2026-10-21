@@ -51,8 +51,8 @@ export function InformationPage({ mode }) {
             <ol>
               <li>Chọn cơ sở thuận tiện, chuyên khoa hoặc gói khám và bác sĩ.</li>
               <li>Chọn ngày và khung giờ còn trống.</li>
-              <li>Đăng nhập tài khoản bệnh nhân demo, kiểm tra thông tin người khám.</li>
-              <li>Xác nhận yêu cầu và theo dõi trạng thái trong “Lịch hẹn”.</li>
+              <li>Đăng nhập tài khoản bệnh nhân và kiểm tra thông tin người khám.</li>
+              <li>Chức năng đặt lịch sẽ hoạt động khi backend có API tạo lịch hẹn.</li>
             </ol>
             <p>
               Bác sĩ sẽ duyệt yêu cầu. Sau khi khám hoàn tất, kết quả xuất hiện trong “Lịch sử

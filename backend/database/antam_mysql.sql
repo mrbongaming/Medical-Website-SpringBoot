@@ -1731,7 +1731,8 @@ CREATE TABLE auth_users (
 CREATE DATABASE IF NOT EXISTS antam_notification CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE antam_notification;
 
-CREATE TABLE email_deliveries (
+-- A previous notification-service Flyway migration may already have created this table.
+CREATE TABLE IF NOT EXISTS email_deliveries (
     id VARCHAR(36) PRIMARY KEY,
     recipient VARCHAR(190) NOT NULL,
     subject VARCHAR(255) NOT NULL,

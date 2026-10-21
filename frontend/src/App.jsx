@@ -28,7 +28,6 @@ import { DoctorSchedulePage } from './pages/DoctorSchedulePage';
 import { RecordDetailPage } from './pages/RecordDetailPage';
 import { ExaminationPage } from './pages/ExaminationPage';
 import { ManagementPage } from './pages/ManagementPage';
-import { SystemPage } from './pages/SystemPage';
 import { PricingSettingsPage } from './pages/PricingSettingsPage';
 import { PaymentResultPage } from './pages/PaymentResultPage';
 import { InventoryPage } from './pages/InventoryPage';
@@ -118,7 +117,6 @@ const router = createBrowserRouter(
                 element={<ManagementPage key={entity} entity={entity} />}
               />
             ))}
-            <Route path="he-thong" element={<SystemPage />} />
             <Route path="cau-hinh-gia" element={<PricingSettingsPage />} />
           </Route>
           <Route path="*" element={<NotFound />} />

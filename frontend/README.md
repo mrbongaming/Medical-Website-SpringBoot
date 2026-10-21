@@ -55,13 +55,16 @@ npm run dev
 - Đọc cơ sở, chuyên khoa, bác sĩ và gói khám từ MySQL qua `core-service`.
 - Đọc lịch hẹn của bệnh nhân đã đăng nhập từ `GET /api/appointments`.
 
-Trang đăng nhập hiển thị trạng thái backend. Khi gateway hoặc service không chạy,
-giao diện báo không kết nối được và giữ dữ liệu demo cục bộ làm phương án dự phòng.
+Trang đăng nhập hiển thị trạng thái backend. Khi gateway, service hoặc database
+không kết nối được, các trang danh mục công khai hiển thị lỗi và nút thử lại thay
+vì hiển thị dữ liệu demo. Nếu backend phản hồi nhưng các danh mục đều rỗng, giao
+diện báo chưa có dữ liệu trong database.
+Các kết quả thao tác thành công hoặc thất bại được hiển thị bằng toast ở góc trên
+bên phải; toast có thể đóng thủ công và tự biến mất sau vài giây.
 
 Backend hiện chưa có API ghi lịch hẹn, cập nhật hồ sơ, bệnh án, kho thuốc và quản
-trị. Các thao tác này không được giả vờ lưu vào MySQL. Khu vực **Nhân sự demo** vẫn
-dùng `localStorage` để có thể xem giao diện bác sĩ/admin trong lúc các API đó chưa
-được xây dựng.
+trị. Đăng nhập nhân sự demo và dữ liệu cá nhân mẫu trên trình duyệt đã được vô hiệu
+hóa. Trang đặt lịch báo chưa hỗ trợ cho đến khi backend có API tạo lịch hẹn.
 
 ## Kiểm tra frontend
 

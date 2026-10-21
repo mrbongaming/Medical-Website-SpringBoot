@@ -18,7 +18,7 @@ import { DRAFT } from '../helpers/PatientHelpers';
 import { isFacilityAssignedPackage } from '../data/packageRules';
 
 export function BookingForm() {
-  const { db, user, dispatch } = useHospital();
+  const { db, user, dispatch, notify } = useHospital();
   const [params] = useSearchParams();
   const [form, setForm] = useState(() => {
     let saved = {};
@@ -208,6 +208,7 @@ export function BookingForm() {
       });
       setResult(id);
       sessionStorage.removeItem(DRAFT);
+      notify('success', 'Đã giữ lịch khám thành công. Vui lòng hoàn tất thanh toán.');
     } catch (e) {
       setError(e.message);
     }

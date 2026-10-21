@@ -11,6 +11,20 @@ export function PublicLayout() {
   const { db, user, logout, storageError, apiError, apiState, refreshApi } = useHospital();
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const needsCatalog = [
+    '/',
+    '/co-so',
+    '/chuyen-khoa',
+    '/bac-si',
+    '/goi-kham',
+    '/dat-lich',
+    '/gioi-thieu',
+    '/lien-he',
+  ].some(
+    (path) =>
+      location.pathname === path || (path !== '/' && location.pathname.startsWith(path + '/')),
+  );
+  const catalogUnavailable = needsCatalog && apiState !== 'connected';
   return (
     <>
       <a
@@ -21,7 +35,10 @@ export function PublicLayout() {
       </a>
       <div className="hidden bg-brand-900 py-2 text-xs text-sky-50 sm:block">
         <div className="mx-auto flex w-full max-w-7xl justify-between px-4 sm:px-6 lg:px-8">
-          <span>Một hệ thống chăm sóc · {publicBranchCount(db)} cơ sở kết nối</span>
+          <span>
+            Một hệ thống chăm sóc · {apiState === 'connected' ? publicBranchCount(db) : 0} cơ sở kết
+            nối
+          </span>
           <span>Tư vấn / đặt khám: {hospital.phone}</span>
         </div>
       </div>
@@ -91,19 +108,6 @@ export function PublicLayout() {
           {storageError}
         </div>
       )}
-      {apiError && (
-        <div className="mx-auto my-4 flex w-full max-w-7xl flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-900">
-          <span>{apiError} Dữ liệu demo cục bộ chỉ được giữ làm phương án dự phòng.</span>
-          <button
-            type="button"
-            className="rounded-lg border border-amber-400 bg-white px-4 py-2 font-semibold hover:bg-amber-100 disabled:opacity-60"
-            onClick={refreshApi}
-            disabled={apiState === 'connecting'}
-          >
-            {apiState === 'connecting' ? 'Đang thử lại…' : 'Thử kết nối lại'}
-          </button>
-        </div>
-      )}
       {user?.role === 'patient' &&
         ['/lich-hen', '/ho-so-kham', '/tai-khoan'].some((path) =>
           location.pathname.startsWith(path),
@@ -129,7 +133,41 @@ export function PublicLayout() {
           </div>
         )}
       <main id="main-content">
-        <Outlet />
+        {catalogUnavailable ? (
+          <div className="mx-auto flex min-h-[55vh] w-full max-w-7xl items-center px-4 py-12 sm:px-6 lg:px-8">
+            <div
+              role={apiState === 'unavailable' ? 'alert' : 'status'}
+              className="w-full rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950 sm:p-10"
+            >
+              <h1 className="text-2xl font-bold">
+                {apiState === 'connecting'
+                  ? 'Đang tải dữ liệu từ backend…'
+                  : apiState === 'empty'
+                    ? 'Chưa có dữ liệu trong database'
+                    : 'Không kết nối được với backend hoặc database'}
+              </h1>
+              {apiState !== 'connecting' && (
+                <>
+                  <p className="mt-3 text-sm sm:text-base">
+                    {apiState === 'empty'
+                      ? 'Backend đã phản hồi nhưng chưa có dữ liệu cơ sở, chuyên khoa, bác sĩ hoặc gói khám.'
+                      : 'Chưa có dữ liệu để hiển thị. Vui lòng kiểm tra kết nối backend và database, rồi thử lại.'}
+                  </p>
+                  {apiError && <p className="mt-2 text-sm">Chi tiết: {apiError}</p>}
+                  <button
+                    type="button"
+                    className="mt-6 rounded-lg bg-amber-900 px-5 py-2.5 font-semibold text-white hover:bg-amber-950"
+                    onClick={refreshApi}
+                  >
+                    Thử kết nối lại
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 grid gap-10 py-12 md:grid-cols-3 [&_h3]:mb-4 [&_h3]:font-bold [&_a]:mb-2 [&_a]:block [&_a]:text-slate-600 [&_p]:mt-4 [&_p]:text-slate-600">
