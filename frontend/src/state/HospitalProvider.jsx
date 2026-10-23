@@ -33,6 +33,7 @@ function catalogData(db, catalogs) {
     active: true,
   }));
   const specialties = catalogs.specialties.map((item) => ({ ...item, active: true }));
+  const departments = catalogs.departments.map((item) => ({ ...item, active: true }));
   const doctors = catalogs.doctors.map((item) => ({
     ...item,
     contactPhone: branches.find((branch) => branch.id === item.branchId)?.phone || '',
@@ -49,7 +50,7 @@ function catalogData(db, catalogs) {
     ...item,
     times: item.times.map((time) => String(time).slice(0, 5)),
   }));
-  return { ...db, branches, specialties, doctors, packages, schedulePreviews };
+  return { ...db, branches, specialties, departments, doctors, packages, schedulePreviews };
 }
 
 function catalogState(catalogs) {

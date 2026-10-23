@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
-import { dateKey, money, relativeDate } from '../data/mockData';
+import { dateKey, money, relativeDate } from '../helpers/FormatHelpers';
 import { PageTitle } from '../components/PageTitle';
 import { Pagination } from '../components/Pagination';
 import { usePagination } from '../hooks/usePagination';

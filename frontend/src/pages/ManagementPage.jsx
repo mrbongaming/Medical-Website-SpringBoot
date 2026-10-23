@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { inBranch, normalize } from '../data/domain';
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';
 import { Modal } from '../components/Modal';

@@ -1,4 +1,4 @@
-import { statuses } from '../data/mockData';
+import { statuses } from '../data/constants';
 
 export function Badge({ status }) {
   const tones = {

@@ -10,7 +10,8 @@ import {
   FiPhone,
 } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money, hospital } from '../data/mockData';
+import { hospital } from '../data/constants';
+import { money } from '../helpers/FormatHelpers';
 import { availableSlots, upcomingSchedules } from '../data/domain';
 import { DoctorCard } from '../components/DoctorCard';
 import { Photo } from '../components/Photo';

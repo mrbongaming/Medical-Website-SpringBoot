@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiMapPin } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 import { Photo } from './Photo';
 import { Rating } from './Rating';
 

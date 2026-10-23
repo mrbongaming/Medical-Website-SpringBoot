@@ -1,7 +1,8 @@
 import { appointmentPrice } from '../helpers/PricingHelpers';
 import { useState } from 'react';
 import { useHospital } from '../state/context';
-import { dateKey, relativeDate, money, statuses } from '../data/mockData';
+import { statuses } from '../data/constants';
+import { dateKey, relativeDate, money } from '../helpers/FormatHelpers';
 import { inBranch } from '../data/domain';
 import { report } from '../data/reports';
 import { Empty } from '../components/Empty';

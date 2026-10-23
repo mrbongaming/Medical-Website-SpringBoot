@@ -1,7 +1,7 @@
 import { Link, useSearchParams } from 'react-router-dom';
 import { FiArrowRight, FiActivity } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 import { normalize } from '../data/domain';
 import { Empty } from '../components/Empty';
 import { PageTitle } from '../components/PageTitle';

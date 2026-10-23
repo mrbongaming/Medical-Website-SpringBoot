@@ -2,6 +2,7 @@ package com.example.backend;
 
 import com.example.backend.appointment.repository.AppointmentRepository;
 import com.example.backend.branch.repository.BranchRepository;
+import com.example.backend.department.repository.DepartmentRepository;
 import com.example.backend.doctor.repository.DoctorRepository;
 import com.example.backend.exampackage.repository.ExamPackageRepository;
 import com.example.backend.medicine.repository.MedicineRepository;
@@ -31,6 +32,7 @@ class BackendApplicationTests {
     @LocalServerPort private int port;
 
     @MockitoBean BranchRepository branchRepository;
+    @MockitoBean DepartmentRepository departmentRepository;
     @MockitoBean SpecialtyRepository specialtyRepository;
     @MockitoBean DoctorRepository doctorRepository;
     @MockitoBean ExamPackageRepository examPackageRepository;
@@ -45,6 +47,14 @@ class BackendApplicationTests {
     @Test
     void publicBranchEndpointIsAvailable() throws Exception {
         var response = get("/api/public/branches");
+
+        assertThat(response.statusCode()).isEqualTo(200);
+        assertThat(response.body()).isEqualTo("[]");
+    }
+
+    @Test
+    void publicDepartmentEndpointIsAvailable() throws Exception {
+        var response = get("/api/public/departments");
 
         assertThat(response.statusCode()).isEqualTo(200);
         assertThat(response.body()).isEqualTo("[]");

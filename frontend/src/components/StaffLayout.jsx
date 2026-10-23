@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet } from 'react-router-dom';
 import { FiLogOut, FiMenu } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { roles } from '../data/mockData';
+import { roles } from '../data/constants';
 import { Brand } from './Brand';
 import { getStaffNavigation } from '../helpers/StaffHelpers';
 
 export function StaffLayout() {
-  const { user, db, logout, storageError } = useHospital();
+  const { user, db, logout } = useHospital();
   const [open, setOpen] = useState(false);
   const doctor = user.role === 'doctor';
   const receptionist = user.role === 'staff';
@@ -92,11 +92,6 @@ export function StaffLayout() {
           </div>
         </header>
         <main className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8" id="main-content">
-          {storageError && (
-            <p className="my-4 rounded-xl border p-4 text-sm font-medium border-red-200 bg-red-50 text-red-800">
-              {storageError}
-            </p>
-          )}
           <Outlet />
         </main>
       </div>

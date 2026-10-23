@@ -7,13 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "format": "prettier --write src scripts index.html README.md",
-    "format:check": "prettier --check src scripts index.html README.md",
-    "preview": "vite preview",
-    "check:domain": "node scripts/check-domain.mjs",
-    "check:billing": "node scripts/check-billing.mjs",
-    "check:inventory": "node scripts/check-inventory.mjs",
-    "check:browser": "node scripts/check-browser.mjs"
+    "format": "prettier --write src index.html README.md",
+    "format:check": "prettier --check src index.html README.md",
+    "preview": "vite preview"
   },
   "dependencies": {
     "chart.js": "^4.5.1",

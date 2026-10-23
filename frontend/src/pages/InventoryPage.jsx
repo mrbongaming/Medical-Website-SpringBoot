@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useHospital } from '../state/context';
 import { availableStock, inventorySummary, settingRow } from '../data/inventory';
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 import { normalize } from '../data/domain';
 import { Alert } from '../components/Alert';
 import { Field } from '../components/Field';

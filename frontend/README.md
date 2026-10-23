@@ -56,7 +56,7 @@ npm run dev
 - Đăng nhập Google/Facebook khi đã điền OAuth Client ID/Client Secret hợp lệ trong
   `backend\.env`.
 - Khôi phục phiên đăng nhập bằng cookie `ANTAM_TOKEN`.
-- Đọc cơ sở, chuyên khoa, bác sĩ và gói khám từ MySQL qua `core-service`.
+- Đọc cơ sở, chuyên khoa, khoa/phòng, bác sĩ và gói khám từ MySQL qua `core-service`.
 - Đọc lịch hẹn của bệnh nhân đã đăng nhập từ `GET /api/appointments`.
 
 Trang đăng nhập hiển thị trạng thái backend. Khi gateway, service hoặc database
@@ -66,9 +66,10 @@ diện báo chưa có dữ liệu trong database.
 Các kết quả thao tác thành công hoặc thất bại được hiển thị bằng toast ở góc trên
 bên phải; toast có thể đóng thủ công và tự biến mất sau vài giây.
 
-Backend hiện chưa có API ghi lịch hẹn, cập nhật hồ sơ, bệnh án, kho thuốc và quản
-trị. Đăng nhập nhân sự demo và dữ liệu cá nhân mẫu trên trình duyệt đã được vô hiệu
-hóa. Trang đặt lịch báo chưa hỗ trợ cho đến khi backend có API tạo lịch hẹn.
+Đặt lịch và cập nhật hồ sơ đã gọi API backend. Các API ghi bệnh án, kho thuốc và
+quản trị vẫn chưa được triển khai; những thao tác đó sẽ báo rõ là chưa có API thay
+vì ghi dữ liệu giả vào trình duyệt. Frontend không còn seed hoặc fallback sang dữ
+liệu mock khi backend/database không khả dụng.
 
 ## Kiểm tra frontend
 
@@ -77,17 +78,8 @@ Chạy trong Command Prompt:
 ```bat
 cd /d C:\Users\Admin\Desktop\practic\springboot\frontend
 npm run lint
-npm run check:domain
-npm run check:billing
-npm run check:inventory
 npm run build
 npm run format:check
-```
-
-Browser check cần Chrome và Node.js 22 trở lên:
-
-```bat
-npm run check:browser
 ```
 
 Không đưa file `.env` hoặc thông tin bí mật lên Git.

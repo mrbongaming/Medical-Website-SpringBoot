@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 import { Alert } from '../components/Alert';
 import { Empty } from '../components/Empty';
 import { PageTitle } from '../components/PageTitle';

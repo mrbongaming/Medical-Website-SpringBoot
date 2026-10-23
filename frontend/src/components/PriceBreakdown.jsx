@@ -1,4 +1,4 @@
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 
 export function PriceBreakdown({ price, title = 'Chi phí dự kiến' }) {
   if (!price) return null;

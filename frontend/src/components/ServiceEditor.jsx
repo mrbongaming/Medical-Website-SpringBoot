@@ -1,4 +1,4 @@
-import { money } from '../data/mockData';
+import { money } from '../helpers/FormatHelpers';
 import { Field } from './Field';
 
 export function ServiceEditor({ catalog, value, onChange, reason, onReason, savedItems = [] }) {

@@ -117,14 +117,15 @@ export const authApi = {
 
 export const publicApi = {
   loadCatalogs: async () => {
-    const [branches, specialties, doctors, packages, schedules] = await Promise.all([
+    const [branches, specialties, departments, doctors, packages, schedules] = await Promise.all([
       request('/api/public/branches'),
       request('/api/public/specialties'),
+      request('/api/public/departments'),
       request('/api/public/doctors'),
       request('/api/public/packages'),
       request('/api/public/schedules'),
     ]);
-    return { branches, specialties, doctors, packages, schedules };
+    return { branches, specialties, departments, doctors, packages, schedules };
   },
 };
 

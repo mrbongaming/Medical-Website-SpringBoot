@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useHospital } from '../state/context';
 import { isAdmin } from '../data/domain';
-import { dateKey, money } from '../data/mockData';
+import { dateKey, money } from '../helpers/FormatHelpers';
 import { financialBalance } from '../helpers/PricingHelpers';
 import { insuranceStatuses } from '../helpers/InsuranceHelpers';
 import { PriceBreakdown } from './PriceBreakdown';

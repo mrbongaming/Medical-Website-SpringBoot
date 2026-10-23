@@ -2,13 +2,13 @@ import { useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { FiArrowRight, FiMenu, FiX } from 'react-icons/fi';
 import { useHospital } from '../state/context';
-import { hospital, roles } from '../data/mockData';
+import { hospital, roles } from '../data/constants';
 import { Brand } from './Brand';
 import { roleProfilePath, roleWorkspacePath } from '../helpers/StaffHelpers';
 import { publicBranchCount } from '../helpers/BranchHelpers';
 
 export function PublicLayout() {
-  const { db, user, logout, storageError, apiError, apiState, refreshApi } = useHospital();
+  const { db, user, logout, apiError, apiState, refreshApi } = useHospital();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const needsCatalog = [
@@ -103,11 +103,6 @@ export function PublicLayout() {
           )}
         </div>
       </header>
-      {storageError && (
-        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 my-4 rounded-xl border p-4 text-sm font-medium border-red-200 bg-red-50 text-red-800">
-          {storageError}
-        </div>
-      )}
       {user?.role === 'patient' &&
         ['/lich-hen', '/ho-so-kham', '/tai-khoan'].some((path) =>
           location.pathname.startsWith(path),

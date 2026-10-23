@@ -252,6 +252,7 @@ Body đăng nhập mẫu:
 
 - `GET /api/public/branches`
 - `GET /api/public/specialties`
+- `GET /api/public/departments`
 - `GET /api/public/doctors`
 - `GET /api/public/packages`
 - `GET /api/appointments` - yêu cầu JWT

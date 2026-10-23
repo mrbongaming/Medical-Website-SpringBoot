@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FiCalendar } from 'react-icons/fi';
 import { useHospital } from '../state/context';
 import { inBranch, upcomingSchedules } from '../data/domain';
-import { dateKey } from '../data/mockData';
+import { dateKey } from '../helpers/FormatHelpers';
 import { Empty } from '../components/Empty';
 import { Field } from '../components/Field';
 import { PageTitle } from '../components/PageTitle';
